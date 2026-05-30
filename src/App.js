@@ -262,7 +262,12 @@ function SetupScreen({onStart, lang, setLang}) {
             borderRadius:24,padding:28,maxWidth:380,width:"100%",
             animation:"modalIn 0.3s ease",
           }}>
-            <div style={{textAlign:"center",marginBottom:20}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+                background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
+                borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,
+                cursor:"pointer",marginBottom:12,
+              }}>{t.language}</button>
               <div style={{fontSize:40,marginBottom:8}}>🃏</div>
               <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
             </div>
@@ -286,13 +291,17 @@ function SetupScreen({onStart, lang, setLang}) {
         </div>
       )}
 
-      <h1 style={{
-        fontSize:56,fontWeight:900,margin:"0 0 4px",letterSpacing:-2,
-        background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
-        WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-        animation:"shimmer 3s linear infinite",
-      }}>24</h1>
-      <p style={{color:"#64748b",letterSpacing:3,fontSize:12,textTransform:"uppercase",marginBottom:12}}>{t.subtitle}</p>
+      <div style={{textAlign:"center",marginBottom:4}}>
+        <h1 style={{
+          fontSize:52,fontWeight:900,margin:"0 0 2px",letterSpacing:-2,
+          background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+          animation:"shimmer 3s linear infinite",
+        }}>{lang==="zh"?"24点":"Game 24"}</h1>
+        <p style={{
+          color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
+        }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
+      </div>
       <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
         background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",
         borderRadius:20,padding:"4px 14px",color:"#94a3b8",fontSize:13,
@@ -618,11 +627,11 @@ export default function App() {
 
       {/* Title */}
       <h1 style={{
-        fontSize:38,fontWeight:900,margin:"0 0 2px",letterSpacing:-1,
+        fontSize:34,fontWeight:900,margin:"0 0 2px",letterSpacing:-1,
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
-      }}>24</h1>
+      }}>{lang==="zh"?"24点":"Game 24"}</h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
@@ -646,7 +655,12 @@ export default function App() {
             border:"1px solid rgba(255,255,255,0.15)",
             borderRadius:24,padding:28,maxWidth:380,width:"100%",
           }}>
-            <div style={{textAlign:"center",marginBottom:20}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+                background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
+                borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,
+                cursor:"pointer",marginBottom:12,
+              }}>{t.language}</button>
               <div style={{fontSize:40,marginBottom:8}}>🃏</div>
               <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
             </div>

@@ -370,9 +370,9 @@ export default function App() {
 
   function handleSolve() {
     clearInterval(timerRef.current);
-  
+    const diffCfg=DIFFICULTY[difficulty];
     const speedBonus=timerActive?Math.max(0,Math.floor(timeLeft/5)):0;
-    const pts=diff.pointsPerSolve+speedBonus;
+    const pts=diffCfg.pointsPerSolve+speedBonus;
     setPlayers(ps=>{
       const next=[...ps];
       next[currentPlayer]={...next[currentPlayer],
@@ -383,6 +383,8 @@ export default function App() {
     });
     setMessage({text:timerActive&&speedBonus>0?`🎉 24! +${pts} pts (⚡${speedBonus} speed bonus)`:`🎉 24! +${pts} pts`,type:"win"});
     setTurnOver(true);
+    // Auto-advance to next turn after 2 seconds
+    setTimeout(()=>{ handleNextTurn(); }, 2000);
   }
 
   function handleReset() {

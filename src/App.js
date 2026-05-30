@@ -63,7 +63,7 @@ const T = {
     score: "Score", streak2: "Streak",
     perRound: (s) => `${s}s per round · `,
     ptsPerSolve: (p) => `+${p} pts per solve`,
-    language: "语文",
+    language: "中文",
   },
   zh: {
     title: "24",
@@ -106,6 +106,17 @@ const T = {
     playAgain: "再玩一次",
     score: "得分", streak2: "连胜",
     language: "English",
+    howToPlayTitle: "游戏说明",
+    howToPlayLines: [
+      "🃏 发四张牌 — 用全部四个数字凑成24",
+      "➕ 可以使用 + − × ÷ 以及乘方 (^) 和开方 (√)",
+      "👆 点击数字 → 点击运算符 → 点击另一个数字",
+      "🔁 计算结果会变成新的数字继续使用",
+      "🎯 继续计算直到只剩一个数字 — 必须是24！",
+      "💡 不会做？点击提示按钮",
+      "⏭ 做不出来？点击跳过换一组牌",
+    ],
+    gotIt: "明白了！开始游戏 🎮",
   }
 };
 
@@ -204,6 +215,7 @@ function OpBtn({op,active,onClick}) {
 function SetupScreen({onStart, lang, setLang}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
+  const [showInstructions,setShowInstructions]=useState(true);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
   const [diff,setDiff]=useState("Medium");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
@@ -220,10 +232,48 @@ function SetupScreen({onStart, lang, setLang}) {
       <style>{`
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
         input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;
           color:white;padding:8px 12px;font-size:14px;width:100%;box-sizing:border-box;outline:none;}
         input:focus{border-color:#f59e0b;}
       `}</style>
+
+      {/* How to Play Modal */}
+      {showInstructions&&(
+        <div style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          zIndex:1000,padding:20,
+        }}>
+          <div style={{
+            background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:24,padding:28,maxWidth:380,width:"100%",
+            animation:"modalIn 0.3s ease",
+          }}>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:40,marginBottom:8}}>🃏</div>
+              <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
+            </div>
+            <div style={{marginBottom:24}}>
+              {t.howToPlayLines.map((line,i)=>(
+                <div key={i} style={{
+                  color:"#cbd5e1",fontSize:14,marginBottom:10,
+                  padding:"8px 12px",
+                  background:"rgba(255,255,255,0.04)",
+                  borderRadius:8,lineHeight:1.5,
+                }}>{line}</div>
+              ))}
+            </div>
+            <button onClick={()=>setShowInstructions(false)} style={{
+              width:"100%",padding:"14px",borderRadius:12,border:"none",
+              background:"linear-gradient(135deg,#f6d365,#fda085)",
+              color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
+              boxShadow:"0 4px 20px rgba(246,211,101,0.4)",
+            }}>{t.gotIt}</button>
+          </div>
+        </div>
+      )}
 
       <h1 style={{
         fontSize:56,fontWeight:900,margin:"0 0 4px",letterSpacing:-2,
@@ -336,6 +386,7 @@ export default function App() {
   const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
+  const [showHelp,setShowHelp]=useState(false);
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -561,11 +612,50 @@ export default function App() {
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
       }}>24</h1>
-      <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-        background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
-        borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,
-        cursor:"pointer",marginBottom:8,
-      }}>{t.language}</button>
+      <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
+        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
+          borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",
+        }}>{t.language}</button>
+        <button onClick={()=>setShowHelp(true)} style={{
+          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
+          borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",
+        }}>❓</button>
+      </div>
+
+      {/* Help modal in game */}
+      {showHelp&&(
+        <div style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          zIndex:1000,padding:20,
+        }}>
+          <div style={{
+            background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:24,padding:28,maxWidth:380,width:"100%",
+          }}>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:40,marginBottom:8}}>🃏</div>
+              <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
+            </div>
+            <div style={{marginBottom:24}}>
+              {t.howToPlayLines.map((line,i)=>(
+                <div key={i} style={{
+                  color:"#cbd5e1",fontSize:14,marginBottom:10,
+                  padding:"8px 12px",background:"rgba(255,255,255,0.04)",
+                  borderRadius:8,lineHeight:1.5,
+                }}>{line}</div>
+              ))}
+            </div>
+            <button onClick={()=>setShowHelp(false)} style={{
+              width:"100%",padding:"14px",borderRadius:12,border:"none",
+              background:"linear-gradient(135deg,#f6d365,#fda085)",
+              color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
+            }}>{t.gotIt}</button>
+          </div>
+        </div>
+      )}
 
       {/* Player scoreboard */}
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>

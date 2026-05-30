@@ -10,9 +10,9 @@ const CARD_FACE_NUM   = {1:null,2:null,3:null,4:null,5:null,6:null,7:null,8:null
 const FACE  = {1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12,13:13};
 
 const DIFFICULTY = {
-  Easy:   { timeLimit: 90,  pointsPerSolve: 8,  hintPenalty: 2, label:"Easy",   color:"#34d399" },
-  Medium: { timeLimit: 60,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b" },
-  Hard:   { timeLimit: 40,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444" },
+  Easy:   { timeLimit: 120, pointsPerSolve: 8,  hintPenalty: 2, label:"Easy",   color:"#34d399", maxCard:6,  cardNote:"1–6" },
+  Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10" },
+  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (A,J,Q,K)" },
 };
 const LEVEL_UP_SCORE = { Easy: 40, Medium: 100 }; // score needed to unlock next diff
 
@@ -326,7 +326,7 @@ function SetupScreen({onStart, lang, setLang}) {
             ))}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s {lang==="zh"?"/ 回合":"/ round"} · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分/题":"pts per solve"}
+            {DIFFICULTY[diff].timeLimit}s {lang==="zh"?"/ 回合":"/ round"} · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分/题":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}
           </div>
         </div>
 
@@ -447,8 +447,10 @@ export default function App() {
   }
 
   function dealCards(d=deck, diff=difficulty) {
-    let pool=[...d], drawn, attempts=0;
-    if (pool.length<4){pool=generateDeck();}
+    const maxCard=DIFFICULTY[diff].maxCard;
+    let pool=[...d].filter(card=>FACE[card.val]<=maxCard);
+    if (pool.length<4){pool=generateDeck().filter(card=>FACE[card.val]<=maxCard);}
+    let drawn, attempts=0;
     do {
       pool=pool.sort(()=>Math.random()-0.5);
       drawn=pool.slice(0,4);

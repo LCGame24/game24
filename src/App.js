@@ -19,6 +19,97 @@ const LEVEL_UP_SCORE = { Easy: 40, Medium: 100 }; // score needed to unlock next
 const PLAYER_COLORS = ["#f6d365","#f472b6","#34d399","#60a5fa"];
 const PLAYER_BG     = ["rgba(246,211,101,0.15)","rgba(244,114,182,0.15)","rgba(52,211,153,0.15)","rgba(96,165,250,0.15)"];
 
+// ── translations ───────────────────────────────────────────────────────────
+const T = {
+  en: {
+    title: "24",
+    subtitle: "THE MATH CARD GAME",
+    difficulty: "DIFFICULTY",
+    easy: "Easy", medium: "Medium", hard: "Hard",
+    timerSolo: "TIMER (SOLO)",
+    timerOn: "⏱ On — earn speed bonus",
+    timerOff: "∞ Off — no speed bonus",
+    timerOnNote: t.timerOnNote,
+    timerOffNote: t.timerOffNote,
+    players: "PLAYERS",
+    roundsPerPlayer: "ROUNDS PER PLAYER",
+    roundsNote: (r,n) => n>1?`${r*n} total puzzles across all players`:`${r} puzzles to solve`,
+    startGame: "Start Game ▶",
+    round: "ROUND", time: "TIME", diff: "DIFF",
+    speedBonus: t.speedBonus, noBonus: t.noBonus,
+    yourTurn: (name) => `${name}'s Turn`,
+    availableNumbers: "AVAILABLE NUMBERS",
+    steps: "STEPS", step: "Step",
+    tapInstruction: t.tapInstruction,
+    pickOperator: t.pickOperator,
+    pickSecond: t.pickSecond,
+    reset: "↺ Reset", hint: "💡 Hint", skip: "⏭ Skip",
+    nextPuzzle: "Next Puzzle ▶",
+    nextPlayer: (name) => `Next: ${name}'s Turn ▶`,
+    seeResults: "🏆 See Final Results",
+    cantDivideZero: t.cantDivideZero,
+    notTwentyFour: (n) => `Result is ${n}, not 24. Try resetting!`,
+    timeUp: t.timeUp,
+    roundsPerPlayerNote: (r) => `${r} rounds per player`,
+    winMsg: (pts, bonus) => bonus>0?`🎉 24! +${pts} pts (⚡${bonus} speed bonus)`:`🎉 24! +${pts} pts`,
+    gameOver: "Game Over!",
+    wins: (name) => `${name} Wins!`,
+    finalScore: "Final Score",
+    bestStreak: "Best Streak",
+    hintsUsed: (n) => `💡 ${n} hints used`,
+    streak: (n) => `🔥 Best streak ${n}`,
+    levelUp: (next) => `🎉 Score unlocked next difficulty! Try ${next} mode.`,
+    playAgain: "Play Again",
+    score: "Score", streak2: "Streak",
+    perRound: (t) => `${t}s per round · `,
+    ptsPerSolve: (p) => `+${p} pts per solve`,
+    language: "语文",
+  },
+  zh: {
+    title: "24",
+    subtitle: "数学扑克牌游戏",
+    difficulty: "难度",
+    easy: "简单", medium: "中等", hard: "困难",
+    timerSolo: "计时器（单人）",
+    timerOn: "⏱ 开启 — 获得速度奖励",
+    timerOff: "∞ 关闭 — 无速度奖励",
+    timerOnNote: "快速完成可获得速度奖励",
+    timerOffNote: "无时间压力 — 慢慢来",
+    players: "玩家人数",
+    roundsPerPlayer: "每位玩家的轮数",
+    roundsNote: (r,n) => n>1?`所有玩家共 ${r*n} 题`:`共 ${r} 题`,
+    startGame: "开始游戏 ▶",
+    round: "轮次", time: "时间", diff: "难度",
+    speedBonus: "速度奖励", noBonus: "无奖励",
+    yourTurn: (name) => `${name} 的回合`,
+    availableNumbers: "可用数字",
+    steps: "步骤", step: "第",
+    tapInstruction: "点击数字 → 选择运算符 → 点击另一个数字",
+    pickOperator: "请选择运算符 ↑",
+    pickSecond: "请点击第二个数字 ↑",
+    reset: "↺ 重置", hint: "💡 提示", skip: "⏭ 跳过",
+    nextPuzzle: "下一题 ▶",
+    nextPlayer: (name) => `下一位：${name} ▶`,
+    seeResults: "🏆 查看最终结果",
+    cantDivideZero: "不能除以零！",
+    notTwentyFour: (n) => `结果是 ${n}，不是24。请重置！`,
+    timeUp: "⏰ 时间到！",
+    roundsPerPlayerNote: (r) => `每位玩家 ${r} 轮`,
+    winMsg: (pts, bonus) => bonus>0?`🎉 答对了！+${pts}分（⚡${bonus}速度奖励）`:`🎉 答对了！+${pts}分`,
+    gameOver: "游戏结束！",
+    wins: (name) => `${name} 获胜！`,
+    finalScore: "最终得分",
+    bestStreak: "最长连胜",
+    hintsUsed: (n) => `💡 使用了 ${n} 次提示`,
+    streak: (n) => `🔥 最长连胜 ${n}`,
+    levelUp: (next) => `🎉 解锁下一难度！试试${next}模式。`,
+    playAgain: "再玩一次",
+    score: "得分", streak2: "连胜",
+    language: "English",
+  }
+};
+
+
 // ── helpers ────────────────────────────────────────────────────────────────
 function generateDeck() {
   const d = [];
@@ -110,7 +201,8 @@ function OpBtn({op,active,onClick}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart}) {
+function SetupScreen({onStart, lang, setLang}) {
+  const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
   const [diff,setDiff]=useState("Medium");
@@ -139,7 +231,12 @@ function SetupScreen({onStart}) {
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
       }}>24</h1>
-      <p style={{color:"#64748b",letterSpacing:3,fontSize:12,textTransform:"uppercase",marginBottom:32}}>The Math Card Game</p>
+      <p style={{color:"#64748b",letterSpacing:3,fontSize:12,textTransform:"uppercase",marginBottom:12}}>{t.subtitle}</p>
+      <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+        background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",
+        borderRadius:20,padding:"4px 14px",color:"#94a3b8",fontSize:13,
+        cursor:"pointer",marginBottom:20,
+      }}>{t.language}</button>
 
       <div style={{
         background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
@@ -147,7 +244,7 @@ function SetupScreen({onStart}) {
       }}>
         {/* Difficulty */}
         <div style={{marginBottom:24}}>
-          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Difficulty</div>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{t.difficulty}</div>
           <div style={{display:"flex",gap:8}}>
             {Object.keys(DIFFICULTY).map(d=>(
               <button key={d} onClick={()=>setDiff(d)} style={{
@@ -155,20 +252,20 @@ function SetupScreen({onStart}) {
                 background:diff===d?DIFFICULTY[d].color:"rgba(255,255,255,0.07)",
                 color:diff===d?"#1a1a2e":"#64748b",fontWeight:700,fontSize:13,cursor:"pointer",
                 transition:"all 0.2s",
-              }}>{d}</button>
+              }}>{t[d.toLowerCase()]||d}</button>
             ))}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s per round · +{DIFFICULTY[diff].pointsPerSolve} pts per solve
+            {DIFFICULTY[diff].timeLimit}s / {lang==="zh"?"回合":"round"} · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分/题":"pts per solve"}
           </div>
         </div>
 
         {/* Solo timer option — only shown for 1 player */}
         {numPlayers===1&&(
           <div style={{marginBottom:24}}>
-            <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Timer (Solo)</div>
+            <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{t.timerSolo}</div>
             <div style={{display:"flex",gap:8}}>
-              {[{v:true,label:"⏱ On — earn speed bonus"},{v:false,label:"∞ Off — no speed bonus"}].map(opt=>(
+              {[{v:true,label:t.timerOn},{v:false,label:t.timerOff}].map(opt=>(
                 <button key={String(opt.v)} onClick={()=>setSoloTimer(opt.v)} style={{
                   flex:1,padding:"8px 6px",borderRadius:10,border:"none",fontSize:12,
                   background:soloTimer===opt.v?(opt.v?"#34d399":"#a78bfa"):"rgba(255,255,255,0.07)",
@@ -178,14 +275,14 @@ function SetupScreen({onStart}) {
               ))}
             </div>
             <div style={{color:"#475569",fontSize:11,marginTop:6,textAlign:"center"}}>
-              {soloTimer?"Speed bonus earned for fast solves":"No time pressure — solve at your own pace"}
+              {soloTimer?t.timerOnNote:t.timerOffNote}
             </div>
           </div>
         )}
 
         {/* Players */}
         <div style={{marginBottom:24}}>
-          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Players</div>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{t.players}</div>
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             {[1,2,3,4].map(n=>(
               <button key={n} onClick={()=>setNumPlayers(n)} style={{
@@ -207,7 +304,7 @@ function SetupScreen({onStart}) {
 
         {/* Rounds selector */}
         <div style={{marginBottom:24}}>
-          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Rounds per Player</div>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{t.roundsPerPlayer}</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {[3,5,8,10,15,20].map(r=>(
               <button key={r} onClick={()=>setRounds(r)} style={{
@@ -219,7 +316,7 @@ function SetupScreen({onStart}) {
             ))}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:6,textAlign:"center"}}>
-            {numPlayers>1?`${rounds * numPlayers} total puzzles across all players`:`${rounds} puzzles to solve`}
+            {t.roundsNote(rounds,numPlayers)}
           </div>
         </div>
 
@@ -228,7 +325,7 @@ function SetupScreen({onStart}) {
           background:"linear-gradient(135deg,#f6d365,#fda085)",
           color:"#1a1a2e",fontSize:16,fontWeight:800,cursor:"pointer",
           boxShadow:"0 4px 20px rgba(246,211,101,0.4)",
-        }}>Start Game ▶</button>
+        }}>{t.startGame}</button>
       </div>
     </div>
   );
@@ -238,6 +335,7 @@ function SetupScreen({onStart}) {
 export default function App() {
   const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd
   const [config,setConfig]=useState(null);
+  const [lang,setLang]=useState("en");
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -314,7 +412,7 @@ export default function App() {
   },[screen,turnOver,currentPlayer,round,timerActive]);
 
   function handleTimeUp() {
-    setMessage({text:"⏰ Time's up!",type:"bad"});
+    setMessage({text:t.timeUp,type:"bad"});
     setTurnOver(true);
   }
 
@@ -340,7 +438,7 @@ export default function App() {
     else if (op==="−") result=a-b;
     else if (op==="×") result=a*b;
     else if (op==="÷") {
-      if (Math.abs(b)<1e-9){setMessage({text:"Can't divide by zero!",type:"bad"});return;}
+      if (Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}
       result=a/b;
     } else if (op==="^") result=Math.pow(a,b);
     else if (op==="√") { result=Math.sqrt(a); }
@@ -361,7 +459,7 @@ export default function App() {
       if (Math.abs(result-24)<1e-9) {
         handleSolve();
       } else {
-        setMessage({text:`Result is ${fmt(result)}, not 24. Try resetting!`,type:"bad"});
+        setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
       }
     } else {
       setMessage({text:`✓ ${expr}`,type:"step"});
@@ -381,7 +479,7 @@ export default function App() {
       };
       return next;
     });
-    setMessage({text:timerActive&&speedBonus>0?`🎉 24! +${pts} pts (⚡${speedBonus} speed bonus)`:`🎉 24! +${pts} pts`,type:"win"});
+    setMessage({text:t.winMsg(pts,timerActive?speedBonus:0),type:"win"});
     setTurnOver(true);
     // Auto-advance to next turn after 2 seconds
     setTimeout(()=>{ handleNextTurn(); }, 2000);
@@ -430,12 +528,13 @@ export default function App() {
   }
 
   const cp=players[currentPlayer]||{name:"",score:0,streak:0};
+  const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
-  if (screen==="setup") return <SetupScreen onStart={startGame}/>;
+  if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}/>;
 
   if (screen==="gameEnd") return (
-    <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty}/>
+    <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty} lang={lang} setLang={setLang}/>
   );
 
   return (
@@ -462,6 +561,11 @@ export default function App() {
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
       }}>24</h1>
+      <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+        background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
+        borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,
+        cursor:"pointer",marginBottom:8,
+      }}>{t.language}</button>
 
       {/* Player scoreboard */}
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>
@@ -488,14 +592,14 @@ export default function App() {
         borderRadius:14,padding:"8px 18px",flexWrap:"wrap",justifyContent:"center",
       }}>
         <div style={{textAlign:"center"}}>
-          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>Round</div>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.round}</div>
           <div style={{color:"white",fontWeight:800,fontSize:18}}>{round}/{ROUNDS_PER_PLAYER}</div>
         </div>
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
         {isSolo ? (
           <>
             <div style={{textAlign:"center"}}>
-              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>Time</div>
+              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.time}</div>
               <div style={{
                 fontWeight:900,fontSize:22,
                 color:!timerEnabled?"#a78bfa":timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",
@@ -517,13 +621,13 @@ export default function App() {
                 color:"white",fontWeight:800,fontSize:11,cursor:turnOver?"not-allowed":"pointer",
                 opacity:turnOver?0.5:1,
               }}>{timerEnabled?"⏱ On":"∞ Off"}</button>
-              <div style={{color:"#475569",fontSize:10,marginTop:2}}>{timerEnabled?"speed bonus":"no bonus"}</div>
+              <div style={{color:"#475569",fontSize:10,marginTop:2}}>{timerEnabled?t.speedBonus:t.noBonus}</div>
             </div>
           </>
         ) : (
           <>
             <div style={{textAlign:"center"}}>
-              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>Time</div>
+              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.time}</div>
               <div style={{
                 fontWeight:900,fontSize:22,
                 color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",
@@ -545,7 +649,7 @@ export default function App() {
         )}
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
         <div style={{textAlign:"center"}}>
-          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>Diff</div>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.diff}</div>
           <div style={{color:DIFFICULTY[difficulty].color,fontWeight:800,fontSize:13}}>{difficulty}</div>
         </div>
       </div>
@@ -574,7 +678,7 @@ export default function App() {
 
       {/* Working numbers pool */}
       <div style={{marginBottom:14,textAlign:"center"}}>
-        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Available Numbers</div>
+        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{t.availableNumbers}</div>
         <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
           {numbers.map((n,i)=>(
             <div key={i} onClick={()=>handleNumberClick(i)} style={{
@@ -611,10 +715,10 @@ export default function App() {
           background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",
           borderRadius:12,padding:"10px 16px",marginBottom:12,width:"100%",maxWidth:360,
         }}>
-          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>Steps</div>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.steps}</div>
           {steps.map((s,i)=>(
             <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3,animation:"fadeSlide 0.3s ease"}}>
-              <span style={{color:"#475569",marginRight:6}}>Step {i+1}:</span>{s.expr}
+              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>
@@ -660,9 +764,9 @@ export default function App() {
       {!turnOver?(
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>
           {[
-            {label:"↺ Reset",action:handleReset,color:"#64748b"},
-            {label:"💡 Hint",action:handleHint,color:"#a78bfa"},
-            ...(isSolo?[{label:"⏭ Skip",action:handleNextTurn,color:"#f472b6"}]:[]),
+            {label:t.reset,action:handleReset,color:"#64748b"},
+            {label:t.hint,action:handleHint,color:"#a78bfa"},
+            ...(isSolo?[{label:t.skip,action:handleNextTurn,color:"#f472b6"}]:[]),
           ].map(b=>(
             <button key={b.label} onClick={b.action} style={{
               background:"transparent",border:`2px solid ${b.color}`,
@@ -680,20 +784,21 @@ export default function App() {
           animation:"popIn 0.4s ease",
         }}>
           {((round-1)*config.numPlayers+currentPlayer+1)>=config.numPlayers*ROUNDS_PER_PLAYER
-            ?"🏆 See Final Results"
-            :isSolo?"Next Puzzle ▶":`Next: ${players[(currentPlayer+1)%config.numPlayers]?.name}'s Turn ▶`}
+            ?t.seeResults
+            :isSolo?t.nextPuzzle:t.nextPlayer(players[(currentPlayer+1)%config.numPlayers]?.name)}
         </button>
       )}
 
       <p style={{color:"#1e293b",fontSize:10,marginTop:12,textAlign:"center"}}>
-        {ROUNDS_PER_PLAYER} rounds per player
+        {t.roundsPerPlayerNote(ROUNDS_PER_PLAYER)}
       </p>
     </div>
   );
 }
 
 // ── Game End screen ────────────────────────────────────────────────────────
-function GameEnd({players,onRestart,difficulty}) {
+function GameEnd({players,onRestart,difficulty,lang,setLang}) {
+  const t=T[lang];
   const sorted=[...players].sort((a,b)=>b.score-a.score);
   const winner=sorted[0];
 
@@ -717,9 +822,9 @@ function GameEnd({players,onRestart,difficulty}) {
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 2s linear infinite",
       }}>
-        {players.length>1?`${winner.name} Wins!`:"Game Over!"}
+        {players.length>1?t.wins(winner.name):t.gameOver}
       </h2>
-      <p style={{color:"#64748b",marginBottom:24,fontSize:13}}>{difficulty} mode</p>
+      <p style={{color:"#64748b",marginBottom:12,fontSize:13}}>{lang==="zh"?{"简单":"简单","Medium":"中等","Hard":"困难"}[difficulty]||difficulty:difficulty} {lang==="zh"?"模式":"mode"}</p>
 
       <div style={{width:"100%",maxWidth:340,marginBottom:24}}>
         {sorted.map((p,i)=>{
@@ -738,7 +843,7 @@ function GameEnd({players,onRestart,difficulty}) {
               <div style={{flex:1}}>
                 <div style={{color:PLAYER_COLORS[pi],fontWeight:700,fontSize:14}}>{p.name}</div>
                 <div style={{color:"#64748b",fontSize:11}}>
-                  🔥 Best streak {p.streak} · 💡 {p.hintsUsed} hints used
+                  {t.streak(p.streak)} · {t.hintsUsed(p.hintsUsed)}
                 </div>
               </div>
               <div style={{color:"white",fontWeight:900,fontSize:22}}>{p.score}</div>
@@ -754,7 +859,7 @@ function GameEnd({players,onRestart,difficulty}) {
           borderRadius:12,padding:"10px 18px",marginBottom:16,textAlign:"center",
           color:"#34d399",fontSize:13,fontWeight:600,
         }}>
-          🎉 Score unlocked next difficulty! Try {difficulty==="Easy"?"Medium":"Hard"} mode.
+          {t.levelUp(difficulty==="Easy"?(lang==="zh"?"中等":"Medium"):(lang==="zh"?"困难":"Hard"))}
         </div>
       )}
 
@@ -763,7 +868,7 @@ function GameEnd({players,onRestart,difficulty}) {
         border:"none",borderRadius:12,padding:"14px 32px",
         color:"#1a1a2e",fontSize:16,fontWeight:800,cursor:"pointer",
         boxShadow:"0 4px 20px rgba(246,211,101,0.35)",
-      }}>Play Again</button>
+      }}>{t.playAgain}</button>
     </div>
   );
 }

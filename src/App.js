@@ -61,7 +61,7 @@ const T = {
     levelUp: (next) => `🎉 Score unlocked next difficulty! Try ${next} mode.`,
     playAgain: "Play Again",
     score: "Score", streak2: "Streak",
-    perRound: (t) => `${t}s per round · `,
+    perRound: (s) => `${s}s per round · `,
     ptsPerSolve: (p) => `+${p} pts per solve`,
     language: "语文",
   },
@@ -660,7 +660,7 @@ export default function App() {
         marginBottom:12,letterSpacing:1,
         textTransform:"uppercase",
       }}>
-        {cp.name}'s Turn
+        {t.yourTurn(cp.name)}
       </div>
 
       {/* Cards */}

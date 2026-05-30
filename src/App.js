@@ -342,8 +342,8 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
                 transition:"all 0.2s",position:"relative",
               }}>
                 {isLocked?"🔒":t[d.toLowerCase()]||d}
-              </button>);}
-            ))}
+              </button>);
+            })}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
             {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}{!unlocked.Hard?` · ${lang==="zh"?"Medium 50分解锁Hard":"Score 50pts on Medium to unlock Hard"}`:""}

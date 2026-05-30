@@ -6,7 +6,6 @@ const VALUES = [1,2,3,4,5,6,7,8,9,10,11,12,13];
 const LABELS = {1:"1",2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"11",12:"12",13:"13"};
 // Card face shows traditional letter + numeric value for face cards
 const CARD_FACE_LABEL = {1:"A",2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"J",12:"Q",13:"K"};
-const CARD_FACE_NUM   = {1:null,2:null,3:null,4:null,5:null,6:null,7:null,8:null,9:null,10:null,11:"11",12:"12",13:"13"};
 const FACE  = {1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12,13:13};
 
 const DIFFICULTY = {
@@ -209,13 +208,11 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
       {used&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#475569"}}>✓</div>}
       <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif",lineHeight:1.1}}>
         {CARD_FACE_LABEL[card.val]}
-        {CARD_FACE_NUM[card.val]&&<span style={{fontSize:9,display:"block",color:red?"#c53030":"#4a5568"}}>=({CARD_FACE_NUM[card.val]})</span>}
         <span style={{fontSize:11}}>{card.suit}</span>
       </div>
       <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
       <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif",lineHeight:1.1}}>
         {CARD_FACE_LABEL[card.val]}
-        {CARD_FACE_NUM[card.val]&&<span style={{fontSize:9,display:"block",color:red?"#c53030":"#4a5568"}}>=({CARD_FACE_NUM[card.val]})</span>}
         <span style={{fontSize:11}}>{card.suit}</span>
       </div>
     </div>

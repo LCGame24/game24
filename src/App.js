@@ -370,7 +370,7 @@ export default function App() {
 
   function handleSolve() {
     clearInterval(timerRef.current);
-    const diff=DIFFICULTY[difficulty];
+  
     const speedBonus=timerActive?Math.max(0,Math.floor(timeLeft/5)):0;
     const pts=diff.pointsPerSolve+speedBonus;
     setPlayers(ps=>{
@@ -694,7 +694,8 @@ export default function App() {
 function GameEnd({players,onRestart,difficulty}) {
   const sorted=[...players].sort((a,b)=>b.score-a.score);
   const winner=sorted[0];
-  const diff=DIFFICULTY[difficulty];
+
+
 
   return (
     <div style={{

@@ -64,6 +64,17 @@ const T = {
     perRound: (s) => `${s}s per round · `,
     ptsPerSolve: (p) => `+${p} pts per solve`,
     language: "中文",
+    howToPlayTitle: "How to Play",
+    howToPlayLines: [
+      "🃏 Four cards are dealt — use ALL four numbers to make 24",
+      "➕ You can use + − × ÷ and even power (^) or square root (√)",
+      "👆 Tap a number → tap an operator → tap another number",
+      "🔁 The result becomes a new number to use in the next step",
+      "🎯 Keep going until only one number is left — it must be 24!",
+      "💡 Stuck? Use the Hint button",
+      "⏭ Can't solve it? Press Skip to get new cards",
+    ],
+    gotIt: "Got it! Let's Play 🎮",
   },
   zh: {
     title: "24",

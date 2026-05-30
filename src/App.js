@@ -14,7 +14,21 @@ const DIFFICULTY = {
   Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷","^","√"] },
   Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√"] },
 };
-const LEVEL_UP_SCORE = { Easy: 40, Medium: 100 }; // score needed to unlock next diff
+const LEVEL_UP_SCORE = { Easy: 40, Medium: 50 }; // score needed to unlock Hard
+
+// ── local storage helpers ─────────────────────────────────────────────────
+function loadUnlocked() {
+  try { return JSON.parse(localStorage.getItem("game24_unlocked")||"{}"); } catch { return {}; }
+}
+function saveUnlocked(u) {
+  try { localStorage.setItem("game24_unlocked",JSON.stringify(u)); } catch {}
+}
+function loadLeaderboard() {
+  try { return JSON.parse(localStorage.getItem("game24_leaderboard")||"[]"); } catch { return []; }
+}
+function saveLeaderboard(entries) {
+  try { localStorage.setItem("game24_leaderboard",JSON.stringify(entries.slice(0,20))); } catch {}
+}
 
 const PLAYER_COLORS = ["#f6d365","#f472b6","#34d399","#60a5fa"];
 const PLAYER_BG     = ["rgba(246,211,101,0.15)","rgba(244,114,182,0.15)","rgba(52,211,153,0.15)","rgba(96,165,250,0.15)"];
@@ -223,10 +237,11 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, lang, setLang}) {
+function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(true);
+  const [showLB,setShowLB]=useState(false);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
   const [diff,setDiff]=useState("Medium");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
@@ -316,17 +331,22 @@ function SetupScreen({onStart, lang, setLang}) {
         <div style={{marginBottom:24}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{t.difficulty}</div>
           <div style={{display:"flex",gap:8}}>
-            {Object.keys(DIFFICULTY).map(d=>(
-              <button key={d} onClick={()=>setDiff(d)} style={{
+            {Object.keys(DIFFICULTY).map(d=>{
+              const isLocked=d==="Hard"&&!unlocked.Hard;
+              return (
+              <button key={d} onClick={()=>!isLocked&&setDiff(d)} style={{
                 flex:1,padding:"8px 4px",borderRadius:10,border:"none",
-                background:diff===d?DIFFICULTY[d].color:"rgba(255,255,255,0.07)",
-                color:diff===d?"#1a1a2e":"#64748b",fontWeight:700,fontSize:13,cursor:"pointer",
-                transition:"all 0.2s",
-              }}>{t[d.toLowerCase()]||d}</button>
+                background:isLocked?"rgba(255,255,255,0.03)":diff===d?DIFFICULTY[d].color:"rgba(255,255,255,0.07)",
+                color:isLocked?"#334155":diff===d?"#1a1a2e":"#64748b",
+                fontWeight:700,fontSize:13,cursor:isLocked?"not-allowed":"pointer",
+                transition:"all 0.2s",position:"relative",
+              }}>
+                {isLocked?"🔒":t[d.toLowerCase()]||d}
+              </button>);}
             ))}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}
+            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}{!unlocked.Hard?` · ${lang==="zh"?"Medium 50分解锁Hard":"Score 50pts on Medium to unlock Hard"}`:""}
           </div>
         </div>
 
@@ -394,8 +414,67 @@ function SetupScreen({onStart, lang, setLang}) {
           width:"100%",padding:"14px",borderRadius:12,border:"none",
           background:"linear-gradient(135deg,#f6d365,#fda085)",
           color:"#1a1a2e",fontSize:16,fontWeight:800,cursor:"pointer",
-          boxShadow:"0 4px 20px rgba(246,211,101,0.4)",
+          boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginBottom:10,
         }}>{t.startGame}</button>
+
+        <button onClick={()=>setShowLB(true)} style={{
+          width:"100%",padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
+          background:"rgba(255,255,255,0.04)",color:"#94a3b8",
+          fontSize:14,fontWeight:600,cursor:"pointer",
+        }}>🏆 {lang==="zh"?"排行榜":"Leaderboard"}</button>
+
+        {/* Leaderboard Modal */}
+        {showLB&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+            display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+            <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",
+              border:"1px solid rgba(255,255,255,0.12)",borderRadius:24,
+              padding:24,maxWidth:380,width:"100%",maxHeight:"80vh",overflowY:"auto"}}>
+              <div style={{textAlign:"center",marginBottom:16}}>
+                <div style={{fontSize:36}}>🏆</div>
+                <h2 style={{color:"white",fontSize:20,fontWeight:900,margin:"4px 0"}}>
+                  {lang==="zh"?"排行榜":"Leaderboard"}
+                </h2>
+              </div>
+              {leaderboard.length===0?(
+                <p style={{color:"#475569",textAlign:"center",fontSize:14}}>
+                  {lang==="zh"?"暂无记录，快去挑战吧！":"No scores yet — play to get on the board!"}
+                </p>
+              ):(
+                leaderboard.map((entry,i)=>(
+                  <div key={i} style={{
+                    display:"flex",alignItems:"center",gap:10,
+                    background:"rgba(255,255,255,0.04)",borderRadius:12,
+                    padding:"10px 14px",marginBottom:8,
+                  }}>
+                    <div style={{fontSize:18,width:28,textAlign:"center"}}>
+                      {i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}.`}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{color:"white",fontWeight:700,fontSize:14}}>{entry.name}</div>
+                      <div style={{color:"#64748b",fontSize:11}}>
+                        {entry.difficulty} · {entry.date} · 🔥{entry.streak}
+                      </div>
+                    </div>
+                    <div style={{color:"#f6d365",fontWeight:900,fontSize:20}}>{entry.score}</div>
+                  </div>
+                ))
+              )}
+              {leaderboard.length>0&&(
+                <button onClick={()=>{saveLeaderboard([]);setLeaderboard([]);}} style={{
+                  width:"100%",padding:"8px",borderRadius:10,marginTop:8,
+                  border:"1px solid #ef4444",background:"transparent",
+                  color:"#ef4444",fontSize:12,cursor:"pointer",
+                }}>{lang==="zh"?"清除记录":"Clear All Scores"}</button>
+              )}
+              <button onClick={()=>setShowLB(false)} style={{
+                width:"100%",padding:"12px",borderRadius:12,border:"none",marginTop:10,
+                background:"linear-gradient(135deg,#f6d365,#fda085)",
+                color:"#1a1a2e",fontSize:14,fontWeight:800,cursor:"pointer",
+              }}>{lang==="zh"?"关闭":"Close"}</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -407,6 +486,9 @@ export default function App() {
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
   const [showHelp,setShowHelp]=useState(false);
+  const [unlocked,setUnlocked]=useState(()=>({Easy:true,Medium:true,Hard:loadUnlocked().Hard||false}));
+  const [leaderboard,setLeaderboard]=useState(()=>loadLeaderboard());
+  const [showLeaderboard,setShowLeaderboard]=useState(false);
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -552,8 +634,15 @@ export default function App() {
       };
       return next;
     });
+    const newScore = players[currentPlayer].score + pts;
     setMessage({text:t.winMsg(pts,timerActive?speedBonus:0),type:"win"});
     setTurnOver(true);
+    // Check Hard unlock
+    if (difficulty==="Medium" && newScore>=LEVEL_UP_SCORE.Medium && !unlocked.Hard) {
+      const newUnlocked={...unlocked,Hard:true};
+      setUnlocked(newUnlocked);
+      saveUnlocked(newUnlocked);
+    }
     // Auto-advance to next turn after 2 seconds
     setTimeout(()=>{ handleNextTurn(); }, 2000);
   }
@@ -604,10 +693,12 @@ export default function App() {
   const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
-  if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}/>;
+  if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}
+    unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}/>;
 
   if (screen==="gameEnd") return (
-    <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty} lang={lang} setLang={setLang}/>
+    <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty} lang={lang} setLang={setLang}
+      leaderboard={leaderboard} setLeaderboard={setLeaderboard}/>
   );
 
   return (
@@ -927,10 +1018,23 @@ export default function App() {
 }
 
 // ── Game End screen ────────────────────────────────────────────────────────
-function GameEnd({players,onRestart,difficulty,lang,setLang}) {
+function GameEnd({players,onRestart,difficulty,lang,setLang,leaderboard,setLeaderboard}) {
   const t=T[lang];
   const sorted=[...players].sort((a,b)=>b.score-a.score);
   const winner=sorted[0];
+
+  // Save all players to leaderboard on mount
+  useState(()=>{
+    const date=new Date().toLocaleDateString();
+    const newEntries=[...leaderboard];
+    players.forEach(p=>{
+      if (p.score>0) newEntries.push({name:p.name,score:p.score,difficulty,streak:p.streak,date});
+    });
+    newEntries.sort((a,b)=>b.score-a.score);
+    const top20=newEntries.slice(0,20);
+    saveLeaderboard(top20);
+    setLeaderboard(top20);
+  });
 
 
 

@@ -256,7 +256,7 @@ function SetupScreen({onStart, lang, setLang}) {
             ))}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s / {lang==="zh"?"回合":"round"} · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分/题":"pts per solve"}
+            {DIFFICULTY[diff].timeLimit}s {lang==="zh"?"/ 回合":"/ round"} · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分/题":"pts per solve"}
           </div>
         </div>
 
@@ -824,7 +824,9 @@ function GameEnd({players,onRestart,difficulty,lang,setLang}) {
       }}>
         {players.length>1?t.wins(winner.name):t.gameOver}
       </h2>
-      <p style={{color:"#64748b",marginBottom:12,fontSize:13}}>{lang==="zh"?{"简单":"简单","Medium":"中等","Hard":"困难"}[difficulty]||difficulty:difficulty} {lang==="zh"?"模式":"mode"}</p>
+      <p style={{color:"#64748b",marginBottom:12,fontSize:13}}>
+        {difficulty==="Easy"?(lang==="zh"?"简单":"Easy"):difficulty==="Medium"?(lang==="zh"?"中等":"Medium"):(lang==="zh"?"困难":"Hard")} {lang==="zh"?"模式":"mode"}
+      </p>
 
       <div style={{width:"100%",maxWidth:340,marginBottom:24}}>
         {sorted.map((p,i)=>{

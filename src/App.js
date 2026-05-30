@@ -10,9 +10,9 @@ const CARD_FACE_NUM   = {1:null,2:null,3:null,4:null,5:null,6:null,7:null,8:null
 const FACE  = {1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12,13:13};
 
 const DIFFICULTY = {
-  Easy:   { timeLimit: 120, pointsPerSolve: 8,  hintPenalty: 2, label:"Easy",   color:"#34d399", maxCard:6,  cardNote:"1–6" },
-  Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10" },
-  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (A,J,Q,K)" },
+  Easy:   { timeLimit: 120, pointsPerSolve: 8,  hintPenalty: 2, label:"Easy",   color:"#34d399", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷"] },
+  Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷","^","√"] },
+  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√"] },
 };
 const LEVEL_UP_SCORE = { Easy: 40, Medium: 100 }; // score needed to unlock next diff
 
@@ -208,14 +208,14 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
   );
 }
 
-function OpBtn({op,active,onClick}) {
+function OpBtn({op,active,onClick,disabled}) {
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} disabled={disabled} style={{
       width:44,height:44,borderRadius:"50%",
-      border:active?"2px solid #f59e0b":"2px solid #334155",
-      background:active?"#fef3c7":"rgba(255,255,255,0.05)",
-      fontSize:18,fontWeight:800,cursor:"pointer",
-      color:active?"#92400e":"#94a3b8",
+      border:active?"2px solid #f59e0b":disabled?"2px solid #1e293b":"2px solid #334155",
+      background:active?"#fef3c7":disabled?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.05)",
+      fontSize:18,fontWeight:800,cursor:disabled?"default":"pointer",
+      color:active?"#92400e":disabled?"#1e3a5f":"#94a3b8",
       transform:active?"scale(1.18)":"scale(1)",
       transition:"all 0.15s",boxShadow:active?"0 4px 12px rgba(245,158,11,0.4)":"none",
     }}>{op}</button>
@@ -326,7 +326,7 @@ function SetupScreen({onStart, lang, setLang}) {
             ))}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s {lang==="zh"?"/ 回合":"/ round"} · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分/题":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}
+            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}
           </div>
         </div>
 
@@ -818,11 +818,24 @@ export default function App() {
       {/* Operators */}
       {!turnOver&&(
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>
-          {["+","−","×","÷","^","√"].map(op=>(
-            <OpBtn key={op} op={op} active={operator===op} onClick={()=>{
-              if (selectedIdx!==null) setOperator(o=>o===op?null:op);
-            }}/>
-          ))}
+          {["+","−","×","÷","^","√"].map(op=>{
+            const allowed=DIFFICULTY[difficulty].ops.includes(op);
+            return (
+              <div key={op} style={{position:"relative"}}>
+                <OpBtn op={op} active={operator===op} onClick={()=>{
+                  if (selectedIdx!==null&&allowed) setOperator(o=>o===op?null:op);
+                }} disabled={!allowed}/>
+                {!allowed&&(
+                  <div style={{
+                    position:"absolute",inset:0,borderRadius:"50%",
+                    background:"rgba(0,0,0,0.55)",display:"flex",
+                    alignItems:"center",justifyContent:"center",
+                    fontSize:16,pointerEvents:"none",
+                  }}>🔒</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -644,6 +644,7 @@ export default function App() {
   const [showConfetti,setShowConfetti]=useState(false);
   const [totalSolves,setTotalSolves]=useState(0);
   const [skipUsed,setSkipUsed]=useState(false);
+  const [showMediumNudge,setShowMediumNudge]=useState(false);
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -685,6 +686,7 @@ export default function App() {
     setTurnOver(false);
     setSkipUsed(false);
     setTotalSolves(0);
+    setShowMediumNudge(false);
   }
 
   function dealCards(d=deck, diff=difficulty) {
@@ -842,10 +844,16 @@ export default function App() {
       saveBadges(allBadges);
       setNewBadges(earned);
       setTimeout(()=>setNewBadges([]),4000);
+      if (earned.includes("easy_grad")) setShowMediumNudge(true);
     }
 
     setMessage({text:t.winMsg(pts,timerActive?speedBonus:0),type:"win"});
     setTurnOver(true);
+    // Suggest Medium when Easy score reaches 40pts
+    if (difficulty==="Easy" && newScore>=40 && !showMediumNudge) {
+      setShowMediumNudge(true);
+    }
+
     // Check Hard unlock
     if (difficulty==="Medium" && newScore>=LEVEL_UP_SCORE.Medium && !unlocked.Hard) {
       const newUnlocked={...unlocked,Hard:true};
@@ -1350,6 +1358,23 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {showMediumNudge&&!justUnlockedHard&&(
+            <div style={{
+              background:"linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05))",
+              border:"2px solid #f59e0b",borderRadius:16,
+              padding:"12px 20px",marginBottom:12,textAlign:"center",
+              animation:"popIn 0.5s ease",
+            }}>
+              <div style={{fontSize:28,marginBottom:4}}>🌟⬆️</div>
+              <div style={{color:"#f59e0b",fontWeight:900,fontSize:15,marginBottom:4}}>
+                {lang==="zh"?"你做得很棒！准备好升级了吗？":"You're doing great! Ready for more?"}
+              </div>
+              <div style={{color:"#94a3b8",fontSize:12,marginBottom:10}}>
+                {lang==="zh"?"试试中等难度，挑战更多运算！":"Try Medium mode for a bigger challenge!"}
+              </div>
+            </div>
+          )}
           <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
             {justUnlockedHard&&(
               <button onClick={()=>{
@@ -1364,6 +1389,20 @@ export default function App() {
                 animation:"popIn 0.4s ease",
               }}>
                 🔥 {lang==="zh"?"去玩困难模式！":"Play Hard Mode!"}
+              </button>
+            )}
+            {showMediumNudge&&!justUnlockedHard&&(
+              <button onClick={()=>{
+                setShowMediumNudge(false);
+                setScreen("setup");
+              }} style={{
+                background:"linear-gradient(135deg,#f59e0b,#d97706)",
+                border:"none",borderRadius:12,padding:"12px 20px",
+                color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
+                boxShadow:"0 4px 20px rgba(245,158,11,0.4)",
+                animation:"popIn 0.4s ease",
+              }}>
+                ⬆️ {lang==="zh"?"试试中等难度！":"Try Medium Mode!"}
               </button>
             )}
             <button onClick={handleNextTurn} style={{

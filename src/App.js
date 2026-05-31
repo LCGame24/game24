@@ -315,10 +315,10 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest}) {
+function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
-  const [showInstructions,setShowInstructions]=useState(true);
+  const [showInstructions,setShowInstructions]=useState(!skipInstructions);
   const [showLB,setShowLB]=useState(false);
   const [showBadges,setShowBadges]=useState(false);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
@@ -648,6 +648,7 @@ export default function App() {
   const [totalSolves,setTotalSolves]=useState(0);
   const [skipUsed,setSkipUsed]=useState(false);
   const [showMediumNudge,setShowMediumNudge]=useState(false);
+  const [skipInstructions,setSkipInstructions]=useState(false);
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -966,10 +967,11 @@ export default function App() {
   if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
     autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
-    badges={badges} personalBest={personalBest}/>;
+    badges={badges} personalBest={personalBest}
+    skipInstructions={skipInstructions}/>;
 
   if (screen==="gameEnd") return (
-    <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty} lang={lang} setLang={setLang}
+    <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setScreen("setup");}} difficulty={difficulty} lang={lang} setLang={setLang}
       leaderboard={leaderboard} setLeaderboard={setLeaderboard}
       onKeepPlaying={()=>{ dealCards(deck, difficulty); setRound(1); setCurrentPlayer(0); setScreen("game"); setPlayers(ps=>ps.map(p=>({...p,score:0,streak:0,hintsUsed:0}))); }}/>
   );

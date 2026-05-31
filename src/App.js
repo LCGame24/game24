@@ -341,7 +341,8 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
   const [diff,setDiff]=useState(autoSelectHard?"Hard":preSelectDiff||"Easy");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
-  const [rounds,setRounds]=useState(5);
+  const defaultRounds = (d) => d==="Easy" ? 5 : 10;
+  const [rounds,setRounds]=useState(()=>defaultRounds(autoSelectHard?"Hard":preSelectDiff||"Easy"));
 
   function updateName(i,v){const n=[...names];n[i]=v;setNames(n);}
 
@@ -430,7 +431,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
             {Object.keys(DIFFICULTY).map(d=>{
               const isLocked=d==="Hard"&&!unlocked.Hard;
               return (
-              <button key={d} onClick={()=>!isLocked&&setDiff(d)} style={{
+              <button key={d} onClick={()=>{if(isLocked)return;setDiff(prev=>{if(rounds===defaultRounds(prev))setRounds(defaultRounds(d));return d;});}} style={{
                 flex:1,padding:"8px 4px",borderRadius:10,border:"none",
                 background:isLocked?"rgba(255,255,255,0.03)":diff===d?DIFFICULTY[d].color:"rgba(255,255,255,0.07)",
                 color:isLocked?"#334155":diff===d?"#1a1a2e":"#64748b",
@@ -442,7 +443,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
             })}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}{!unlocked.Hard?` · ${lang==="zh"?"Medium 50分解锁Hard":"Score 50pts on Medium to unlock Hard"}`:""}
+            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}{!unlocked.Hard?` · ${lang==="zh"?"Medium 150分解锁Hard":"Score 150pts on Medium to unlock Hard"}`:""}
           </div>
         </div>
 

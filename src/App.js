@@ -315,14 +315,14 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions}) {
+function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(!skipInstructions);
   const [showLB,setShowLB]=useState(false);
   const [showBadges,setShowBadges]=useState(false);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
-  const [diff,setDiff]=useState(autoSelectHard?"Hard":"Easy");
+  const [diff,setDiff]=useState(autoSelectHard?"Hard":preSelectDiff||"Easy");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
   const [rounds,setRounds]=useState(5);
 
@@ -503,7 +503,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
                 <div key={diff} style={{textAlign:"center"}}>
                   <div style={{color:DIFFICULTY[diff]?.color||"#94a3b8",fontSize:11,fontWeight:700}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[diff]||diff:diff}</div>
                   <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{score}</div>
-                  <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Lv"} {Math.floor(score/10)+1}</div>
+                  <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Level"} {Math.floor(score/10)+1}</div>
                 </div>
               ))}
             </div>
@@ -601,7 +601,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
                     <div style={{flex:1}}>
                       <div style={{color:"white",fontWeight:700,fontSize:14}}>{entry.name}</div>
                       <div style={{color:"#64748b",fontSize:11}}>
-                        {entry.difficulty} · {lang==="zh"?"等级":"Lv"}{Math.floor(entry.score/10)+1} · {entry.date} · 🔥{entry.streak}
+                        {entry.difficulty} · {lang==="zh"?"等级":"Level"}{Math.floor(entry.score/10)+1} · {entry.date} · 🔥{entry.streak}
                       </div>
                     </div>
                     <div style={{color:"#f6d365",fontWeight:900,fontSize:20}}>{entry.score}</div>
@@ -649,6 +649,8 @@ export default function App() {
   const [skipUsed,setSkipUsed]=useState(false);
   const [showMediumNudge,setShowMediumNudge]=useState(false);
   const [skipInstructions,setSkipInstructions]=useState(false);
+  const [showDiffMenu,setShowDiffMenu]=useState(false);
+  const [preSelectDiff,setPreSelectDiff]=useState(null);
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -968,10 +970,10 @@ export default function App() {
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
     autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
     badges={badges} personalBest={personalBest}
-    skipInstructions={skipInstructions}/>;
+    skipInstructions={skipInstructions} preSelectDiff={preSelectDiff}/>;
 
   if (screen==="gameEnd") return (
-    <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setScreen("setup");}} onPlayAgain={()=>{setSkipInstructions(true);setScreen("setup");}} difficulty={difficulty} lang={lang} setLang={setLang}
+    <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} onPlayAgain={()=>{ setSkipInstructions(true); setPreSelectDiff(difficulty); setScreen("setup"); }} difficulty={difficulty} lang={lang} setLang={setLang}
       leaderboard={leaderboard} setLeaderboard={setLeaderboard}
       onKeepPlaying={()=>{ dealCards(deck, difficulty); setRound(1); setCurrentPlayer(0); setScreen("game"); setPlayers(ps=>ps.map(p=>({...p,score:0,streak:0,hintsUsed:0}))); }}/>
   );
@@ -1118,7 +1120,7 @@ export default function App() {
             </div>
             <div style={{fontSize:20,fontWeight:900,color:"white"}}>{p.score}</div>
             <div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>
-              {lang==="zh"?"等级":"Lv"} {Math.floor(p.score/10)+1}
+              {lang==="zh"?"等级":"Level"} {Math.floor(p.score/10)+1}
             </div>
             {p.streak>1&&<div style={{fontSize:10,color:"#f472b6"}}>🔥{p.streak}</div>}
           </div>
@@ -1188,9 +1190,50 @@ export default function App() {
           </>
         )}
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
-        <div style={{textAlign:"center"}}>
-          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.diff}</div>
-          <div style={{color:DIFFICULTY[difficulty].color,fontWeight:800,fontSize:13}}>{difficulty}</div>
+        <div style={{textAlign:"center",position:"relative"}}>
+          <button onClick={()=>setShowDiffMenu(d=>!d)} style={{
+            background:"transparent",border:"none",cursor:"pointer",padding:"2px 4px",
+          }}>
+            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.diff} ▾</div>
+            <div style={{color:DIFFICULTY[difficulty].color,fontWeight:800,fontSize:13}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[difficulty]||difficulty:difficulty}</div>
+          </button>
+          {showDiffMenu&&(
+            <div style={{
+              position:"absolute",top:"110%",right:0,zIndex:100,
+              background:"#1e293b",border:"1px solid rgba(255,255,255,0.15)",
+              borderRadius:12,padding:8,minWidth:140,
+              boxShadow:"0 8px 24px rgba(0,0,0,0.4)",
+            }}>
+              {Object.keys(DIFFICULTY).map(d=>{
+                const isLocked=d==="Hard"&&!unlocked.Hard;
+                return (
+                  <button key={d} onClick={()=>{
+                    if (isLocked) return;
+                    setShowDiffMenu(false);
+                    setSkipInstructions(true);
+                    setScreen("setup");
+                  }} style={{
+                    display:"block",width:"100%",padding:"7px 12px",
+                    background:d===difficulty?"rgba(255,255,255,0.08)":"transparent",
+                    border:"none",borderRadius:8,
+                    color:isLocked?"#334155":DIFFICULTY[d].color,
+                    fontWeight:700,fontSize:13,cursor:isLocked?"not-allowed":"pointer",
+                    textAlign:"left",marginBottom:2,
+                  }}>
+                    {isLocked?"🔒 ":""}{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[d]||d:d}
+                    {d===difficulty?" ✓":""}
+                  </button>
+                );
+              })}
+              <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",marginTop:6,paddingTop:6}}>
+                <button onClick={()=>{setShowDiffMenu(false);setSkipInstructions(false);setScreen("setup");}} style={{
+                  display:"block",width:"100%",padding:"7px 12px",
+                  background:"transparent",border:"none",borderRadius:8,
+                  color:"#94a3b8",fontWeight:600,fontSize:12,cursor:"pointer",textAlign:"left",
+                }}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
+              </div>
+            </div>
+          )}
         </div>
         {personalBest[difficulty]>0&&(
           <>

@@ -289,7 +289,7 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
   const red = card.suit==="♥"||card.suit==="♦";
   return (
     <div onClick={used?null:onClick} style={{
-      width:72,height:100,borderRadius:10,
+      width:72,minWidth:72,height:100,borderRadius:10,
       background: used?"#1e293b": selected?"#fff8e1":"white",
       border: used?"2px solid #334155": selected?"3px solid #f59e0b":"3px solid #e2e8f0",
       boxShadow: selected?"0 8px 24px rgba(245,158,11,0.5)":"0 4px 12px rgba(0,0,0,0.2)",
@@ -1357,8 +1357,8 @@ export default function App() {
         {t.yourTurn(cp.name)}
       </div>
 
-      {/* Cards */}
-      <div style={{display:"flex",gap:10,marginBottom:16,justifyContent:"center",flexWrap:"wrap"}}>
+      {/* Cards — 4-in-a-row on wide screens, 2×2 on narrow (wraps naturally at ~300px) */}
+      <div style={{display:"flex",gap:10,marginBottom:16,justifyContent:"center",flexWrap:"wrap",maxWidth:320,width:"100%"}}>
         {cards.map((card,i)=>{
           const inPool=numbers.some(n=>n.sourceId===card.id);
           return (

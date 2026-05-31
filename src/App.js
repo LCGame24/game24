@@ -13,7 +13,7 @@ const DIFFICULTY = {
   Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷","^","√"] },
   Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√","!"] },
 };
-const LEVEL_UP_SCORE = { Easy: 40, Medium: 50 }; // score needed to unlock Hard
+const LEVEL_UP_SCORE = { Easy: 50, Medium: 80 }; // score needed to unlock Hard
 
 // ── local storage helpers ─────────────────────────────────────────────────
 function loadUnlocked() {
@@ -636,6 +636,8 @@ export default function App() {
   const [unlocked,setUnlocked]=useState(()=>({Easy:true,Medium:true,Hard:loadUnlocked().Hard||false}));
   const [justUnlockedHard,setJustUnlockedHard]=useState(false);
   const justUnlockedHardRef=useRef(false);
+  const showMediumNudgeRef=useRef(false);
+  const autoAdvanceRef=useRef(null);
   const [leaderboard,setLeaderboard]=useState(()=>loadLeaderboard());
   const [showLeaderboard,setShowLeaderboard]=useState(false);
   const [badges,setBadges]=useState(()=>loadBadges());
@@ -687,6 +689,7 @@ export default function App() {
     setSkipUsed(false);
     setTotalSolves(0);
     setShowMediumNudge(false);
+    showMediumNudgeRef.current=false;
   }
 
   function dealCards(d=deck, diff=difficulty) {
@@ -844,14 +847,20 @@ export default function App() {
       saveBadges(allBadges);
       setNewBadges(earned);
       setTimeout(()=>setNewBadges([]),4000);
-      if (earned.includes("easy_grad")) setShowMediumNudge(true);
+      if (earned.includes("easy_grad")) {
+        setShowMediumNudge(true);
+        showMediumNudgeRef.current=true;
+        if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+      }
     }
 
     setMessage({text:t.winMsg(pts,timerActive?speedBonus:0),type:"win"});
     setTurnOver(true);
     // Suggest Medium when Easy score reaches 40pts
-    if (difficulty==="Easy" && newScore>=40 && !showMediumNudge) {
+    if (difficulty==="Easy" && newScore>=50 && !showMediumNudge) {
       setShowMediumNudge(true);
+      showMediumNudgeRef.current=true;
+      if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     }
 
     // Check Hard unlock
@@ -862,10 +871,13 @@ export default function App() {
       setJustUnlockedHard(true);
       justUnlockedHardRef.current=true;
     }
-    // Auto-advance to next turn after 2 seconds (skip if Hard just unlocked)
-    if (!justUnlockedHardRef.current) {
-      setTimeout(()=>{ handleNextTurn(); }, 2000);
-    }
+    // Auto-advance to next turn after 2 seconds
+    // Skip if any nudge/unlock message is showing — let player choose
+    autoAdvanceRef.current = setTimeout(()=>{
+      if (!justUnlockedHardRef.current && !showMediumNudgeRef.current) {
+        handleNextTurn();
+      }
+    }, 2000);
   }
 
   function applyFactorial(idx) {
@@ -1394,6 +1406,7 @@ export default function App() {
             {showMediumNudge&&!justUnlockedHard&&(
               <button onClick={()=>{
                 setShowMediumNudge(false);
+    showMediumNudgeRef.current=false;
                 setScreen("setup");
               }} style={{
                 background:"linear-gradient(135deg,#f59e0b,#d97706)",

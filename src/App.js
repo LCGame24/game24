@@ -80,13 +80,12 @@ const T = {
     howToPlayTitle: "How to Play",
     howToPlayLines: [
       "🃏 Four cards are dealt — use ALL four numbers to make 24",
-      "➕ You can use + − × ÷ and even power (^) or square root (√)",
+      "➕ You can use + − × ÷ and even power (^), square root (√) or factorial ! (Hard mode only)",
       "👆 Tap a number → tap an operator → tap another number",
       "🔁 The result becomes a new number to use in the next step",
       "🎯 Keep going until only one number is left — it must be 24!",
       "💡 Stuck? Use the Hint button",
       "⏭ Can't solve it? Press Skip to get new cards",
-      "🔢 Hard mode also has factorial (!) e.g. 4! = 24",
     ],
     gotIt: "Got it! Let's Play 🎮",
   },
@@ -134,13 +133,12 @@ const T = {
     howToPlayTitle: "游戏说明",
     howToPlayLines: [
       "🃏 发四张牌 — 用全部四个数字凑成24",
-      "➕ 可以使用 + − × ÷ 以及乘方 (^) 和开方 (√)",
+      "➕ 可以使用 + − × ÷ 以及乘方 (^)、开方 (√) 和阶乘 ! (仅限困难模式)",
       "👆 点击数字 → 点击运算符 → 点击另一个数字",
       "🔁 计算结果会变成新的数字继续使用",
       "🎯 继续计算直到只剩一个数字 — 必须是24！",
       "💡 不会做？点击提示按钮",
       "⏭ 做不出来？点击跳过换一组牌",
-      "🔢 困难模式还有阶乘 (!) 例如 4! = 24",
     ],
     gotIt: "明白了！开始游戏 🎮",
   }
@@ -937,7 +935,7 @@ export default function App() {
       {/* Operators */}
       {!turnOver&&(
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>
-          {["+","−","×","÷","^","√"].map(op=>{
+          {["+","−","×","÷","^","√","!"].map(op=>{
             const allowed=DIFFICULTY[difficulty].ops.includes(op);
             return (
               <div key={op} style={{position:"relative"}}>

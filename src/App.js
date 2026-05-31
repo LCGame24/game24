@@ -28,6 +28,52 @@ function loadLeaderboard() {
 function saveLeaderboard(entries) {
   try { localStorage.setItem("game24_leaderboard",JSON.stringify(entries.slice(0,20))); } catch {}
 }
+function loadBadges() {
+  try { return JSON.parse(localStorage.getItem("game24_badges")||"[]"); } catch { return []; }
+}
+function saveBadges(b) {
+  try { localStorage.setItem("game24_badges",JSON.stringify(b)); } catch {}
+}
+function loadPersonalBest() {
+  try { return JSON.parse(localStorage.getItem("game24_pb")||"{}"); } catch { return {}; }
+}
+function savePersonalBest(pb) {
+  try { localStorage.setItem("game24_pb",JSON.stringify(pb)); } catch {}
+}
+
+// Badge definitions
+const BADGES = [
+  { id:"first_solve",   icon:"🌟", en:"First Solve!",        zh:"第一次成功！",      desc:"Solve your first puzzle" },
+  { id:"streak3",       icon:"🔥", en:"On Fire!",             zh:"势不可挡！",        desc:"3 solves in a row" },
+  { id:"streak5",       icon:"💥", en:"Unstoppable!",         zh:"无人能挡！",        desc:"5 solves in a row" },
+  { id:"streak10",      icon:"👑", en:"Grandmaster!",         zh:"大师级！",          desc:"10 solves in a row" },
+  { id:"speed_demon",   icon:"⚡", en:"Speed Demon!",         zh:"闪电侠！",          desc:"Solve in under 15 seconds" },
+  { id:"no_hint",       icon:"🧠", en:"Big Brain!",           zh:"超强大脑！",        desc:"Complete a full game without hints" },
+  { id:"hard_first",    icon:"💪", en:"Hard Core!",           zh:"硬核玩家！",        desc:"First solve on Hard mode" },
+  { id:"score_50",      icon:"🥉", en:"Bronze Player",        zh:"铜牌玩家",          desc:"Score 50 points" },
+  { id:"score_100",     icon:"🥈", en:"Silver Player",        zh:"银牌玩家",          desc:"Score 100 points" },
+  { id:"score_200",     icon:"🥇", en:"Gold Player",          zh:"金牌玩家",          desc:"Score 200 points" },
+  { id:"perfect_game",  icon:"💎", en:"Perfect Game!",        zh:"完美游戏！",        desc:"Solve all rounds without hints or skips" },
+  { id:"easy_grad",     icon:"🎓", en:"Easy Graduate",        zh:"简单模式毕业！",    desc:"Complete 10 Easy puzzles" },
+];
+
+function checkBadges(existing, {totalSolves, streak, timeLeft, difficulty, hintUsed, skipUsed, score, totalRounds, solvedRounds}) {
+  const newBadges = [];
+  const has = id => existing.includes(id);
+  if (!has("first_solve") && totalSolves>=1) newBadges.push("first_solve");
+  if (!has("streak3") && streak>=3) newBadges.push("streak3");
+  if (!has("streak5") && streak>=5) newBadges.push("streak5");
+  if (!has("streak10") && streak>=10) newBadges.push("streak10");
+  if (!has("speed_demon") && timeLeft>=75) newBadges.push("speed_demon");
+  if (!has("no_hint") && !hintUsed && totalRounds>0 && solvedRounds===totalRounds) newBadges.push("no_hint");
+  if (!has("hard_first") && difficulty==="Hard" && totalSolves>=1) newBadges.push("hard_first");
+  if (!has("score_50") && score>=50) newBadges.push("score_50");
+  if (!has("score_100") && score>=100) newBadges.push("score_100");
+  if (!has("score_200") && score>=200) newBadges.push("score_200");
+  if (!has("perfect_game") && !hintUsed && !skipUsed && totalRounds>0 && solvedRounds===totalRounds) newBadges.push("perfect_game");
+  if (!has("easy_grad") && difficulty==="Easy" && totalSolves>=10) newBadges.push("easy_grad");
+  return newBadges;
+}
 
 const PLAYER_COLORS = ["#f6d365","#f472b6","#34d399","#60a5fa"];
 const PLAYER_BG     = ["rgba(246,211,101,0.15)","rgba(244,114,182,0.15)","rgba(52,211,153,0.15)","rgba(96,165,250,0.15)"];
@@ -269,13 +315,14 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard}) {
+function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(true);
   const [showLB,setShowLB]=useState(false);
+  const [showBadges,setShowBadges]=useState(false);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
-  const [diff,setDiff]=useState(autoSelectHard?"Hard":"Medium");
+  const [diff,setDiff]=useState(autoSelectHard?"Hard":"Easy");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
   const [rounds,setRounds]=useState(5);
 
@@ -442,6 +489,26 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
           </div>
         </div>
 
+        {/* Personal Best */}
+        {Object.keys(personalBest).length>0&&(
+          <div style={{
+            background:"rgba(246,211,101,0.08)",border:"1px solid rgba(246,211,101,0.2)",
+            borderRadius:12,padding:"10px 14px",marginBottom:12,
+          }}>
+            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>
+              {lang==="zh"?"个人最高分":"Personal Best"}
+            </div>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+              {Object.entries(personalBest).map(([diff,score])=>(
+                <div key={diff} style={{textAlign:"center"}}>
+                  <div style={{color:DIFFICULTY[diff]?.color||"#94a3b8",fontSize:11,fontWeight:700}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[diff]||diff:diff}</div>
+                  <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{score}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <button onClick={()=>onStart({numPlayers,names:names.slice(0,numPlayers),difficulty:diff,soloTimer:numPlayers===1?soloTimer:true,rounds})} style={{
           width:"100%",padding:"14px",borderRadius:12,border:"none",
           background:"linear-gradient(135deg,#f6d365,#fda085)",
@@ -449,11 +516,59 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
           boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginBottom:10,
         }}>{t.startGame}</button>
 
-        <button onClick={()=>setShowLB(true)} style={{
-          width:"100%",padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
-          background:"rgba(255,255,255,0.04)",color:"#94a3b8",
-          fontSize:14,fontWeight:600,cursor:"pointer",
-        }}>🏆 {lang==="zh"?"排行榜":"Leaderboard"}</button>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setShowLB(true)} style={{
+            flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
+            background:"rgba(255,255,255,0.04)",color:"#94a3b8",
+            fontSize:14,fontWeight:600,cursor:"pointer",
+          }}>🏆 {lang==="zh"?"排行榜":"Leaderboard"}</button>
+          <button onClick={()=>setShowBadges(true)} style={{
+            flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
+            background:"rgba(255,255,255,0.04)",color:"#94a3b8",
+            fontSize:14,fontWeight:600,cursor:"pointer",
+          }}>🎖️ {lang==="zh"?"成就":"Badges"} {badges.length>0?`(${badges.length})`:""}</button>
+        </div>
+
+        {/* Badges Modal */}
+        {showBadges&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+            display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+            <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",
+              border:"1px solid rgba(255,255,255,0.12)",borderRadius:24,
+              padding:24,maxWidth:380,width:"100%",maxHeight:"80vh",overflowY:"auto"}}>
+              <div style={{textAlign:"center",marginBottom:16}}>
+                <div style={{fontSize:36}}>🎖️</div>
+                <h2 style={{color:"white",fontSize:20,fontWeight:900,margin:"4px 0"}}>
+                  {lang==="zh"?"成就徽章":"Achievement Badges"}
+                </h2>
+                <div style={{color:"#64748b",fontSize:12}}>{badges.length}/{BADGES.length} {lang==="zh"?"已解锁":"unlocked"}</div>
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
+                {BADGES.map(badge=>{
+                  const earned=badges.includes(badge.id);
+                  return (
+                    <div key={badge.id} style={{
+                      background:earned?"rgba(246,211,101,0.1)":"rgba(255,255,255,0.03)",
+                      border:`1px solid ${earned?"#f6d365":"rgba(255,255,255,0.06)"}`,
+                      borderRadius:12,padding:"8px 10px",flex:"1",minWidth:"44%",
+                      opacity:earned?1:0.4,
+                    }}>
+                      <div style={{fontSize:22,marginBottom:2}}>{earned?badge.icon:"🔒"}</div>
+                      <div style={{color:earned?"#f6d365":"#475569",fontSize:12,fontWeight:700}}>
+                        {lang==="zh"?badge.zh:badge.en}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button onClick={()=>setShowBadges(false)} style={{
+                width:"100%",padding:"12px",borderRadius:12,border:"none",
+                background:"linear-gradient(135deg,#f6d365,#fda085)",
+                color:"#1a1a2e",fontSize:14,fontWeight:800,cursor:"pointer",
+              }}>{lang==="zh"?"关闭":"Close"}</button>
+            </div>
+          </div>
+        )}
 
         {/* Leaderboard Modal */}
         {showLB&&(
@@ -682,15 +797,45 @@ export default function App() {
     const diffCfg=DIFFICULTY[difficulty];
     const speedBonus=timerActive?Math.max(0,Math.floor(timeLeft/5)):0;
     const pts=diffCfg.pointsPerSolve+speedBonus;
+    const newStreak=players[currentPlayer].streak+1;
+    const newScore=players[currentPlayer].score+pts;
+    const newTotalSolves=totalSolves+1;
+    setTotalSolves(newTotalSolves);
     setPlayers(ps=>{
       const next=[...ps];
-      next[currentPlayer]={...next[currentPlayer],
-        score:next[currentPlayer].score+pts,
-        streak:next[currentPlayer].streak+1,
-      };
+      next[currentPlayer]={...next[currentPlayer],score:newScore,streak:newStreak};
       return next;
     });
-    const newScore = players[currentPlayer].score + pts;
+
+    // Confetti!
+    setShowConfetti(true);
+    setTimeout(()=>setShowConfetti(false),2500);
+
+    // Personal best
+    const pbKey=difficulty;
+    const currentPB=personalBest[pbKey]||0;
+    if (newScore>currentPB) {
+      const newPB={...personalBest,[pbKey]:newScore};
+      setPersonalBest(newPB);
+      savePersonalBest(newPB);
+    }
+
+    // Check badges
+    const totalRounds=config.numPlayers*ROUNDS_PER_PLAYER;
+    const currentTurn=(round-1)*config.numPlayers+currentPlayer;
+    const earned=checkBadges(badges,{
+      totalSolves:newTotalSolves, streak:newStreak, timeLeft,
+      difficulty, hintUsed:players[currentPlayer].hintsUsed>0,
+      skipUsed, score:newScore, totalRounds, solvedRounds:newTotalSolves,
+    });
+    if (earned.length>0) {
+      const allBadges=[...badges,...earned];
+      setBadges(allBadges);
+      saveBadges(allBadges);
+      setNewBadges(earned);
+      setTimeout(()=>setNewBadges([]),4000);
+    }
+
     setMessage({text:t.winMsg(pts,timerActive?speedBonus:0),type:"win"});
     setTurnOver(true);
     // Check Hard unlock
@@ -761,6 +906,11 @@ export default function App() {
     setTimeout(()=>setExtFlash(false),700);
   }
 
+  function handleSkipTrack() {
+    setSkipUsed(true);
+    handleNextTurn();
+  }
+
   function handleNextTurn() {
     // Advance to next player or next round
     const totalTurns=config.numPlayers*ROUNDS_PER_PLAYER;
@@ -783,7 +933,8 @@ export default function App() {
 
   if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
-    autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}/>;
+    autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
+    badges={badges} personalBest={personalBest}/>;
 
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty} lang={lang} setLang={setLang}
@@ -805,7 +956,61 @@ export default function App() {
         @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
         @keyframes extFlash{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
         @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+        @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%{transform:translateX(0);opacity:1}85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}
       `}</style>
+
+      {/* Confetti */}
+      {showConfetti&&(
+        <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>
+          {Array.from({length:40}).map((_,i)=>{
+            const colors=["#f6d365","#fda085","#f472b6","#34d399","#60a5fa","#a78bfa","#fb923c"];
+            const color=colors[i%colors.length];
+            const left=Math.random()*100;
+            const delay=Math.random()*0.8;
+            const size=6+Math.random()*8;
+            const duration=1.5+Math.random()*1;
+            return (
+              <div key={i} style={{
+                position:"absolute",top:"-20px",
+                left:`${left}%`,
+                width:size,height:size,
+                background:color,
+                borderRadius:Math.random()>0.5?"50%":"2px",
+                animation:`confettiFall ${duration}s ease-in ${delay}s forwards`,
+              }}/>
+            );
+          })}
+        </div>
+      )}
+
+      {/* New badge notifications */}
+      {newBadges.map((id,i)=>{
+        const badge=BADGES.find(b=>b.id===id);
+        if (!badge) return null;
+        return (
+          <div key={id} style={{
+            position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,
+            background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid #f6d365",borderRadius:14,
+            padding:"10px 16px",minWidth:200,
+            animation:"badgeSlide 4s ease forwards",
+            boxShadow:"0 4px 20px rgba(246,211,101,0.3)",
+          }}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{fontSize:28}}>{badge.icon}</div>
+              <div>
+                <div style={{color:"#f6d365",fontWeight:800,fontSize:13}}>
+                  {lang==="zh"?"新成就解锁！":"Badge Unlocked!"}
+                </div>
+                <div style={{color:"white",fontWeight:700,fontSize:14}}>
+                  {lang==="zh"?badge.zh:badge.en}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Title */}
       <h1 style={{
@@ -949,6 +1154,19 @@ export default function App() {
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.diff}</div>
           <div style={{color:DIFFICULTY[difficulty].color,fontWeight:800,fontSize:13}}>{difficulty}</div>
         </div>
+        {personalBest[difficulty]>0&&(
+          <>
+            <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
+                {lang==="zh"?"最高分":"Best"}
+              </div>
+              <div style={{color:"#f6d365",fontWeight:800,fontSize:16}}>
+                {personalBest[difficulty]}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Current player banner */}

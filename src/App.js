@@ -1596,6 +1596,7 @@ export default function App() {
                 setJustUnlockedHard(false);
                 justUnlockedHardRef.current=false;
                 setPreSelectDiff("Hard");
+                setSkipInstructions(true);
                 setScreen("setup");
               }} style={{
                 background:"linear-gradient(135deg,#ef4444,#b91c1c)",

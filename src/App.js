@@ -234,13 +234,13 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard}) {
+function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(true);
   const [showLB,setShowLB]=useState(false);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
-  const [diff,setDiff]=useState("Medium");
+  const [diff,setDiff]=useState(autoSelectHard?"Hard":"Medium");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
   const [rounds,setRounds]=useState(5);
 
@@ -484,6 +484,7 @@ export default function App() {
   const [lang,setLang]=useState("en");
   const [showHelp,setShowHelp]=useState(false);
   const [unlocked,setUnlocked]=useState(()=>({Easy:true,Medium:true,Hard:loadUnlocked().Hard||false}));
+  const [justUnlockedHard,setJustUnlockedHard]=useState(false);
   const [leaderboard,setLeaderboard]=useState(()=>loadLeaderboard());
   const [showLeaderboard,setShowLeaderboard]=useState(false);
 
@@ -642,6 +643,7 @@ export default function App() {
       const newUnlocked={...unlocked,Hard:true};
       setUnlocked(newUnlocked);
       saveUnlocked(newUnlocked);
+      setJustUnlockedHard(true);
     }
     // Auto-advance to next turn after 2 seconds
     setTimeout(()=>{ handleNextTurn(); }, 2000);
@@ -720,7 +722,8 @@ export default function App() {
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
   if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}
-    unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}/>;
+    unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
+    autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}/>;
 
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>setScreen("setup")} difficulty={difficulty} lang={lang} setLang={setLang}
@@ -1028,17 +1031,52 @@ export default function App() {
           ))}
         </div>
       ):(
-        <button onClick={handleNextTurn} style={{
-          background:"linear-gradient(135deg,#f6d365,#fda085)",
-          border:"none",borderRadius:12,padding:"12px 28px",
-          color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
-          boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginTop:4,
-          animation:"popIn 0.4s ease",
-        }}>
-          {((round-1)*config.numPlayers+currentPlayer+1)>=config.numPlayers*ROUNDS_PER_PLAYER
-            ?t.seeResults
-            :isSolo?t.nextPuzzle:t.nextPlayer(players[(currentPlayer+1)%config.numPlayers]?.name)}
-        </button>
+        <>
+          {justUnlockedHard&&(
+            <div style={{
+              background:"linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.05))",
+              border:"2px solid #ef4444",borderRadius:16,
+              padding:"12px 20px",marginBottom:12,textAlign:"center",
+              animation:"popIn 0.5s ease",
+            }}>
+              <div style={{fontSize:28,marginBottom:4}}>🔓🔥</div>
+              <div style={{color:"#ef4444",fontWeight:900,fontSize:16,marginBottom:4}}>
+                {lang==="zh"?"困难模式已解锁！":"Hard Mode Unlocked!"}
+              </div>
+              <div style={{color:"#94a3b8",fontSize:12}}>
+                {lang==="zh"?"准备好迎接挑战了吗？":"Ready for the real challenge?"}
+              </div>
+            </div>
+          )}
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+            {justUnlockedHard&&(
+              <button onClick={()=>{
+                setJustUnlockedHard(false);
+                setScreen("setup");
+                setTimeout(()=>setJustUnlockedHard(false),100);
+              }} style={{
+                background:"linear-gradient(135deg,#ef4444,#b91c1c)",
+                border:"none",borderRadius:12,padding:"12px 20px",
+                color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
+                boxShadow:"0 4px 20px rgba(239,68,68,0.4)",
+                animation:"popIn 0.4s ease",
+              }}>
+                🔥 {lang==="zh"?"去玩困难模式！":"Play Hard Mode!"}
+              </button>
+            )}
+            <button onClick={handleNextTurn} style={{
+              background:"linear-gradient(135deg,#f6d365,#fda085)",
+              border:"none",borderRadius:12,padding:"12px 20px",
+              color:"#1a1a2e",fontSize:14,fontWeight:800,cursor:"pointer",
+              boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginTop:4,
+              animation:"popIn 0.4s ease",
+            }}>
+              {((round-1)*config.numPlayers+currentPlayer+1)>=config.numPlayers*ROUNDS_PER_PLAYER
+                ?t.seeResults
+                :isSolo?t.nextPuzzle:t.nextPlayer(players[(currentPlayer+1)%config.numPlayers]?.name)}
+            </button>
+          </div>
+        </>
       )}
 
       <p style={{color:"#1e293b",fontSize:10,marginTop:12,textAlign:"center"}}>

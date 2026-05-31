@@ -485,6 +485,7 @@ export default function App() {
   const [showHelp,setShowHelp]=useState(false);
   const [unlocked,setUnlocked]=useState(()=>({Easy:true,Medium:true,Hard:loadUnlocked().Hard||false}));
   const [justUnlockedHard,setJustUnlockedHard]=useState(false);
+  const justUnlockedHardRef=useRef(false);
   const [leaderboard,setLeaderboard]=useState(()=>loadLeaderboard());
   const [showLeaderboard,setShowLeaderboard]=useState(false);
 
@@ -644,9 +645,12 @@ export default function App() {
       setUnlocked(newUnlocked);
       saveUnlocked(newUnlocked);
       setJustUnlockedHard(true);
+      justUnlockedHardRef.current=true;
     }
-    // Auto-advance to next turn after 2 seconds
-    setTimeout(()=>{ handleNextTurn(); }, 2000);
+    // Auto-advance to next turn after 2 seconds (skip if Hard just unlocked)
+    if (!justUnlockedHardRef.current) {
+      setTimeout(()=>{ handleNextTurn(); }, 2000);
+    }
   }
 
   function applyFactorial(idx) {
@@ -1052,8 +1056,8 @@ export default function App() {
             {justUnlockedHard&&(
               <button onClick={()=>{
                 setJustUnlockedHard(false);
+                justUnlockedHardRef.current=false;
                 setScreen("setup");
-                setTimeout(()=>setJustUnlockedHard(false),100);
               }} style={{
                 background:"linear-gradient(135deg,#ef4444,#b91c1c)",
                 border:"none",borderRadius:12,padding:"12px 20px",

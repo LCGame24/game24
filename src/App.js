@@ -1533,12 +1533,20 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         </div>
       )}
 
-      <button onClick={onRestart} style={{
-        background:"linear-gradient(135deg,#f6d365,#fda085)",
-        border:"none",borderRadius:12,padding:"14px 32px",
-        color:"#1a1a2e",fontSize:16,fontWeight:800,cursor:"pointer",
-        boxShadow:"0 4px 20px rgba(246,211,101,0.35)",
-      }}>{t.playAgain}</button>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+        <button onClick={onRestart} style={{
+          background:"rgba(255,255,255,0.06)",
+          border:"1px solid rgba(255,255,255,0.15)",
+          borderRadius:12,padding:"14px 24px",
+          color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer",
+        }}>{lang==="zh"?"返回主页":"Main Menu"}</button>
+        <button onClick={onPlayAgain} style={{
+          background:"linear-gradient(135deg,#f6d365,#fda085)",
+          border:"none",borderRadius:12,padding:"14px 24px",
+          color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(246,211,101,0.35)",
+        }}>{lang==="zh"?"再来一局 ▶":"Play Again ▶"}</button>
+      </div>
     </div>
   );
 }

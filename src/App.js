@@ -167,6 +167,41 @@ function solve24(nums) {
 
 function hasSolution(cards) { return solve24(cards.map(c=>FACE[c.val])); }
 
+// Whole-number-only solution checker for Easy mode
+function solveWholeOnly(nums) {
+  if (nums.length===1) return Math.abs(nums[0]-24)<1e-9;
+  for (let i=0;i<nums.length;i++) for (let j=0;j<nums.length;j++) {
+    if (i===j) continue;
+    const rest=nums.filter((_,k)=>k!==i&&k!==j);
+    const [a,b]=[nums[i],nums[j]];
+    const opts=[a+b,a-b,a*b];
+    if (Math.abs(b)>1e-9 && Math.abs((a/b)-Math.round(a/b))<1e-9) opts.push(a/b);
+    for (const r of opts) {
+      if (Math.abs(r-Math.round(r))<1e-9 && solveWholeOnly([...rest,r])) return true;
+    }
+  }
+  return false;
+}
+
+// Get first step hint for Easy auto-hint
+function getFirstStep(cards) {
+  const nums=cards.map(c=>FACE[c.val]);
+  const labels=cards.map(c=>String(FACE[c.val]));
+  for (let i=0;i<nums.length;i++) for (let j=0;j<nums.length;j++) {
+    if (i===j) continue;
+    const rest=nums.filter((_,k)=>k!==i&&k!==j);
+    const [a,b,la,lb]=[nums[i],nums[j],labels[i],labels[j]];
+    const tries=[[a+b,`${la} + ${lb}`],[a-b,`${la} − ${lb}`],[a*b,`${la} × ${lb}`]];
+    if (Math.abs(b)>1e-9 && Math.abs((a/b)-Math.round(a/b))<1e-9) tries.push([a/b,`${la} ÷ ${lb}`]);
+    for (const [r,expr] of tries) {
+      if (Math.abs(r-Math.round(r))<1e-9 && solveWholeOnly([...rest,r])) {
+        return expr;
+      }
+    }
+  }
+  return null;
+}
+
 function getHint(cards) {
   const nums=cards.map(c=>FACE[c.val]), ls=cards.map(c=>String(FACE[c.val]));
   function find(ns,ls) {

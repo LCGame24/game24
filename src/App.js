@@ -507,6 +507,8 @@ export default function App() {
   const [extFlash,setExtFlash]=useState(false);
   const [message,setMessage]=useState({text:"",type:""});
   const [showHint,setShowHint]=useState(null);
+  const [autoHint,setAutoHint]=useState(null);
+  const autoHintRef=useRef(null);
   const [difficulty,setDifficulty]=useState("Medium");
   const [timerEnabled,setTimerEnabled]=useState(true); // solo can toggle per-puzzle
   const timerRef=useRef(null);
@@ -532,11 +534,15 @@ export default function App() {
     let pool=[...d].filter(card=>FACE[card.val]<=maxCard);
     if (pool.length<4){pool=generateDeck().filter(card=>FACE[card.val]<=maxCard);}
     let drawn, attempts=0;
+    const needWholeOnly = diff==="Easy";
     do {
       pool=pool.sort(()=>Math.random()-0.5);
       drawn=pool.slice(0,4);
       attempts++;
-    } while (!hasSolution(drawn)&&attempts<100);
+      if (attempts>80) break; // fallback to any solvable if no whole-only found
+    } while (needWholeOnly
+      ? !solveWholeOnly(drawn.map(c=>FACE[c.val]))
+      : !hasSolution(drawn));
     setDeck(pool.slice(4));
     setCards(drawn);
     setNumbers(drawn.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
@@ -547,10 +553,23 @@ export default function App() {
     setShowHint(null);
     setTimeLeft(DIFFICULTY[diff].timeLimit);
     setTurnOver(false);
+    setAutoHint(null);
+    if (autoHintRef.current) clearTimeout(autoHintRef.current);
     // keep timerEnabled as-is — player chose it per puzzle
   }
 
   const isSolo = config?.numPlayers===1;
+
+  // Auto-hint after 30s on Easy mode
+  useEffect(()=>{
+    if (screen!=="game"||turnOver||difficulty!=="Easy"||autoHint) return;
+    if (autoHintRef.current) clearTimeout(autoHintRef.current);
+    autoHintRef.current=setTimeout(()=>{
+      const hint=getFirstStep(cards);
+      if (hint) setAutoHint(hint);
+    },30000);
+    return ()=>{ if(autoHintRef.current) clearTimeout(autoHintRef.current); };
+  },[screen,turnOver,difficulty,cards,autoHint]);
   const timerActive = !isSolo || timerEnabled; // multi always timed; solo depends on toggle
 
   // timer — active in multiplayer always, solo only when timerEnabled
@@ -685,6 +704,8 @@ export default function App() {
     setOperator(null);
     setSteps([]);
     setMessage({text:"",type:""});
+    setAutoHint(null);
+    if (autoHintRef.current) clearTimeout(autoHintRef.current);
   }
 
   function handleHint() {
@@ -1017,6 +1038,22 @@ export default function App() {
           borderRadius:12,padding:"8px 16px",marginBottom:10,
           color:"#a78bfa",fontSize:13,textAlign:"center",
         }}>💡 {showHint} = 24</div>
+      )}
+      {autoHint&&!showHint&&!turnOver&&(
+        <div style={{
+          background:"rgba(52,211,153,0.1)",border:"1px solid #34d399",
+          borderRadius:12,padding:"10px 16px",marginBottom:10,
+          color:"#34d399",fontSize:13,textAlign:"center",
+          animation:"popIn 0.4s ease",
+        }}>
+          <div style={{fontWeight:700,marginBottom:2}}>
+            {lang==="zh"?"💡 小提示 — 试试第一步：":"💡 Hint — try this first step:"}
+          </div>
+          <div style={{fontSize:15,fontWeight:800}}>{autoHint}</div>
+          <div style={{fontSize:11,color:"#64748b",marginTop:4}}>
+            {lang==="zh"?"(30秒后自动显示)":"(auto-shown after 30 seconds)"}
+          </div>
+        </div>
       )}
 
       {/* Action buttons */}

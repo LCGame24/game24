@@ -1595,6 +1595,7 @@ export default function App() {
               <button onClick={()=>{
                 setJustUnlockedHard(false);
                 justUnlockedHardRef.current=false;
+                setPreSelectDiff("Hard");
                 setScreen("setup");
               }} style={{
                 background:"linear-gradient(135deg,#ef4444,#b91c1c)",
@@ -1609,9 +1610,10 @@ export default function App() {
             {showMediumNudge&&!justUnlockedHard&&(
               <button onClick={()=>{
                 setShowMediumNudge(false);
-    showMediumNudgeRef.current=false;
-    setPaused(false);
+                showMediumNudgeRef.current=false;
+                setPaused(false);
                 setSkipInstructions(true);
+                setPreSelectDiff("Medium");
                 setScreen("setup");
               }} style={{
                 background:"linear-gradient(135deg,#f59e0b,#d97706)",

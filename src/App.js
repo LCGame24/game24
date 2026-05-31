@@ -13,7 +13,7 @@ const DIFFICULTY = {
   Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷","^","√"] },
   Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√","!"] },
 };
-const LEVEL_UP_SCORE = { Easy: 50, Medium: 80 }; // score needed to unlock Hard
+const LEVEL_UP_SCORE = { Easy: 80, Medium: 150 }; // score needed to unlock Hard
 
 // ── local storage helpers ─────────────────────────────────────────────────
 function loadUnlocked() {
@@ -503,6 +503,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
                 <div key={diff} style={{textAlign:"center"}}>
                   <div style={{color:DIFFICULTY[diff]?.color||"#94a3b8",fontSize:11,fontWeight:700}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[diff]||diff:diff}</div>
                   <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{score}</div>
+                  <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Lv"} {Math.floor(score/10)+1}</div>
                 </div>
               ))}
             </div>
@@ -600,7 +601,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
                     <div style={{flex:1}}>
                       <div style={{color:"white",fontWeight:700,fontSize:14}}>{entry.name}</div>
                       <div style={{color:"#64748b",fontSize:11}}>
-                        {entry.difficulty} · {entry.date} · 🔥{entry.streak}
+                        {entry.difficulty} · {lang==="zh"?"等级":"Lv"}{Math.floor(entry.score/10)+1} · {entry.date} · 🔥{entry.streak}
                       </div>
                     </div>
                     <div style={{color:"#f6d365",fontWeight:900,fontSize:20}}>{entry.score}</div>
@@ -854,10 +855,13 @@ export default function App() {
       }
     }
 
-    setMessage({text:t.winMsg(pts,timerActive?speedBonus:0),type:"win"});
+    const newLevel=Math.floor(newScore/10)+1;
+    const prevLevel=Math.floor(players[currentPlayer].score/10)+1;
+    const levelUpMsg=newLevel>prevLevel?` 🆙 ${lang==="zh"?`升至等级${newLevel}`:`Level ${newLevel}!`}`:"";
+    setMessage({text:t.winMsg(pts,timerActive?speedBonus:0)+levelUpMsg,type:"win"});
     setTurnOver(true);
     // Suggest Medium when Easy score reaches 40pts
-    if (difficulty==="Easy" && newScore>=50 && !showMediumNudge) {
+    if (difficulty==="Easy" && newScore>=80 && !showMediumNudge) {
       setShowMediumNudge(true);
       showMediumNudgeRef.current=true;
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
@@ -1110,6 +1114,9 @@ export default function App() {
               {i===currentPlayer?"▶ ":""}{p.name}
             </div>
             <div style={{fontSize:20,fontWeight:900,color:"white"}}>{p.score}</div>
+            <div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>
+              {lang==="zh"?"等级":"Lv"} {Math.floor(p.score/10)+1}
+            </div>
             {p.streak>1&&<div style={{fontSize:10,color:"#f472b6"}}>🔥{p.streak}</div>}
           </div>
         ))}

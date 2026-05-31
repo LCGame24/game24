@@ -11,7 +11,7 @@ const FACE  = {1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12,13:13};
 const DIFFICULTY = {
   Easy:   { timeLimit: 120, pointsPerSolve: 8,  hintPenalty: 2, label:"Easy",   color:"#34d399", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷"] },
   Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷","^","√"] },
-  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√"] },
+  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√","!"] },
 };
 const LEVEL_UP_SCORE = { Easy: 40, Medium: 50 }; // score needed to unlock Hard
 
@@ -86,6 +86,7 @@ const T = {
       "🎯 Keep going until only one number is left — it must be 24!",
       "💡 Stuck? Use the Hint button",
       "⏭ Can't solve it? Press Skip to get new cards",
+      "🔢 Hard mode also has factorial (!) e.g. 4! = 24",
     ],
     gotIt: "Got it! Let's Play 🎮",
   },
@@ -139,6 +140,7 @@ const T = {
       "🎯 继续计算直到只剩一个数字 — 必须是24！",
       "💡 不会做？点击提示按钮",
       "⏭ 做不出来？点击跳过换一组牌",
+      "🔢 困难模式还有阶乘 (!) 例如 4! = 24",
     ],
     gotIt: "明白了！开始游戏 🎮",
   }
@@ -577,6 +579,9 @@ export default function App() {
     } else if (selectedIdx===idx) {
       setSelectedIdx(null);
       setOperator(null);
+    } else if (operator==="!") {
+      // factorial is single-operand — apply immediately without second number
+      applyFactorial(selectedIdx);
     } else if (operator!==null) {
       applyOp(selectedIdx, operator, idx);
     }
@@ -642,6 +647,32 @@ export default function App() {
     }
     // Auto-advance to next turn after 2 seconds
     setTimeout(()=>{ handleNextTurn(); }, 2000);
+  }
+
+  function applyFactorial(idx) {
+    const a = numbers[idx].value;
+    // Only allow factorial on non-negative integers up to 7 (7!=5040 is already huge)
+    if (!Number.isInteger(a) || a < 0 || a > 7) {
+      setMessage({text: lang==="zh"?`${fmt(a)}! 超出范围 (只能用 0-7)`:`${fmt(a)}! is out of range (0–7 only)`, type:"bad"});
+      setSelectedIdx(null);
+      setOperator(null);
+      return;
+    }
+    let result = 1;
+    for (let i = 2; i <= a; i++) result *= i;
+    const expr = `${fmt(a)}! = ${fmt(result)}`;
+    setSteps(s=>[...s, {expr, result}]);
+    const newNums = numbers.filter((_,i)=>i!==idx);
+    newNums.push({value:result, label:fmt(result), sourceId:`step_${steps.length+1}`});
+    setNumbers(newNums);
+    setSelectedIdx(null);
+    setOperator(null);
+    if (newNums.length===1) {
+      if (Math.abs(result-24)<1e-9) handleSolve();
+      else setMessage({text: t.notTwentyFour(fmt(result)), type:"bad"});
+    } else {
+      setMessage({text:`✓ ${expr}`, type:"step"});
+    }
   }
 
   function handleReset() {
@@ -911,7 +942,12 @@ export default function App() {
             return (
               <div key={op} style={{position:"relative"}}>
                 <OpBtn op={op} active={operator===op} onClick={()=>{
-                  if (selectedIdx!==null&&allowed) setOperator(o=>o===op?null:op);
+                  if (!allowed) return;
+                  if (op==="!" && selectedIdx!==null) {
+                    applyFactorial(selectedIdx);
+                  } else if (selectedIdx!==null) {
+                    setOperator(o=>o===op?null:op);
+                  }
                 }} disabled={!allowed}/>
                 {!allowed&&(
                   <div style={{

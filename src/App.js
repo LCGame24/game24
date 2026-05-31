@@ -650,6 +650,7 @@ export default function App() {
   const [showMediumNudge,setShowMediumNudge]=useState(false);
   const [skipInstructions,setSkipInstructions]=useState(false);
   const [showDiffMenu,setShowDiffMenu]=useState(false);
+  const [paused,setPaused]=useState(false);
   const [preSelectDiff,setPreSelectDiff]=useState(null);
 
   // players: [{name, score, streak, hintsUsed}]
@@ -694,6 +695,7 @@ export default function App() {
     setTotalSolves(0);
     setShowMediumNudge(false);
     showMediumNudgeRef.current=false;
+    setPaused(false);
   }
 
   function dealCards(d=deck, diff=difficulty) {
@@ -741,7 +743,7 @@ export default function App() {
 
   // timer — active in multiplayer always, solo only when timerEnabled
   useEffect(()=>{
-    if (screen!=="game"||turnOver||!timerActive) return;
+    if (screen!=="game"||turnOver||!timerActive||paused) return;
     timerRef.current=setInterval(()=>{
       setTimeLeft(t=>{
         if (t<=1){ clearInterval(timerRef.current); handleTimeUp(); return 0; }
@@ -749,7 +751,7 @@ export default function App() {
       });
     },1000);
     return ()=>clearInterval(timerRef.current);
-  },[screen,turnOver,currentPlayer,round,timerActive]);
+  },[screen,turnOver,currentPlayer,round,timerActive,paused]);
 
   function handleTimeUp() {
     setMessage({text:t.timeUp,type:"bad"});
@@ -768,6 +770,9 @@ export default function App() {
     } else if (operator==="!") {
       // factorial is single-operand — apply immediately without second number
       applyFactorial(selectedIdx);
+    } else if (operator==="√") {
+      // sqrt is single-operand — apply immediately without second number
+      applySqrt(selectedIdx);
     } else if (operator!==null) {
       applyOp(selectedIdx, operator, idx);
     }
@@ -784,7 +789,7 @@ export default function App() {
       if (Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}
       result=a/b;
     } else if (op==="^") result=Math.pow(a,b);
-    else if (op==="√") { result=Math.sqrt(a); }
+
 
     const expr=`${la} ${op} ${lb} = ${fmt(result)}`;
     const newStep={expr,result};
@@ -885,6 +890,27 @@ export default function App() {
         handleNextTurn();
       }
     }, 2000);
+  }
+
+  function applySqrt(idx) {
+    const a=numbers[idx].value;
+    if (a < 0) {
+      setMessage({text:lang==="zh"?"不能对负数开方！":"Can't take sqrt of negative number!",type:"bad"});
+      setSelectedIdx(null); setOperator(null); return;
+    }
+    const result=Math.sqrt(a);
+    const expr=`√${fmt(a)} = ${fmt(result)}`;
+    setSteps(s=>[...s,{expr,result}]);
+    const newNums=numbers.filter((_,i)=>i!==idx);
+    newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
+    setNumbers(newNums);
+    setSelectedIdx(null); setOperator(null);
+    if (newNums.length===1) {
+      if (Math.abs(result-24)<1e-9) handleSolve();
+      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+    } else {
+      setMessage({text:`✓ ${expr}`,type:"step"});
+    }
   }
 
   function applyFactorial(idx) {
@@ -1065,7 +1091,39 @@ export default function App() {
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
           borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",
         }}>❓</button>
+        <button onClick={()=>setPaused(p=>!p)} style={{
+          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
+          borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",
+        }}>{paused?"▶":"⏸"}</button>
       </div>
+
+      {/* Pause overlay */}
+      {paused&&(
+        <div style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          zIndex:500,
+        }}>
+          <div style={{fontSize:56,marginBottom:16}}>⏸</div>
+          <h2 style={{color:"white",fontSize:28,fontWeight:900,margin:"0 0 8px"}}>
+            {lang==="zh"?"游戏暂停":"Game Paused"}
+          </h2>
+          <p style={{color:"#64748b",marginBottom:28,fontSize:14}}>
+            {lang==="zh"?"计时器已停止":"Timer is stopped"}
+          </p>
+          <button onClick={()=>setPaused(false)} style={{
+            background:"linear-gradient(135deg,#f6d365,#fda085)",
+            border:"none",borderRadius:14,padding:"14px 36px",
+            color:"#1a1a2e",fontSize:16,fontWeight:800,cursor:"pointer",
+            boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginBottom:12,
+          }}>▶ {lang==="zh"?"继续游戏":"Resume"}</button>
+          <button onClick={()=>{setPaused(false);setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} style={{
+            background:"transparent",border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:14,padding:"10px 28px",
+            color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer",
+          }}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
+        </div>
+      )}
 
       {/* Help modal in game */}
       {showHelp&&(
@@ -1305,6 +1363,8 @@ export default function App() {
                   if (!allowed) return;
                   if (op==="!" && selectedIdx!==null) {
                     applyFactorial(selectedIdx);
+                  } else if (op==="√" && selectedIdx!==null) {
+                    applySqrt(selectedIdx);
                   } else if (selectedIdx!==null) {
                     setOperator(o=>o===op?null:op);
                   }
@@ -1460,6 +1520,7 @@ export default function App() {
               <button onClick={()=>{
                 setShowMediumNudge(false);
     showMediumNudgeRef.current=false;
+    setPaused(false);
                 setSkipInstructions(true);
                 setScreen("setup");
               }} style={{

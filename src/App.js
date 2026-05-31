@@ -1417,6 +1417,7 @@ export default function App() {
               <button onClick={()=>{
                 setShowMediumNudge(false);
     showMediumNudgeRef.current=false;
+                setSkipInstructions(true);
                 setScreen("setup");
               }} style={{
                 background:"linear-gradient(135deg,#f59e0b,#d97706)",

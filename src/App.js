@@ -638,6 +638,12 @@ export default function App() {
   const justUnlockedHardRef=useRef(false);
   const [leaderboard,setLeaderboard]=useState(()=>loadLeaderboard());
   const [showLeaderboard,setShowLeaderboard]=useState(false);
+  const [badges,setBadges]=useState(()=>loadBadges());
+  const [newBadges,setNewBadges]=useState([]);
+  const [personalBest,setPersonalBest]=useState(()=>loadPersonalBest());
+  const [showConfetti,setShowConfetti]=useState(false);
+  const [totalSolves,setTotalSolves]=useState(0);
+  const [skipUsed,setSkipUsed]=useState(false);
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -677,6 +683,8 @@ export default function App() {
     dealCards(newDeck, cfg.difficulty);
     setExtensions(2);
     setTurnOver(false);
+    setSkipUsed(false);
+    setTotalSolves(0);
   }
 
   function dealCards(d=deck, diff=difficulty) {
@@ -1315,7 +1323,7 @@ export default function App() {
           {[
             {label:t.reset,action:handleReset,color:"#64748b"},
             {label:t.hint,action:handleHint,color:"#a78bfa"},
-            ...(isSolo?[{label:t.skip,action:handleNextTurn,color:"#f472b6"}]:[]),
+            ...(isSolo?[{label:t.skip,action:handleSkipTrack,color:"#f472b6"}]:[]),
           ].map(b=>(
             <button key={b.label} onClick={b.action} style={{
               background:"transparent",border:`2px solid ${b.color}`,

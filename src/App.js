@@ -248,21 +248,38 @@ function getFirstStep(cards) {
   return null;
 }
 
-function getHint(cards) {
-  const nums=cards.map(c=>FACE[c.val]), ls=cards.map(c=>String(FACE[c.val]));
-  function find(ns,ls) {
-    if (ns.length===1) return Math.abs(ns[0]-24)<1e-9?ls[0]:null;
-    for (let i=0;i<ns.length;i++) for (let j=0;j<ns.length;j++) {
-      if (i===j) continue;
-      const rN=ns.filter((_,k)=>k!==i&&k!==j), rL=ls.filter((_,k)=>k!==i&&k!==j);
-      const [a,b,la,lb]=[ns[i],ns[j],ls[i],ls[j]];
-      const ops=[[a+b,`(${la}+${lb})`],[a-b,`(${la}-${lb})`],[a*b,`(${la}×${lb})`]];
-      if (Math.abs(b)>1e-9) ops.push([a/b,`(${la}÷${lb})`]);
-      for (const [r,e] of ops){ const res=find([...rN,r],[...rL,e]); if(res!==null) return res; }
+// Returns full solution as array of step strings, e.g. ["3 × 8 = 24"] or ["2 + 6 = 8", "8 × 3 = 24", ...]
+// Works on the *current* working numbers (not necessarily original 4 cards)
+function getHintSteps(currentNumbers) {
+  const nums = currentNumbers.map(n => n.value);
+  const labs = currentNumbers.map(n => n.label);
+
+  // Returns array of {expr, result, labelA, labelB, op} steps leading to 24, or null
+  function find(ns, ls) {
+    if (ns.length === 1) return Math.abs(ns[0] - 24) < 1e-9 ? [] : null;
+    for (let i = 0; i < ns.length; i++) for (let j = 0; j < ns.length; j++) {
+      if (i === j) continue;
+      const rN = ns.filter((_,k) => k!==i && k!==j);
+      const rL = ls.filter((_,k) => k!==i && k!==j);
+      const [a, b, la, lb] = [ns[i], ns[j], ls[i], ls[j]];
+      const ops = [
+        [a+b, "+"],
+        [a-b, "−"],
+        [a*b, "×"],
+      ];
+      if (Math.abs(b) > 1e-9) ops.push([a/b, "÷"]);
+      // power
+      if (b >= 0 && b <= 5 && Number.isInteger(b)) ops.push([Math.pow(a,b), "^"]);
+      // sqrt (single-operand — handled separately, skip here)
+      for (const [r, op] of ops) {
+        const expr = `${la} ${op} ${lb} = ${fmt(r)}`;
+        const rest = find([...rN, r], [...rL, fmt(r)]);
+        if (rest !== null) return [{expr, result: r}, ...rest];
+      }
     }
     return null;
   }
-  return find(nums,ls);
+  return find(nums, labs);
 }
 
 function fmt(n) { return Number.isInteger(n)?String(n):n.toFixed(3).replace(/\.?0+$/,""); }
@@ -670,7 +687,7 @@ export default function App() {
   const [extensions,setExtensions]=useState(2);
   const [extFlash,setExtFlash]=useState(false);
   const [message,setMessage]=useState({text:"",type:""});
-  const [showHint,setShowHint]=useState(null);
+  const [showHint,setShowHint]=useState(null); // {steps:[...], revealed:N} or null
   const [autoHint,setAutoHint]=useState(null);
   const autoHintRef=useRef(null);
   const [difficulty,setDifficulty]=useState("Medium");
@@ -719,7 +736,7 @@ export default function App() {
     setOperator(null);
     setSteps([]);
     setMessage({text:"",type:""});
-    setShowHint(null);
+    setShowHint(null); // reset step-by-step hint
     setTimeLeft(DIFFICULTY[diff].timeLimit);
     setTurnOver(false);
     setAutoHint(null);
@@ -945,18 +962,40 @@ export default function App() {
     setOperator(null);
     setSteps([]);
     setMessage({text:"",type:""});
+    setShowHint(null);
     setAutoHint(null);
     if (autoHintRef.current) clearTimeout(autoHintRef.current);
   }
 
   function handleHint() {
-    const hint=getHint(cards);
-    setShowHint(hint);
-    setPlayers(ps=>{
-      const next=[...ps];
-      next[currentPlayer]={...next[currentPlayer],hintsUsed:next[currentPlayer].hintsUsed+1};
-      return next;
-    });
+    if (difficulty === "Easy") {
+      // Easy: show full solution expression (existing behaviour via getFirstStep auto-hint)
+      // Manual hint on Easy shows the full answer path
+      const steps = getHintSteps(numbers);
+      const fullExpr = steps ? steps.map(s => s.expr).join(" → ") : null;
+      setShowHint({steps: steps||[], revealed: steps ? steps.length : 0});
+      setPlayers(ps=>{
+        const next=[...ps];
+        next[currentPlayer]={...next[currentPlayer],hintsUsed:next[currentPlayer].hintsUsed+1};
+        return next;
+      });
+    } else {
+      // Medium/Hard: reveal one step at a time
+      if (!showHint) {
+        // First tap: compute steps from current working numbers, reveal step 1
+        const steps = getHintSteps(numbers);
+        setShowHint({steps: steps||[], revealed: 1});
+      } else if (showHint.revealed < showHint.steps.length) {
+        // Subsequent taps: reveal next step
+        setShowHint(h => ({...h, revealed: h.revealed + 1}));
+      }
+      // Each tap costs a hint
+      setPlayers(ps=>{
+        const next=[...ps];
+        next[currentPlayer]={...next[currentPlayer],hintsUsed:next[currentPlayer].hintsUsed+1};
+        return next;
+      });
+    }
   }
 
   function handleExtend() {
@@ -1425,13 +1464,49 @@ export default function App() {
         }}>{message.text}</div>
       )}
 
-      {/* Hint */}
-      {showHint&&(
+      {/* Hint display */}
+      {showHint&&showHint.steps&&(
         <div style={{
           background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",
-          borderRadius:12,padding:"8px 16px",marginBottom:10,
+          borderRadius:12,padding:"10px 16px",marginBottom:10,
           color:"#a78bfa",fontSize:13,textAlign:"center",
-        }}>💡 {showHint} = 24</div>
+          maxWidth:340,width:"100%",
+        }}>
+          {difficulty==="Easy"?(
+            // Easy: show all steps at once
+            <div>💡 {showHint.steps.map(s=>s.expr).join(" → ")} = 24</div>
+          ):(
+            // Medium/Hard: show steps one by one
+            <div>
+              <div style={{fontWeight:700,marginBottom:6,fontSize:12,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:1}}>
+                💡 {lang==="zh"?"逐步提示":"Step-by-step hint"} ({showHint.revealed}/{showHint.steps.length})
+              </div>
+              {showHint.steps.slice(0, showHint.revealed).map((s,i)=>(
+                <div key={i} style={{
+                  marginBottom:4,padding:"5px 10px",
+                  background:"rgba(167,139,250,0.1)",borderRadius:8,
+                  color:"#e9d5ff",fontSize:14,fontWeight:700,
+                  animation:"popIn 0.25s ease",
+                }}>
+                  <span style={{color:"#7c3aed",fontSize:11,marginRight:6}}>
+                    {lang==="zh"?`第${i+1}步`:`Step ${i+1}`}
+                  </span>
+                  {s.expr}
+                </div>
+              ))}
+              {showHint.revealed < showHint.steps.length && (
+                <div style={{color:"#6d28d9",fontSize:11,marginTop:6}}>
+                  {lang==="zh"?`再点一次提示查看第${showHint.revealed+1}步`:`Tap hint again for step ${showHint.revealed+1}`}
+                </div>
+              )}
+              {showHint.revealed === showHint.steps.length && (
+                <div style={{color:"#34d399",fontSize:11,marginTop:6,fontWeight:700}}>
+                  {lang==="zh"?"✓ 完整解法已显示":"✓ Full solution shown"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
       {autoHint&&!showHint&&!turnOver&&(
         <div style={{
@@ -1454,14 +1529,28 @@ export default function App() {
       {!turnOver?(
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>
           {[
-            {label:t.reset,action:handleReset,color:"#64748b"},
-            {label:t.hint,action:handleHint,color:"#a78bfa"},
-            ...(isSolo?[{label:t.skip,action:handleSkipTrack,color:"#f472b6"}]:[]),
+            {label:t.reset, action:handleReset, color:"#64748b", disabled:false},
+            {
+              label: difficulty==="Easy"
+                ? t.hint
+                : showHint
+                  ? (showHint.revealed < showHint.steps.length
+                      ? `💡 ${lang==="zh"?"下一步":"Next"} ${showHint.revealed+1}/${showHint.steps.length}`
+                      : `💡 ${lang==="zh"?"已全部显示":"All shown"}`)
+                  : t.hint,
+              action: (difficulty!=="Easy" && showHint && showHint.revealed>=showHint.steps.length)
+                ? null : handleHint,
+              color: (difficulty!=="Easy" && showHint && showHint.revealed>=showHint.steps.length)
+                ? "#1e3a5f" : "#a78bfa",
+              disabled: !!(difficulty!=="Easy" && showHint && showHint.revealed>=showHint.steps.length),
+            },
+            ...(isSolo?[{label:t.skip,action:handleSkipTrack,color:"#f472b6",disabled:false}]:[]),
           ].map(b=>(
-            <button key={b.label} onClick={b.action} style={{
+            <button key={b.label} onClick={b.disabled?null:b.action} style={{
               background:"transparent",border:`2px solid ${b.color}`,
               borderRadius:10,padding:"7px 16px",color:b.color,
-              fontSize:13,fontWeight:700,cursor:"pointer",
+              fontSize:13,fontWeight:700,cursor:b.disabled?"not-allowed":"pointer",
+              opacity:b.disabled?0.4:1,
             }}>{b.label}</button>
           ))}
         </div>

@@ -971,7 +971,7 @@ export default function App() {
     skipInstructions={skipInstructions}/>;
 
   if (screen==="gameEnd") return (
-    <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setScreen("setup");}} difficulty={difficulty} lang={lang} setLang={setLang}
+    <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setScreen("setup");}} onPlayAgain={()=>{setSkipInstructions(true);setScreen("setup");}} difficulty={difficulty} lang={lang} setLang={setLang}
       leaderboard={leaderboard} setLeaderboard={setLeaderboard}
       onKeepPlaying={()=>{ dealCards(deck, difficulty); setRound(1); setCurrentPlayer(0); setScreen("game"); setPlayers(ps=>ps.map(p=>({...p,score:0,streak:0,hintsUsed:0}))); }}/>
   );
@@ -1452,7 +1452,7 @@ export default function App() {
 }
 
 // ── Game End screen ────────────────────────────────────────────────────────
-function GameEnd({players,onRestart,onKeepPlaying,difficulty,lang,setLang,leaderboard,setLeaderboard}) {
+function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,setLang,leaderboard,setLeaderboard}) {
   const t=T[lang];
   const sorted=[...players].sort((a,b)=>b.score-a.score);
   const winner=sorted[0];

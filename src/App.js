@@ -11,7 +11,7 @@ const FACE  = {1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12,13:13};
 const DIFFICULTY = {
   Easy:   { timeLimit: 120, pointsPerSolve: 8,  hintPenalty: 2, label:"Easy",   color:"#34d399", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷"] },
   Medium: { timeLimit: 90,  pointsPerSolve: 12, hintPenalty: 4, label:"Medium", color:"#f59e0b", maxCard:10, cardNote:"1–10", ops:["+","−","×","÷","^","√"] },
-  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√","!"] },
+  Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√","ʸ√","!"] },
 };
 const LEVEL_UP_SCORE = { Easy: 80, Medium: 150 }; // score needed to unlock Hard
 
@@ -126,7 +126,7 @@ const T = {
     howToPlayTitle: "How to Play",
     howToPlayLines: [
       "🃏 Four cards are dealt — use ALL four numbers to make 24",
-      "➕ You can use + − × ÷ and even power (^), square root (√) or factorial ! (Hard mode only)",
+      "➕ You can use + − × ÷ and even power (^), square root (√), y-th root (ʸ√) or factorial ! (Hard mode only)",
       "👆 Tap a number → tap an operator → tap another number",
       "🔁 The result becomes a new number to use in the next step",
       "🎯 Keep going until only one number is left — it must be 24!",
@@ -179,7 +179,7 @@ const T = {
     howToPlayTitle: "游戏说明",
     howToPlayLines: [
       "🃏 发四张牌 — 用全部四个数字凑成24",
-      "➕ 可以使用 + − × ÷ 以及乘方 (^)、开方 (√) 和阶乘 ! (仅限困难模式)",
+      "➕ 可以使用 + − × ÷ 以及乘方 (^)、开方 (√)、任意次方根 (ʸ√) 和阶乘 ! (仅限困难模式)",
       "👆 点击数字 → 点击运算符 → 点击另一个数字",
       "🔁 计算结果会变成新的数字继续使用",
       "🎯 继续计算直到只剩一个数字 — 必须是24！",
@@ -318,12 +318,13 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
 }
 
 function OpBtn({op,active,onClick,disabled}) {
+  const isWide = op==="ʸ√"; // wider label needs adjusted font
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      width:44,height:44,borderRadius:"50%",
+      width:isWide?52:44,height:44,borderRadius:isWide?12:"50%",
       border:active?"2px solid #f59e0b":disabled?"2px solid #1e293b":"2px solid #334155",
       background:active?"#fef3c7":disabled?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.05)",
-      fontSize:18,fontWeight:800,cursor:disabled?"default":"pointer",
+      fontSize:isWide?14:18,fontWeight:800,cursor:disabled?"default":"pointer",
       color:active?"#92400e":disabled?"#1e3a5f":"#94a3b8",
       transform:active?"scale(1.18)":"scale(1)",
       transition:"all 0.15s",boxShadow:active?"0 4px 12px rgba(245,158,11,0.4)":"none",
@@ -807,6 +808,19 @@ export default function App() {
       if (Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}
       result=a/b;
     } else if (op==="^") result=Math.pow(a,b);
+    else if (op==="ʸ√") {
+      // y-th root: a^(1/b) — first number is base, second is root degree
+      if (Math.abs(b)<1e-9){setMessage({text:lang==="zh"?"根指数不能为零！":"Root degree can't be zero!",type:"bad"});return;}
+      if (a<0) {
+        // Only allow odd integer root degrees for negative bases
+        if (!Number.isInteger(b)||b%2===0) {
+          setMessage({text:lang==="zh"?"负数只能开奇数次方根！":"Negative base only allows odd integer root degrees!",type:"bad"});return;
+        }
+        result=-(Math.pow(-a,1/b));
+      } else {
+        result=Math.pow(a,1/b);
+      }
+    }
 
 
     const expr=`${la} ${op} ${lb} = ${fmt(result)}`;
@@ -1395,7 +1409,7 @@ export default function App() {
       {/* Operators */}
       {!turnOver&&(
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>
-          {["+","−","×","÷","^","√","!"].map(op=>{
+          {["+","−","×","÷","^","√","ʸ√","!"].map(op=>{
             const allowed=DIFFICULTY[difficulty].ops.includes(op);
             return (
               <div key={op} style={{position:"relative"}}>

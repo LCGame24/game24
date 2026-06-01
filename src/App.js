@@ -2074,10 +2074,12 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         {/* Header */}
         <div style={{textAlign:"center",marginBottom:16}}>
           <div style={{fontSize:36,marginBottom:4}}>🃏</div>
-          <div style={{
-            fontSize:28,fontWeight:900,color:"#f6d365",letterSpacing:-1,
-          }}>Game 24 / 24点</div>
-          <div style={{color:"#64748b",fontSize:12,marginTop:2}}>The Math Card Game</div>
+          <div style={{fontSize:28,fontWeight:900,color:"#f6d365",letterSpacing:-1}}>
+            Game 24 / 24点
+          </div>
+          <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
+            The Math Card Game · 数学扑克牌游戏
+          </div>
         </div>
 
         {/* Divider */}
@@ -2088,25 +2090,25 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
           background:"rgba(246,211,101,0.08)",borderRadius:12,
           padding:"12px 16px",marginBottom:12,
         }}>
-          <div style={{color:"#f6d365",fontWeight:900,fontSize:13,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>
-            {players.length>1?`🥇 ${winner.name}`:(lang==="zh"?"我的成绩":"My Score")}
+          {/* Player name prominently */}
+          <div style={{color:"white",fontWeight:900,fontSize:18,marginBottom:6}}>
+            👤 {winner.name}
+          </div>
+          <div style={{color:"#f6d365",fontWeight:700,fontSize:12,marginBottom:10,letterSpacing:1}}>
+            {diffLabel} {lang==="zh"?"模式":"Mode"} · {lang==="zh"?"等级":"Level"} {Math.floor(winner.score/10)+1}
           </div>
           <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
             <div style={{textAlign:"center"}}>
               <div style={{color:"#f6d365",fontWeight:900,fontSize:32}}>{winner.score}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"分数":"Score"}</div>
-            </div>
-            <div style={{textAlign:"center"}}>
-              <div style={{color:"white",fontWeight:900,fontSize:32}}>{Math.floor(winner.score/10)+1}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"等级":"Level"}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"分数 Score":"Score 分数"}</div>
             </div>
             <div style={{textAlign:"center"}}>
               <div style={{color:"#f472b6",fontWeight:900,fontSize:32}}>🔥{winner.streak}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连胜":"Streak"}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连胜 Streak":"Streak 连胜"}</div>
             </div>
             <div style={{textAlign:"center"}}>
-              <div style={{color:DIFFICULTY[difficulty].color,fontWeight:900,fontSize:18,marginTop:6}}>{diffLabel}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"难度":"Mode"}</div>
+              <div style={{color:DIFFICULTY[difficulty].color,fontWeight:900,fontSize:32}}>{Math.floor(winner.score/10)+1}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"等级 Level":"Level 等级"}</div>
             </div>
           </div>
         </div>
@@ -2150,7 +2152,9 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         {/* CTA */}
         <div style={{textAlign:"center"}}>
           <div style={{color:"#94a3b8",fontSize:12,marginBottom:4}}>
-            {lang==="zh"?"你能超过我的分数吗？":"Can you beat my score?"}
+            {lang==="zh"
+              ?"你能超过我的分数吗？Can you beat my score?"
+              :"Can you beat my score? 你能超过我吗？"}
           </div>
           <div style={{color:"#f6d365",fontWeight:700,fontSize:13}}>
             game24-taupe.vercel.app

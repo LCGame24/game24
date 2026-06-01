@@ -85,22 +85,26 @@ const PLAYER_COLORS = ["#f6d365","#f472b6","#34d399","#60a5fa"];
 const PLAYER_BG     = ["rgba(246,211,101,0.15)","rgba(244,114,182,0.15)","rgba(52,211,153,0.15)","rgba(96,165,250,0.15)"];
 
 // Tutorial: guided first puzzle using 1×2×3×4=24
-// Steps: tap 1 → tap × → tap 2 → (=2) → tap 2 → tap × → tap 3 → (=6) → tap 6 → tap × → tap 4 → 🎉
+// Correct 9-step sequence including tapping intermediate results
 const TUTORIAL_CARDS = [
   {suit:"♠",val:1,id:"tut_1"},
   {suit:"♥",val:2,id:"tut_2"},
   {suit:"♦",val:3,id:"tut_3"},
   {suit:"♣",val:4,id:"tut_4"},
 ];
-// tutorialStep: 0=tap 1, 1=tap ×, 2=tap 2, 3=tap ×, 4=tap 3, 5=tap ×, 6=tap 4, 7=done
+// Each step: type="number"|"op", target=label to match, isSecond=true means this tap triggers applyOp
 const TUTORIAL_STEPS = [
-  { type:"number", target:"1",   bubble:"👆 Tap the  1  to start!", bubbleZh:"👆 点击数字  1  开始！" },
-  { type:"op",     target:"×",   bubble:"Now tap  ×  to multiply!", bubbleZh:"点击  ×  进行乘法！" },
-  { type:"number", target:"2",   bubble:"Tap  2  — let's make 1×2!", bubbleZh:"点击  2  — 算出 1×2！" },
-  { type:"op",     target:"×",   bubble:"Great! Now tap  ×  again!", bubbleZh:"棒极了！再次点击  ×  ！" },
-  { type:"number", target:"3",   bubble:"Tap  3  — almost there!", bubbleZh:"点击  3  — 快成功了！" },
-  { type:"op",     target:"×",   bubble:"One more  ×  to go!", bubbleZh:"最后一个  ×  ！" },
-  { type:"number", target:"4",   bubble:"Tap  4  to make 24! 🎯", bubbleZh:"点击  4  凑成24！🎯" },
+  { type:"number", target:"1",  isSecond:false, bubble:"👆 Tap  1  to start!",              bubbleZh:"👆 点击数字  1  开始！" },
+  { type:"op",     target:"×",                  bubble:"Now tap  ×  to multiply!",           bubbleZh:"点击  ×  进行乘法！" },
+  { type:"number", target:"2",  isSecond:true,  bubble:"Tap  2  — to make 1×2!",            bubbleZh:"点击  2  — 算出 1×2！" },
+  // after this applyOp fires → result "2" appears in pool
+  { type:"number", target:"2",  isSecond:false, bubble:"✓ 1×2=2!  Now tap  2  again!",      bubbleZh:"✓ 1×2=2！再点击结果  2  ！" },
+  { type:"op",     target:"×",                  bubble:"Tap  ×  again!",                    bubbleZh:"再次点击  ×  ！" },
+  { type:"number", target:"3",  isSecond:true,  bubble:"Tap  3  — to make 2×3!",            bubbleZh:"点击  3  — 算出 2×3！" },
+  // after this applyOp fires → result "6" appears in pool
+  { type:"number", target:"6",  isSecond:false, bubble:"✓ 2×3=6!  Now tap  6 !",           bubbleZh:"✓ 2×3=6！点击结果  6  ！" },
+  { type:"op",     target:"×",                  bubble:"Last  ×  — nearly there! 🎯",       bubbleZh:"最后一个  ×  — 快成功了！🎯" },
+  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  to make 6×4=24! 🎉",        bubbleZh:"点击  4  凑成 6×4=24！🎉" },
 ];
 
 // ── translations ───────────────────────────────────────────────────────────
@@ -673,6 +677,185 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
 }
 
 // ── Main game ──────────────────────────────────────────────────────────────
+// ── Help Modal (tabbed: How to Play | Demo) ───────────────────────────────
+function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
+  const [tab, setTab] = useState("howto"); // "howto" | "demo"
+  const t = T[lang];
+
+  // Static demo steps showing 1×2×3×4=24
+  const demoSteps = [
+    { en:"Tap  1  to select it",        zh:"点击数字  1  选中它",          numbers:["1","2","3","4"], selected:"1", op:null,  result:null },
+    { en:"Tap  ×  to choose multiply",  zh:"点击  ×  选择乘法",            numbers:["1","2","3","4"], selected:"1", op:"×",   result:null },
+    { en:"Tap  2  →  1×2 = 2",          zh:"点击  2  →  1×2 = 2",         numbers:["1","2","3","4"], selected:"1", op:"×",   result:"1×2=2" },
+    { en:"Tap  2  (the result)",         zh:"点击结果  2",                   numbers:["2","3","4"],     selected:"2", op:null,  result:null },
+    { en:"Tap  ×  again",               zh:"再次点击  ×",                   numbers:["2","3","4"],     selected:"2", op:"×",   result:null },
+    { en:"Tap  3  →  2×3 = 6",          zh:"点击  3  →  2×3 = 6",         numbers:["2","3","4"],     selected:"2", op:"×",   result:"2×3=6" },
+    { en:"Tap  6  (the result)",         zh:"点击结果  6",                   numbers:["6","4"],         selected:"6", op:null,  result:null },
+    { en:"Tap  ×  one more time",       zh:"最后一次点击  ×",               numbers:["6","4"],         selected:"6", op:"×",   result:null },
+    { en:"Tap  4  →  6×4 = 24  🎉",     zh:"点击  4  →  6×4 = 24  🎉",   numbers:["6","4"],         selected:"6", op:"×",   result:"6×4=24 🎉" },
+  ];
+
+  const [demoIdx, setDemoIdx] = useState(0);
+  const ds = demoSteps[demoIdx];
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+      <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",
+        border:"1px solid rgba(255,255,255,0.15)",borderRadius:24,padding:24,
+        maxWidth:380,width:"100%",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
+
+        {/* Header */}
+        <div style={{textAlign:"center",marginBottom:14}}>
+          <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+            background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,
+            cursor:"pointer",marginBottom:10,
+          }}>{t.language}</button>
+          <div style={{fontSize:36,marginBottom:4}}>🃏</div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{display:"flex",gap:6,marginBottom:16,background:"rgba(255,255,255,0.05)",
+          borderRadius:12,padding:4}}>
+          {[{id:"howto",label:lang==="zh"?"📖 游戏说明":"📖 How to Play"},
+            {id:"demo", label:lang==="zh"?"🎮 演示":"🎮 Demo"}].map(tb=>(
+            <button key={tb.id} onClick={()=>setTab(tb.id)} style={{
+              flex:1,padding:"8px",borderRadius:10,border:"none",
+              background:tab===tb.id?"linear-gradient(135deg,#334155,#1e293b)":"transparent",
+              color:tab===tb.id?"white":"#64748b",fontWeight:700,fontSize:13,cursor:"pointer",
+              transition:"all 0.2s",
+            }}>{tb.label}</button>
+          ))}
+        </div>
+
+        {/* How to Play tab */}
+        {tab==="howto"&&(
+          <div style={{overflowY:"auto",flex:1,marginBottom:14}}>
+            {t.howToPlayLines.map((line,i)=>(
+              <div key={i} style={{color:"#cbd5e1",fontSize:13,marginBottom:8,
+                padding:"8px 12px",background:"rgba(255,255,255,0.04)",
+                borderRadius:8,lineHeight:1.5}}>{line}</div>
+            ))}
+          </div>
+        )}
+
+        {/* Demo tab */}
+        {tab==="demo"&&(
+          <div style={{flex:1,display:"flex",flexDirection:"column"}}>
+            {/* Step instruction */}
+            <div style={{background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.3)",
+              borderRadius:12,padding:"10px 14px",marginBottom:12,textAlign:"center"}}>
+              <div style={{color:"#93c5fd",fontWeight:700,fontSize:13}}>
+                {lang==="zh"?`第${demoIdx+1}步 / 共9步`:`Step ${demoIdx+1} of 9`}
+              </div>
+              <div style={{color:"white",fontWeight:800,fontSize:15,marginTop:4}}>
+                {lang==="zh"?ds.zh:ds.en}
+              </div>
+              {ds.result&&(
+                <div style={{color:"#34d399",fontWeight:900,fontSize:16,marginTop:6,
+                  background:"rgba(52,211,153,0.1)",borderRadius:8,padding:"4px 10px",
+                  display:"inline-block"}}>
+                  ✓ {ds.result}
+                </div>
+              )}
+            </div>
+
+            {/* Mini number pool visual */}
+            <div style={{marginBottom:12,textAlign:"center"}}>
+              <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
+                {lang==="zh"?"可用数字":"Available Numbers"}
+              </div>
+              <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+                {ds.numbers.map((n,i)=>{
+                  const isSel = n===ds.selected;
+                  return (
+                    <div key={i} style={{
+                      width:46,height:46,borderRadius:10,
+                      background:isSel?"#fef3c7":"rgba(255,255,255,0.08)",
+                      border:`2px solid ${isSel?"#f59e0b":"rgba(255,255,255,0.15)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:16,fontWeight:900,
+                      color:isSel?"#92400e":"white",
+                      transform:isSel?"scale(1.12)":"scale(1)",
+                      boxShadow:isSel?"0 4px 12px rgba(245,158,11,0.4)":"none",
+                    }}>{n}</div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mini operator row */}
+            <div style={{marginBottom:12,textAlign:"center"}}>
+              <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
+                {lang==="zh"?"运算符":"Operators"}
+              </div>
+              <div style={{display:"flex",gap:6,justifyContent:"center"}}>
+                {["+","−","×","÷"].map(op=>{
+                  const isActive = op===ds.op;
+                  return (
+                    <div key={op} style={{
+                      width:38,height:38,borderRadius:"50%",
+                      border:`2px solid ${isActive?"#f59e0b":"#334155"}`,
+                      background:isActive?"#fef3c7":"rgba(255,255,255,0.05)",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:16,fontWeight:800,
+                      color:isActive?"#92400e":"#94a3b8",
+                      transform:isActive?"scale(1.18)":"scale(1)",
+                      boxShadow:isActive?"0 4px 12px rgba(245,158,11,0.4)":"none",
+                      filter:isActive?"drop-shadow(0 0 6px rgba(245,158,11,0.6))":"none",
+                    }}>{op}</div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Progress dots */}
+            <div style={{display:"flex",gap:4,justifyContent:"center",marginBottom:12}}>
+              {demoSteps.map((_,i)=>(
+                <div key={i} style={{
+                  width:6,height:6,borderRadius:"50%",cursor:"pointer",
+                  background:i<demoIdx?"#34d399":i===demoIdx?"#60a5fa":"rgba(255,255,255,0.15)",
+                  transition:"all 0.3s",
+                }} onClick={()=>setDemoIdx(i)}/>
+              ))}
+            </div>
+
+            {/* Prev / Next */}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setDemoIdx(i=>Math.max(0,i-1))} disabled={demoIdx===0} style={{
+                flex:1,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",
+                background:"rgba(255,255,255,0.04)",color:demoIdx===0?"#1e293b":"#94a3b8",
+                fontWeight:700,fontSize:13,cursor:demoIdx===0?"not-allowed":"pointer",
+              }}>◀ {lang==="zh"?"上一步":"Prev"}</button>
+              {demoIdx<demoSteps.length-1?(
+                <button onClick={()=>setDemoIdx(i=>i+1)} style={{
+                  flex:1,padding:"10px",borderRadius:10,border:"none",
+                  background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",
+                  color:"white",fontWeight:700,fontSize:13,cursor:"pointer",
+                }}>{lang==="zh"?"下一步":"Next"} ▶</button>
+              ):(
+                <button onClick={()=>{setDemoIdx(0);onReplayTutorial();}} style={{
+                  flex:1,padding:"10px",borderRadius:10,border:"none",
+                  background:"linear-gradient(135deg,#34d399,#059669)",
+                  color:"white",fontWeight:700,fontSize:13,cursor:"pointer",
+                }}>▶ {lang==="zh"?"亲自试试！":"Try it live!"}</button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Close button */}
+        <button onClick={onClose} style={{
+          width:"100%",padding:"13px",borderRadius:12,border:"none",marginTop:12,
+          background:"linear-gradient(135deg,#f6d365,#fda085)",
+          color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
+        }}>{t.gotIt}</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd
   const [config,setConfig]=useState(null);
@@ -827,14 +1010,21 @@ export default function App() {
       const step=TUTORIAL_STEPS[tutorialStep];
       if (step.type!=="number") return; // waiting for op tap
       if (numbers[idx].label!==step.target) {
-        setMessage({text:`👆 Tap the  ${step.target}  first!`,type:"bad"});
+        setMessage({text:lang==="zh"?`👆 请点击  ${step.target}  ！`:`👆 Tap the  ${step.target}  first!`,type:"bad"});
         return;
       }
-      // Correct tap — advance tutorial
-      setSelectedIdx(idx);
-      setOperator(null);
-      setMessage({text:"",type:""});
-      setTutorialStep(s=>s+1);
+      // Correct number tapped
+      if (!step.isSecond) {
+        // First number in a pair — just select it
+        setSelectedIdx(idx);
+        setOperator(null);
+        setMessage({text:"",type:""});
+        setTutorialStep(s=>s+1);
+      } else {
+        // Second number in a pair — trigger the actual calculation
+        setTutorialStep(s=>s+1);
+        applyOp(selectedIdx, operator, idx);
+      }
       return;
     }
     if (selectedIdx===null) {
@@ -1241,43 +1431,18 @@ export default function App() {
         </div>
       )}
 
-      {/* Help modal in game */}
+      {/* Help modal in game — tabbed: How to Play | Demo */}
       {showHelp&&(
-        <div style={{
-          position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          zIndex:1000,padding:20,
-        }}>
-          <div style={{
-            background:"linear-gradient(135deg,#1e293b,#0f172a)",
-            border:"1px solid rgba(255,255,255,0.15)",
-            borderRadius:24,padding:28,maxWidth:380,width:"100%",
-          }}>
-            <div style={{textAlign:"center",marginBottom:16}}>
-              <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-                background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
-                borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,
-                cursor:"pointer",marginBottom:12,
-              }}>{t.language}</button>
-              <div style={{fontSize:40,marginBottom:8}}>🃏</div>
-              <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
-            </div>
-            <div style={{marginBottom:24}}>
-              {t.howToPlayLines.map((line,i)=>(
-                <div key={i} style={{
-                  color:"#cbd5e1",fontSize:14,marginBottom:10,
-                  padding:"8px 12px",background:"rgba(255,255,255,0.04)",
-                  borderRadius:8,lineHeight:1.5,
-                }}>{line}</div>
-              ))}
-            </div>
-            <button onClick={()=>setShowHelp(false)} style={{
-              width:"100%",padding:"14px",borderRadius:12,border:"none",
-              background:"linear-gradient(135deg,#f6d365,#fda085)",
-              color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
-            }}>{t.gotIt}</button>
-          </div>
-        </div>
+        <HelpModal lang={lang} setLang={setLang} onClose={()=>setShowHelp(false)}
+          onReplayTutorial={()=>{
+            setShowHelp(false);
+            setCards(TUTORIAL_CARDS);
+            setNumbers(TUTORIAL_CARDS.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+            setSelectedIdx(null); setOperator(null); setSteps([]);
+            setMessage({text:"",type:""}); setShowHint(null);
+            setTurnOver(false); setTutorialStep(0);
+          }}
+        />
       )}
 
       {/* Player scoreboard */}
@@ -1526,7 +1691,7 @@ export default function App() {
                     const step=TUTORIAL_STEPS[tutorialStep];
                     if (step.type!=="op") return;
                     if (op!==step.target) {
-                      setMessage({text:`👆 Tap  ${step.target}  now!`,type:"bad"});
+                      setMessage({text:lang==="zh"?`👆 请点击  ${step.target}  ！`:`👆 Tap  ${step.target}  now!`,type:"bad"});
                       return;
                     }
                     setOperator(op);

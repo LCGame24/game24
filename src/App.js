@@ -1305,7 +1305,7 @@ export default function App() {
 
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} onPlayAgain={()=>{ setSkipInstructions(true); setPreSelectDiff(difficulty); setScreen("setup"); }} difficulty={difficulty} lang={lang} setLang={setLang}
-      leaderboard={leaderboard} setLeaderboard={setLeaderboard}
+      leaderboard={leaderboard} setLeaderboard={setLeaderboard} badges={badges}
       onKeepPlaying={()=>{ dealCards(deck, difficulty); setRound(1); setCurrentPlayer(0); setScreen("game"); setPlayers(ps=>ps.map(p=>({...p,score:0,streak:0,hintsUsed:0}))); }}/>
   );
 
@@ -1947,10 +1947,12 @@ export default function App() {
 }
 
 // ── Game End screen ────────────────────────────────────────────────────────
-function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,setLang,leaderboard,setLeaderboard}) {
+function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,setLang,leaderboard,setLeaderboard,badges}) {
   const t=T[lang];
   const sorted=[...players].sort((a,b)=>b.score-a.score);
   const winner=sorted[0];
+  const [sharing,setSharing]=useState(false);
+  const shareCardRef=useRef(null);
 
   // Save all players to leaderboard on mount
   useState(()=>{
@@ -1965,7 +1967,45 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
     setLeaderboard(top20);
   });
 
+  // Badges earned this session (approximate — show all unlocked badges)
+  const earnedBadges = BADGES.filter(b=>badges.includes(b.id));
 
+  async function handleShare() {
+    setSharing(true);
+    try {
+      const html2canvas = (await import('https://esm.sh/html2canvas@1.4.1')).default;
+      const canvas = await html2canvas(shareCardRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        logging: false,
+      });
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'game24-score.png', {type:'image/png'});
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({
+            title: lang==="zh"?"我的24点成绩！":"My Game 24 Score!",
+            text: lang==="zh"?`我在24点游戏中得了${winner.score}分！来挑战我吧！`:`I scored ${winner.score} pts in Game 24! Can you beat me?`,
+            url: 'https://game24-taupe.vercel.app',
+            files: [file],
+          });
+        } else {
+          // Fallback: download the image
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'game24-score.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+        setSharing(false);
+      }, 'image/png');
+    } catch(e) {
+      console.error(e);
+      setSharing(false);
+    }
+  }
+
+  const diffLabel = {Easy:lang==="zh"?"简单":"Easy", Medium:lang==="zh"?"中等":"Medium", Hard:lang==="zh"?"困难":"Hard"}[difficulty]||difficulty;
 
   return (
     <div style={{
@@ -1988,7 +2028,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         {players.length>1?t.wins(winner.name):t.gameOver}
       </h2>
       <p style={{color:"#64748b",marginBottom:12,fontSize:13}}>
-        {difficulty==="Easy"?(lang==="zh"?"简单":"Easy"):difficulty==="Medium"?(lang==="zh"?"中等":"Medium"):(lang==="zh"?"困难":"Hard")} {lang==="zh"?"模式":"mode"}
+        {diffLabel} {lang==="zh"?"模式":"mode"}
       </p>
 
       <div style={{width:"100%",maxWidth:340,marginBottom:24}}>
@@ -2017,6 +2057,100 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         })}
       </div>
 
+      {/* Shareable card — hidden off-screen, captured by html2canvas */}
+      <div ref={shareCardRef} style={{
+        position:"fixed", left:"-9999px", top:0,
+        width:360, background:"linear-gradient(135deg,#1a1a2e,#0f3460)",
+        borderRadius:20, padding:24, fontFamily:"'Trebuchet MS',sans-serif",
+        border:"2px solid rgba(246,211,101,0.4)",
+      }}>
+        {/* Header */}
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{fontSize:36,marginBottom:4}}>🃏</div>
+          <div style={{
+            fontSize:28,fontWeight:900,color:"#f6d365",letterSpacing:-1,
+          }}>Game 24 / 24点</div>
+          <div style={{color:"#64748b",fontSize:12,marginTop:2}}>The Math Card Game</div>
+        </div>
+
+        {/* Divider */}
+        <div style={{height:1,background:"rgba(246,211,101,0.2)",marginBottom:16}}/>
+
+        {/* Winner stats */}
+        <div style={{
+          background:"rgba(246,211,101,0.08)",borderRadius:12,
+          padding:"12px 16px",marginBottom:12,
+        }}>
+          <div style={{color:"#f6d365",fontWeight:900,fontSize:13,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>
+            {players.length>1?`🥇 ${winner.name}`:(lang==="zh"?"我的成绩":"My Score")}
+          </div>
+          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:"#f6d365",fontWeight:900,fontSize:32}}>{winner.score}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"分数":"Score"}</div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:"white",fontWeight:900,fontSize:32}}>{Math.floor(winner.score/10)+1}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"等级":"Level"}</div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:"#f472b6",fontWeight:900,fontSize:32}}>🔥{winner.streak}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连胜":"Streak"}</div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:DIFFICULTY[difficulty].color,fontWeight:900,fontSize:18,marginTop:6}}>{diffLabel}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"难度":"Mode"}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Multiplayer scores */}
+        {players.length>1&&(
+          <div style={{marginBottom:12}}>
+            {sorted.slice(1).map((p,i)=>(
+              <div key={i} style={{
+                display:"flex",justifyContent:"space-between",
+                padding:"6px 12px",background:"rgba(255,255,255,0.04)",
+                borderRadius:8,marginBottom:4,
+              }}>
+                <div style={{color:"#94a3b8",fontSize:13}}>{["🥈","🥉","4️⃣"][i]} {p.name}</div>
+                <div style={{color:"#94a3b8",fontWeight:700,fontSize:13}}>{p.score}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Badges earned */}
+        {earnedBadges.length>0&&(
+          <div style={{marginBottom:12}}>
+            <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>
+              {lang==="zh"?"成就徽章":"Badges Earned"}
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {earnedBadges.map(b=>(
+                <div key={b.id} style={{
+                  background:"rgba(246,211,101,0.1)",border:"1px solid rgba(246,211,101,0.2)",
+                  borderRadius:8,padding:"4px 8px",fontSize:12,color:"#f6d365",
+                }}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        <div style={{height:1,background:"rgba(246,211,101,0.2)",marginBottom:12}}/>
+
+        {/* CTA */}
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#94a3b8",fontSize:12,marginBottom:4}}>
+            {lang==="zh"?"你能超过我的分数吗？":"Can you beat my score?"}
+          </div>
+          <div style={{color:"#f6d365",fontWeight:700,fontSize:13}}>
+            game24-taupe.vercel.app
+          </div>
+        </div>
+      </div>
+
       {/* Level up suggestion */}
       {players.length===1&&LEVEL_UP_SCORE[difficulty]&&winner.score>=LEVEL_UP_SCORE[difficulty]&&(
         <div style={{
@@ -2028,7 +2162,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         </div>
       )}
 
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:10}}>
         <button onClick={onRestart} style={{
           background:"rgba(255,255,255,0.06)",
           border:"1px solid rgba(255,255,255,0.15)",
@@ -2042,6 +2176,17 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
           boxShadow:"0 4px 20px rgba(246,211,101,0.35)",
         }}>{lang==="zh"?"再来一局 ▶":"Play Again ▶"}</button>
       </div>
+
+      {/* Share button */}
+      <button onClick={handleShare} disabled={sharing} style={{
+        background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",
+        border:"none",borderRadius:12,padding:"12px 28px",
+        color:"white",fontSize:14,fontWeight:800,cursor:sharing?"not-allowed":"pointer",
+        opacity:sharing?0.7:1,
+        boxShadow:"0 4px 20px rgba(59,130,246,0.35)",
+      }}>
+        {sharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share Score")}
+      </button>
     </div>
   );
 }

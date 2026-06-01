@@ -439,7 +439,7 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{lang==="zh"?"24点":"Game 24"}</h1>
+        }}>{"Game 24 | 24点"}</h1>
         <p style={{
           color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
         }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
@@ -1387,7 +1387,7 @@ export default function App() {
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
-      }}>{lang==="zh"?"24点":"Game 24"}</h1>
+      }}>{"Game 24 | 24点"}</h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
@@ -2075,7 +2075,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         <div style={{textAlign:"center",marginBottom:16}}>
           <div style={{fontSize:36,marginBottom:4}}>🃏</div>
           <div style={{fontSize:28,fontWeight:900,color:"#f6d365",letterSpacing:-1}}>
-            Game 24 / 24点
+            Game 24 | 24点
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
             {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}

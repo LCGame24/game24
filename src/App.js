@@ -40,6 +40,12 @@ function loadPersonalBest() {
 function savePersonalBest(pb) {
   try { localStorage.setItem("game24_pb",JSON.stringify(pb)); } catch {}
 }
+function loadTutorialDone() {
+  try { return localStorage.getItem("game24_tutorial_done")==="1"; } catch { return false; }
+}
+function saveTutorialDone() {
+  try { localStorage.setItem("game24_tutorial_done","1"); } catch {}
+}
 
 // Badge definitions
 const BADGES = [
@@ -77,6 +83,25 @@ function checkBadges(existing, {totalSolves, streak, timeLeft, difficulty, hintU
 
 const PLAYER_COLORS = ["#f6d365","#f472b6","#34d399","#60a5fa"];
 const PLAYER_BG     = ["rgba(246,211,101,0.15)","rgba(244,114,182,0.15)","rgba(52,211,153,0.15)","rgba(96,165,250,0.15)"];
+
+// Tutorial: guided first puzzle using 1×2×3×4=24
+// Steps: tap 1 → tap × → tap 2 → (=2) → tap 2 → tap × → tap 3 → (=6) → tap 6 → tap × → tap 4 → 🎉
+const TUTORIAL_CARDS = [
+  {suit:"♠",val:1,id:"tut_1"},
+  {suit:"♥",val:2,id:"tut_2"},
+  {suit:"♦",val:3,id:"tut_3"},
+  {suit:"♣",val:4,id:"tut_4"},
+];
+// tutorialStep: 0=tap 1, 1=tap ×, 2=tap 2, 3=tap ×, 4=tap 3, 5=tap ×, 6=tap 4, 7=done
+const TUTORIAL_STEPS = [
+  { type:"number", target:"1",   bubble:"👆 Tap the  1  to start!", bubbleZh:"👆 点击数字  1  开始！" },
+  { type:"op",     target:"×",   bubble:"Now tap  ×  to multiply!", bubbleZh:"点击  ×  进行乘法！" },
+  { type:"number", target:"2",   bubble:"Tap  2  — let's make 1×2!", bubbleZh:"点击  2  — 算出 1×2！" },
+  { type:"op",     target:"×",   bubble:"Great! Now tap  ×  again!", bubbleZh:"棒极了！再次点击  ×  ！" },
+  { type:"number", target:"3",   bubble:"Tap  3  — almost there!", bubbleZh:"点击  3  — 快成功了！" },
+  { type:"op",     target:"×",   bubble:"One more  ×  to go!", bubbleZh:"最后一个  ×  ！" },
+  { type:"number", target:"4",   bubble:"Tap  4  to make 24! 🎯", bubbleZh:"点击  4  凑成24！🎯" },
+];
 
 // ── translations ───────────────────────────────────────────────────────────
 const T = {
@@ -671,6 +696,7 @@ export default function App() {
   const [showDiffMenu,setShowDiffMenu]=useState(false);
   const [paused,setPaused]=useState(false);
   const [preSelectDiff,setPreSelectDiff]=useState(null);
+  const [tutorialStep,setTutorialStep]=useState(-1); // -1 = not in tutorial
 
   // players: [{name, score, streak, hintsUsed}]
   const [players,setPlayers]=useState([]);
@@ -707,7 +733,6 @@ export default function App() {
     setScreen("game");
     const newDeck=generateDeck();
     setDeck(newDeck);
-    dealCards(newDeck, cfg.difficulty);
     setExtensions(2);
     setTurnOver(false);
     setSkipUsed(false);
@@ -715,6 +740,24 @@ export default function App() {
     setShowMediumNudge(false);
     showMediumNudgeRef.current=false;
     setPaused(false);
+
+    // First-ever visit: load tutorial puzzle instead of random cards
+    const isFirstTime = !loadTutorialDone();
+    if (isFirstTime && cfg.numPlayers===1) {
+      setCards(TUTORIAL_CARDS);
+      setNumbers(TUTORIAL_CARDS.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+      setSelectedIdx(null);
+      setOperator(null);
+      setSteps([]);
+      setMessage({text:"",type:""});
+      setShowHint(null);
+      setTimeLeft(DIFFICULTY[cfg.difficulty].timeLimit);
+      setAutoHint(null);
+      setTutorialStep(0);
+    } else {
+      dealCards(newDeck, cfg.difficulty);
+      setTutorialStep(-1);
+    }
   }
 
   function dealCards(d=deck, diff=difficulty) {
@@ -758,7 +801,7 @@ export default function App() {
     },30000);
     return ()=>{ if(autoHintRef.current) clearTimeout(autoHintRef.current); };
   },[screen,turnOver,difficulty,cards,autoHint]);
-  const timerActive = !isSolo || timerEnabled; // multi always timed; solo depends on toggle
+  const timerActive = (!isSolo || timerEnabled) && tutorialStep<0; // no timer during tutorial
 
   // timer — active in multiplayer always, solo only when timerEnabled
   useEffect(()=>{
@@ -779,6 +822,21 @@ export default function App() {
 
   function handleNumberClick(idx) {
     if (turnOver) return;
+    // In tutorial: only allow tapping the highlighted number
+    if (tutorialStep>=0) {
+      const step=TUTORIAL_STEPS[tutorialStep];
+      if (step.type!=="number") return; // waiting for op tap
+      if (numbers[idx].label!==step.target) {
+        setMessage({text:`👆 Tap the  ${step.target}  first!`,type:"bad"});
+        return;
+      }
+      // Correct tap — advance tutorial
+      setSelectedIdx(idx);
+      setOperator(null);
+      setMessage({text:"",type:""});
+      setTutorialStep(s=>s+1);
+      return;
+    }
     if (selectedIdx===null) {
       setSelectedIdx(idx);
       setOperator(null);
@@ -787,10 +845,8 @@ export default function App() {
       setSelectedIdx(null);
       setOperator(null);
     } else if (operator==="!") {
-      // factorial is single-operand — apply immediately without second number
       applyFactorial(selectedIdx);
     } else if (operator==="√") {
-      // sqrt is single-operand — apply immediately without second number
       applySqrt(selectedIdx);
     } else if (operator!==null) {
       applyOp(selectedIdx, operator, idx);
@@ -848,6 +904,11 @@ export default function App() {
 
   function handleSolve() {
     clearInterval(timerRef.current);
+    // Mark tutorial complete
+    if (tutorialStep>=0) {
+      saveTutorialDone();
+      setTutorialStep(-1);
+    }
     const diffCfg=DIFFICULTY[difficulty];
     const speedBonus=timerActive?Math.max(0,Math.floor(timeLeft/5)):0;
     const pts=diffCfg.pointsPerSolve+speedBonus;
@@ -1075,6 +1136,7 @@ export default function App() {
         @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
         @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%{transform:translateX(0);opacity:1}85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}
+        @keyframes tutPulse{0%,100%{box-shadow:0 0 0 3px rgba(96,165,250,0.4)}50%{box-shadow:0 0 0 6px rgba(96,165,250,0.15)}}
       `}</style>
 
       {/* Confetti */}
@@ -1384,25 +1446,60 @@ export default function App() {
         })}
       </div>
 
+      {/* Tutorial bubble */}
+      {tutorialStep>=0&&tutorialStep<TUTORIAL_STEPS.length&&(
+        <div style={{
+          background:"linear-gradient(135deg,#1e3a5f,#0f2744)",
+          border:"2px solid #60a5fa",borderRadius:16,
+          padding:"12px 20px",marginBottom:12,
+          textAlign:"center",maxWidth:320,width:"100%",
+          animation:"popIn 0.3s ease",
+          boxShadow:"0 0 0 4px rgba(96,165,250,0.15)",
+        }}>
+          <div style={{fontSize:13,color:"white",fontWeight:700,lineHeight:1.6}}>
+            {lang==="zh"?TUTORIAL_STEPS[tutorialStep].bubbleZh:TUTORIAL_STEPS[tutorialStep].bubble}
+          </div>
+          <div style={{marginTop:8,display:"flex",gap:4,justifyContent:"center"}}>
+            {TUTORIAL_STEPS.map((_,i)=>(
+              <div key={i} style={{
+                width:6,height:6,borderRadius:"50%",
+                background:i<tutorialStep?"#34d399":i===tutorialStep?"#60a5fa":"rgba(255,255,255,0.15)",
+                transition:"all 0.3s",
+              }}/>
+            ))}
+          </div>
+          <button onClick={()=>{saveTutorialDone();setTutorialStep(-1);dealCards(deck,difficulty);}} style={{
+            marginTop:10,background:"transparent",border:"1px solid rgba(96,165,250,0.3)",
+            borderRadius:8,padding:"4px 12px",color:"#64748b",fontSize:11,cursor:"pointer",
+          }}>{lang==="zh"?"跳过教程":"Skip tutorial"}</button>
+        </div>
+      )}
+
       {/* Working numbers pool */}
       <div style={{marginBottom:14,textAlign:"center"}}>
         <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{t.availableNumbers}</div>
         <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-          {numbers.map((n,i)=>(
+          {numbers.map((n,i)=>{
+            const isTutTarget = tutorialStep>=0
+              && tutorialStep<TUTORIAL_STEPS.length
+              && TUTORIAL_STEPS[tutorialStep].type==="number"
+              && n.label===TUTORIAL_STEPS[tutorialStep].target;
+            return (
             <div key={i} onClick={()=>handleNumberClick(i)} style={{
               width:54,height:54,borderRadius:12,
-              background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
-              border:`2px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,
+              background:selectedIdx===i?"#fef3c7":isTutTarget?"rgba(96,165,250,0.2)":"rgba(255,255,255,0.08)",
+              border:`2px solid ${selectedIdx===i?"#f59e0b":isTutTarget?"#60a5fa":"rgba(255,255,255,0.15)"}`,
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:18,fontWeight:900,
-              color:selectedIdx===i?"#92400e":"white",
+              color:selectedIdx===i?"#92400e":isTutTarget?"#93c5fd":"white",
               cursor:turnOver?"default":"pointer",
-              transform:selectedIdx===i?"scale(1.15)":"scale(1)",
+              transform:selectedIdx===i?"scale(1.15)":isTutTarget?"scale(1.12)":"scale(1)",
               transition:"all 0.15s",
-              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
-              animation:"popIn 0.3s ease",
+              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":isTutTarget?"0 0 0 3px rgba(96,165,250,0.4), 0 4px 16px rgba(96,165,250,0.3)":"none",
+              animation:isTutTarget?"popIn 0.3s ease":"popIn 0.3s ease",
             }}>{n.label}</div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -1411,10 +1508,32 @@ export default function App() {
         <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>
           {["+","−","×","÷","^","√","ʸ√","!"].map(op=>{
             const allowed=DIFFICULTY[difficulty].ops.includes(op);
+            const isTutTarget = tutorialStep>=0
+              && tutorialStep<TUTORIAL_STEPS.length
+              && TUTORIAL_STEPS[tutorialStep].type==="op"
+              && op===TUTORIAL_STEPS[tutorialStep].target;
             return (
-              <div key={op} style={{position:"relative"}}>
+              <div key={op} style={{
+                position:"relative",
+                filter:isTutTarget?"drop-shadow(0 0 8px rgba(96,165,250,0.9))":"none",
+                transform:isTutTarget?"scale(1.18)":"scale(1)",
+                transition:"all 0.2s",
+              }}>
                 <OpBtn op={op} active={operator===op} onClick={()=>{
                   if (!allowed) return;
+                  // In tutorial: only allow the highlighted operator
+                  if (tutorialStep>=0) {
+                    const step=TUTORIAL_STEPS[tutorialStep];
+                    if (step.type!=="op") return;
+                    if (op!==step.target) {
+                      setMessage({text:`👆 Tap  ${step.target}  now!`,type:"bad"});
+                      return;
+                    }
+                    setOperator(op);
+                    setMessage({text:"",type:""});
+                    setTutorialStep(s=>s+1);
+                    return;
+                  }
                   if (op==="!" && selectedIdx!==null) {
                     applyFactorial(selectedIdx);
                   } else if (op==="√" && selectedIdx!==null) {

@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Game 24",
+  "name": "Game 24 / 24点 — The Math Card Game",
+  "description": "Free bilingual math card game for kids and families! Use 4 cards to make 24.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,9 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#0f3460",
+  "background_color": "#1a1a2e",
+  "orientation": "portrait",
+  "lang": "en-SG",
+  "categories": ["games", "education"]
 }

@@ -1973,8 +1973,16 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
   async function handleShare() {
     setSharing(true);
     try {
-      const html2canvas = (await import('https://esm.sh/html2canvas@1.4.1')).default;
-      const canvas = await html2canvas(shareCardRef.current, {
+      // Load html2canvas via script tag if not already loaded
+      await new Promise((resolve, reject) => {
+        if (window.html2canvas) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      const canvas = await window.html2canvas(shareCardRef.current, {
         backgroundColor: null,
         scale: 2,
         logging: false,
@@ -1989,7 +1997,6 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
             files: [file],
           });
         } else {
-          // Fallback: download the image
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;

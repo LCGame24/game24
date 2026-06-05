@@ -212,9 +212,9 @@ const BATTLE_BADGES = [
 ];
 
 const ROBOT_SPEED = {
-  Easy:   { minThinkTime: 35, solveChance: 0.08, label:"Easy",   labelZh:"简单", color:"#34d399", desc:"Slow thinker (~47s avg)",   descZh:"反应迟缓（约47秒）" },
-  Medium: { minThinkTime: 25, solveChance: 0.10, label:"Medium", labelZh:"中等", color:"#f59e0b", desc:"Quick mind (~35s avg)",      descZh:"反应一般（约35秒）" },
-  Hard:   { minThinkTime: 15, solveChance: 0.15, label:"Hard",   labelZh:"困难", color:"#ef4444", desc:"Sharp focus (~21s avg)",    descZh:"反应敏锐（约21秒）" },
+  Easy:   { minThinkTime: 35, solveChance: 0.08, label:"Easy",   labelZh:"简单", labelFr:"Facile",    color:"#34d399", desc:"Slow thinker (~47s avg)",   descZh:"反应迟缓（约47秒）" },
+  Medium: { minThinkTime: 25, solveChance: 0.10, label:"Medium", labelZh:"中等", labelFr:"Moyen",     color:"#f59e0b", desc:"Quick mind (~35s avg)",      descZh:"反应一般（约35秒）" },
+  Hard:   { minThinkTime: 15, solveChance: 0.15, label:"Hard",   labelZh:"困难", labelFr:"Difficile", color:"#ef4444", desc:"Sharp focus (~21s avg)",    descZh:"反应敏锐（约21秒）" },
 };
 
 function loadBattleBadges() {
@@ -865,7 +865,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
               width:"100%",padding:"10px",borderRadius:12,
               border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
               color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-            }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
+            }}>← {lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Back to Main Menu"}</button>
           </div>
         </div>
       )}
@@ -1003,7 +1003,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
             background:"rgba(255,255,255,0.04)",color:"#94a3b8",
             fontSize:14,fontWeight:600,cursor:"pointer",
-          }}>🏆 {lang==="zh"?"排行榜":"Leaderboard"}</button>
+          }}>🏆 {lang==="zh"?"排行榜":lang==="fr"?"Classement":"Leaderboard"}</button>
           <button onClick={()=>setShowBadges(true)} style={{
             flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
             background:"rgba(255,255,255,0.04)",color:"#94a3b8",
@@ -1015,7 +1015,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
           border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
           color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-        }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
+        }}>← {lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Back to Main Menu"}</button>
 
         {/* Badges Modal */}
         {showBadges&&(
@@ -1029,7 +1029,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
                 <h2 style={{color:"white",fontSize:20,fontWeight:900,margin:"4px 0"}}>
                   {lang==="zh"?"成就徽章":"Achievement Badges"}
                 </h2>
-                <div style={{color:"#64748b",fontSize:12}}>{badges.length}/{BADGES.length} {lang==="zh"?"已解锁":"unlocked"}</div>
+                <div style={{color:"#64748b",fontSize:12}}>{badges.length}/{BADGES.length} {lang==="zh"?"已解锁":lang==="fr"?"debloque":"unlocked"}</div>
               </div>
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
                 {BADGES.map(badge=>{
@@ -1043,7 +1043,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
                     }}>
                       <div style={{fontSize:22,marginBottom:2}}>{earned?badge.icon:"🔒"}</div>
                       <div style={{color:earned?"#f6d365":"#475569",fontSize:12,fontWeight:700}}>
-                        {lang==="zh"?badge.zh:badge.en}
+                        {lang==="zh"?badge.zh:lang==="fr"?(badge.fr||badge.en):badge.en}
                       </div>
                     </div>
                   );
@@ -1053,7 +1053,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
                 width:"100%",padding:"12px",borderRadius:12,border:"none",
                 background:"linear-gradient(135deg,#f6d365,#fda085)",
                 color:"#1a1a2e",fontSize:14,fontWeight:800,cursor:"pointer",
-              }}>{lang==="zh"?"关闭":"Close"}</button>
+              }}>{lang==="zh"?"关闭":lang==="fr"?"Fermer":"Close"}</button>
             </div>
           </div>
         )}
@@ -1068,12 +1068,12 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
               <div style={{textAlign:"center",marginBottom:16}}>
                 <div style={{fontSize:36}}>🏆</div>
                 <h2 style={{color:"white",fontSize:20,fontWeight:900,margin:"4px 0"}}>
-                  {lang==="zh"?"排行榜":"Leaderboard"}
+                  {lang==="zh"?"排行榜":lang==="fr"?"Classement":"Leaderboard"}
                 </h2>
               </div>
               {leaderboard.length===0?(
                 <p style={{color:"#475569",textAlign:"center",fontSize:14}}>
-                  {lang==="zh"?"暂无记录，快去挑战吧！":"No scores yet — play to get on the board!"}
+                  {lang==="zh"?"暂无记录，快去挑战吧！":lang==="fr"?"Pas encore de scores !":"No scores yet — play to get on the board!"}
                 </p>
               ):(
                 leaderboard.map((entry,i)=>(
@@ -1100,13 +1100,13 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
                   width:"100%",padding:"8px",borderRadius:10,marginTop:8,
                   border:"1px solid #ef4444",background:"transparent",
                   color:"#ef4444",fontSize:12,cursor:"pointer",
-                }}>{lang==="zh"?"清除记录":"Clear All Scores"}</button>
+                }}>{lang==="zh"?"清除记录":lang==="fr"?"Effacer les scores":"Clear All Scores"}</button>
               )}
               <button onClick={()=>setShowLB(false)} style={{
                 width:"100%",padding:"12px",borderRadius:12,border:"none",marginTop:10,
                 background:"linear-gradient(135deg,#f6d365,#fda085)",
                 color:"#1a1a2e",fontSize:14,fontWeight:800,cursor:"pointer",
-              }}>{lang==="zh"?"关闭":"Close"}</button>
+              }}>{lang==="zh"?"关闭":lang==="fr"?"Fermer":"Close"}</button>
             </div>
           </div>
         )}
@@ -1215,7 +1215,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       const step = jrTutSteps[jrTutStep];
       if (step.type!=="number") return;
       if (numbers[idx].label!==step.target) {
-        setMessage({text:lang==="zh"?`👆 点击  ${step.target}  ！`:`👆 Tap  ${step.target}  !`,type:"bad"});
+        setMessage({text:lang==="zh"?`👆 点击  ${step.target}  ！`:`👆 ${lang==="fr"?"Appuyez":"Tap"}  ${step.target}  !`,type:"bad"});
         return;
       }
       if (!step.isSecond) {
@@ -1250,7 +1250,7 @@ function JuniorScreen({lang, setLang, onBack}) {
     else if (op==="×") result=a*b;
     else if (op==="÷") {
       if (Math.abs(b)<1e-9||Math.abs((a/b)-Math.round(a/b))>1e-9) {
-        setMessage({text:lang==="zh"?"不能整除哦！":"That doesn't divide evenly!",type:"bad"});
+        setMessage({text:lang==="zh"?"不能整除哦！":lang==="fr"?"La division n'est pas entiere !":"That doesn't divide evenly!",type:"bad"});
         return;
       }
       result=a/b;
@@ -1266,7 +1266,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       if (Math.abs(result-jl.target)<1e-9) {
         handleJuniorSolve();
       } else {
-        setMessage({text:lang==="zh"?`结果是${result}，不是${jl.target}，再试试！`:`Got ${result}, not ${jl.target} — try resetting!`,type:"bad"});
+        setMessage({text:lang==="zh"?`结果是${result}，不是${jl.target}，再试试！`:`${lang==="fr"?`Resultat ${result}, pas ${jl.target} — reessayez !`:`Got ${result}, not ${jl.target} — try resetting!`}`,type:"bad"});
       }
     } else {
       setMessage({text:`✓ ${expr}`,type:"step"});
@@ -1348,7 +1348,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       setJrHint(solution.join(" → "));
     } else {
       // No solution from current state — suggest reset
-      setJrHint(lang==="zh"?"点击重置再试试！":"Tap Reset and try again!");
+      setJrHint(lang==="zh"?"点击重置再试试！":lang==="fr"?"Reinitialiser et reessayer !":"Tap Reset and try again!");
     }
   }
 
@@ -1380,10 +1380,10 @@ function JuniorScreen({lang, setLang, onBack}) {
 
       <div style={{fontSize:48,marginBottom:4}}>🌟</div>
       <h1 style={{fontSize:32,fontWeight:900,margin:"0 0 4px",color:"#34d399"}}>
-        {lang==="zh"?"儿童模式":"Junior Mode"}
+        {lang==="zh"?"儿童模式":lang==="fr"?"Mode Junior":"Junior Mode"}
       </h1>
       <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>
-        {lang==="zh"?"适合 5-12 岁":"Ages 5–12"}
+        {lang==="zh"?"适合 5-12 岁":lang==="fr"?"5–12 ans":"Ages 5–12"}
       </p>
 
       <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
@@ -1392,15 +1392,15 @@ function JuniorScreen({lang, setLang, onBack}) {
         {/* Name */}
         <div style={{marginBottom:20}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
-            {lang==="zh"?"你的名字":"Your Name"}
+            {lang==="zh"?"你的名字":lang==="fr"?"Votre nom":"Your Name"}
           </div>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder={lang==="zh"?"输入名字":"Enter your name"}/>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder={lang==="zh"?"输入名字":lang==="fr"?"Entrez votre nom":"Enter your name"}/>
         </div>
 
         {/* Level */}
         <div style={{marginBottom:20}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
-            {lang==="zh"?"选择等级":"Choose Level"}
+            {lang==="zh"?"选择等级":lang==="fr"?"Choisir le niveau":"Choose Level"}
           </div>
           <div style={{display:"flex",gap:8}}>
             {Object.entries(JUNIOR_LEVELS).map(([key,jl])=>(
@@ -1411,9 +1411,9 @@ function JuniorScreen({lang, setLang, onBack}) {
                 fontWeight:800,fontSize:13,cursor:"pointer",transition:"all 0.2s",
               }}>
                 <div style={{fontSize:20,marginBottom:4}}>{key}</div>
-                <div>{lang==="zh"?jl.zh:jl.en}</div>
-                <div style={{fontSize:10,marginTop:2,opacity:0.8}}>{lang==="zh"?"数字":"Cards"} {jl.cardNote}</div>
-                <div style={{fontSize:10,opacity:0.8}}>{lang==="zh"?"目标":"Target"} {jl.target}</div>
+                <div>{lang==="zh"?jl.zh:lang==="fr"?(jl.fr||jl.en):jl.en}</div>
+                <div style={{fontSize:10,marginTop:2,opacity:0.8}}>{lang==="zh"?"数字":lang==="fr"?"Cartes":"Cards"} {jl.cardNote}</div>
+                <div style={{fontSize:10,opacity:0.8}}>{lang==="zh"?"目标":lang==="fr"?"Cible":"Target"} {jl.target}</div>
               </button>
             ))}
           </div>
@@ -1422,7 +1422,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         {/* Rounds */}
         <div style={{marginBottom:20}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
-            {lang==="zh"?"题目数量":"Number of Rounds"}
+            {lang==="zh"?"题目数量":lang==="fr"?"Nombre de manches":"Number of Rounds"}
           </div>
           <div style={{display:"flex",gap:8}}>
             {[3,5,8,10].map(r=>(
@@ -1441,24 +1441,24 @@ function JuniorScreen({lang, setLang, onBack}) {
           background:"linear-gradient(135deg,#34d399,#059669)",
           color:"white",fontSize:16,fontWeight:800,cursor:"pointer",
           boxShadow:"0 4px 20px rgba(52,211,153,0.4)",marginBottom:10,
-        }}>🌟 {lang==="zh"?"开始游戏！":"Let's Play!"}</button>
+        }}>🌟 {lang==="zh"?"开始游戏！":lang==="fr"?"Jouons !":"Let's Play!"}</button>
 
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>setShowLB(true)} style={{
             flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
             background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-          }}>🏆 {lang==="zh"?"排行榜":"Leaderboard"}</button>
+          }}>🏆 {lang==="zh"?"排行榜":lang==="fr"?"Classement":"Leaderboard"}</button>
           <button onClick={()=>setShowBadges(true)} style={{
             flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
             background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-          }}>🎖️ {lang==="zh"?"成就":"Badges"} {juniorBadges.length>0?`(${juniorBadges.length})`:""}</button>
+          }}>🎖️ {lang==="zh"?"成就":lang==="fr"?"Badges":"Badges"} {juniorBadges.length>0?`(${juniorBadges.length})`:""}</button>
         </div>
 
         <button onClick={onBack} style={{
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
           border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
           color:"#64748b",fontSize:13,cursor:"pointer",
-        }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
+        }}>← {lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Back to Main Menu"}</button>
       </div>
 
       {/* Leaderboard Modal */}
@@ -1471,12 +1471,12 @@ function JuniorScreen({lang, setLang, onBack}) {
             <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:36}}>🏆</div>
               <h2 style={{color:"#34d399",fontSize:20,fontWeight:900,margin:"4px 0"}}>
-                {lang==="zh"?"儿童排行榜":"Junior Leaderboard"}
+                {lang==="zh"?"儿童排行榜":lang==="fr"?"Classement Junior":"Junior Leaderboard"}
               </h2>
             </div>
             {juniorLB.length===0?(
               <p style={{color:"#475569",textAlign:"center",fontSize:14}}>
-                {lang==="zh"?"暂无记录！":"No scores yet — play to get on the board!"}
+                {lang==="zh"?"暂无记录！":lang==="fr"?"Pas encore de scores !":"No scores yet — play to get on the board!"}
               </p>
             ):(
               juniorLB.map((entry,i)=>(
@@ -1497,7 +1497,7 @@ function JuniorScreen({lang, setLang, onBack}) {
               width:"100%",padding:"12px",borderRadius:12,border:"none",marginTop:8,
               background:"linear-gradient(135deg,#34d399,#059669)",
               color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
-            }}>{lang==="zh"?"关闭":"Close"}</button>
+            }}>{lang==="zh"?"关闭":lang==="fr"?"Fermer":"Close"}</button>
           </div>
         </div>
       )}
@@ -1512,9 +1512,9 @@ function JuniorScreen({lang, setLang, onBack}) {
             <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:36}}>🎖️</div>
               <h2 style={{color:"#34d399",fontSize:20,fontWeight:900,margin:"4px 0"}}>
-                {lang==="zh"?"儿童成就":"Junior Badges"}
+                {lang==="zh"?"儿童成就":lang==="fr"?"Badges Junior":"Junior Badges"}
               </h2>
-              <div style={{color:"#64748b",fontSize:12}}>{juniorBadges.length}/{JUNIOR_BADGES.length} {lang==="zh"?"已解锁":"unlocked"}</div>
+              <div style={{color:"#64748b",fontSize:12}}>{juniorBadges.length}/{JUNIOR_BADGES.length} {lang==="zh"?"已解锁":lang==="fr"?"debloque":"unlocked"}</div>
             </div>
             <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
               {JUNIOR_BADGES.map(badge=>{
@@ -1528,7 +1528,7 @@ function JuniorScreen({lang, setLang, onBack}) {
                   }}>
                     <div style={{fontSize:22,marginBottom:2}}>{earned?badge.icon:"🔒"}</div>
                     <div style={{color:earned?"#34d399":"#475569",fontSize:12,fontWeight:700}}>
-                      {lang==="zh"?badge.zh:badge.en}
+                      {lang==="zh"?badge.zh:lang==="fr"?(badge.fr||badge.en):badge.en}
                     </div>
                   </div>
                 );
@@ -1538,7 +1538,7 @@ function JuniorScreen({lang, setLang, onBack}) {
               width:"100%",padding:"12px",borderRadius:12,border:"none",
               background:"linear-gradient(135deg,#34d399,#059669)",
               color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
-            }}>{lang==="zh"?"关闭":"Close"}</button>
+            }}>{lang==="zh"?"关闭":lang==="fr"?"Fermer":"Close"}</button>
           </div>
         </div>
       )}
@@ -1587,10 +1587,10 @@ function JuniorScreen({lang, setLang, onBack}) {
               <div style={{fontSize:28}}>{badge.icon}</div>
               <div>
                 <div style={{color:"#34d399",fontWeight:800,fontSize:13}}>
-                  {lang==="zh"?"新成就解锁！":"Badge Unlocked!"}
+                  {lang==="zh"?"新成就解锁！":lang==="fr"?"Badge debloque !":"Badge Unlocked!"}
                 </div>
                 <div style={{color:"white",fontWeight:700,fontSize:14}}>
-                  {lang==="zh"?badge.zh:badge.en}
+                  {lang==="zh"?badge.zh:lang==="fr"?(badge.fr||badge.en):badge.en}
                 </div>
               </div>
             </div>
@@ -1655,22 +1655,22 @@ function JuniorScreen({lang, setLang, onBack}) {
             padding:28,maxWidth:320,width:"100%",textAlign:"center"}}>
             <div style={{fontSize:40,marginBottom:12}}>🏠</div>
             <h3 style={{color:"white",fontSize:18,fontWeight:900,margin:"0 0 8px"}}>
-              {lang==="zh"?"离开游戏？":"Leave game?"}
+              {lang==="zh"?"离开游戏？":lang==="fr"?"Quitter le jeu ?":"Leave game?"}
             </h3>
             <p style={{color:"#64748b",fontSize:13,marginBottom:24}}>
-              {lang==="zh"?"当前进度将会丢失。":"Your progress will be lost."}
+              {lang==="zh"?"当前进度将会丢失。":lang==="fr"?"Votre progression sera perdue.":"Your progress will be lost."}
             </p>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setShowJrLeaveConfirm(false)} style={{
                 flex:1,padding:"12px",borderRadius:12,
                 border:"1px solid rgba(255,255,255,0.15)",background:"transparent",
                 color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer",
-              }}>{lang==="zh"?"取消":"Cancel"}</button>
+              }}>{lang==="zh"?"取消":lang==="fr"?"Annuler":"Cancel"}</button>
               <button onClick={()=>{setShowJrLeaveConfirm(false);setScreen("setup");}} style={{
                 flex:1,padding:"12px",borderRadius:12,border:"none",
                 background:"linear-gradient(135deg,#ef4444,#b91c1c)",
                 color:"white",fontSize:14,fontWeight:700,cursor:"pointer",
-              }}>{lang==="zh"?"离开":"Yes, leave"}</button>
+              }}>{lang==="zh"?"离开":lang==="fr"?"Oui, quitter":"Yes, leave"}</button>
             </div>
           </div>
         </div>
@@ -1682,28 +1682,28 @@ function JuniorScreen({lang, setLang, onBack}) {
         borderRadius:14,padding:"8px 18px",flexWrap:"wrap",justifyContent:"center"}}>
         <div style={{textAlign:"center"}}>
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
-            {lang==="zh"?"轮次":"Round"}
+            {lang==="zh"?"轮次":lang==="fr"?"Manche":"Round"}
           </div>
           <div style={{color:"white",fontWeight:800,fontSize:18}}>{round}/{rounds}</div>
         </div>
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
         <div style={{textAlign:"center"}}>
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
-            {lang==="zh"?"得分":"Score"}
+            {lang==="zh"?"得分":lang==="fr"?"Score":"Score"}
           </div>
           <div style={{color:"#34d399",fontWeight:800,fontSize:18}}>{score}</div>
         </div>
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
         <div style={{textAlign:"center"}}>
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
-            {lang==="zh"?"连胜":"Streak"}
+            {lang==="zh"?"连胜":lang==="fr"?"Serie":"Streak"}
           </div>
           <div style={{color:"#f472b6",fontWeight:800,fontSize:18}}>🔥{streak}</div>
         </div>
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
         <div style={{textAlign:"center"}}>
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
-            {lang==="zh"?"目标":"Target"}
+            {lang==="zh"?"目标":lang==="fr"?"Cible":"Target"}
           </div>
           <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{jl.target}</div>
         </div>
@@ -1715,7 +1715,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         borderRadius:16,padding:"8px 24px",marginBottom:16,textAlign:"center",
       }}>
         <div style={{color:"#f6d365",fontWeight:900,fontSize:22}}>
-          {lang==="zh"?`目标 = ${jl.target} 🎯`:`Make  ${jl.target}! 🎯`}
+          {lang==="zh"?`目标 = ${jl.target} 🎯`:`${lang==="fr"?"Faire":"Make"}  ${jl.target}! 🎯`}
         </div>
       </div>
 
@@ -1751,7 +1751,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       {/* Number pool */}
       <div style={{marginBottom:14,textAlign:"center"}}>
         <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
-          {lang==="zh"?"可用数字":"Available Numbers"}
+          {lang==="zh"?"可用数字":lang==="fr"?"Nombres disponibles":"Available Numbers"}
         </div>
         <div style={{display:"flex",gap:10,justifyContent:"center"}}>
           {numbers.map((n,i)=>{
@@ -1789,7 +1789,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           boxShadow:"0 0 0 4px rgba(52,211,153,0.15)",
         }}>
           <div style={{fontSize:14,color:"white",fontWeight:700,lineHeight:1.6}}>
-            {lang==="zh"?jrTutSteps[jrTutStep].bubbleZh:jrTutSteps[jrTutStep].bubble}
+            {lang==="zh"?jrTutSteps[jrTutStep].bubbleZh:lang==="fr"?(jrTutSteps[jrTutStep].bubbleFr||jrTutSteps[jrTutStep].bubble):jrTutSteps[jrTutStep].bubble}
           </div>
           <div style={{marginTop:8,display:"flex",gap:4,justifyContent:"center"}}>
             {jrTutSteps.map((_,i)=>(
@@ -1803,7 +1803,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           <button onClick={()=>{saveJrTutorialDone(level);setJrTutStep(-1);dealJuniorCards();}} style={{
             marginTop:10,background:"transparent",border:"1px solid rgba(52,211,153,0.3)",
             borderRadius:8,padding:"4px 12px",color:"#64748b",fontSize:11,cursor:"pointer",
-          }}>{lang==="zh"?"跳过教程":"Skip tutorial"}</button>
+          }}>{lang==="zh"?"跳过教程":lang==="fr"?"Passer le tutoriel":"Skip tutorial"}</button>
         </div>
       )}
 
@@ -1826,7 +1826,7 @@ function JuniorScreen({lang, setLang, onBack}) {
                     const step=jrTutSteps[jrTutStep];
                     if (step.type!=="op") return;
                     if (op!==step.target) {
-                      setMessage({text:lang==="zh"?`👆 点击  ${step.target}  ！`:`👆 Tap  ${step.target}  !`,type:"bad"});
+                      setMessage({text:lang==="zh"?`👆 点击  ${step.target}  ！`:`👆 ${lang==="fr"?"Appuyez":"Tap"}  ${step.target}  !`,type:"bad"});
                       return;
                     }
                     setOperator(op);
@@ -1857,7 +1857,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           borderRadius:12,padding:"10px 16px",marginBottom:12,width:"100%",maxWidth:320}}>
           {steps.map((s,i)=>(
             <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
+              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>
@@ -1876,7 +1876,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       {/* Instruction */}
       {!turnOver&&selectedIdx===null&&(
         <div style={{color:"#334155",fontSize:12,textAlign:"center",marginBottom:10}}>
-          {lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":"Tap a number → tap an operator → tap another number"}
+          {lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":lang==="fr"?"Appuyez nombre → operateur → nombre":"Tap a number → tap an operator → tap another number"}
         </div>
       )}
 
@@ -1889,7 +1889,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           animation:"popIn 0.3s ease",
         }}>
           <div style={{color:"#c4b5fd",fontWeight:700,fontSize:12,marginBottom:6}}>
-            💡 {lang==="zh"?"答案提示：":"Here's how:"}
+            💡 {lang==="zh"?"答案提示：":lang==="fr"?"Voici comment :":"Here's how:"}
           </div>
           <div style={{color:"white",fontWeight:800,fontSize:14,lineHeight:1.6}}>
             {jrHint}
@@ -1984,7 +1984,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           </div>
           <div>
             <div style={{color:"#f472b6",fontWeight:900,fontSize:36}}>🔥{streak}</div>
-            <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"连胜":"Streak"}</div>
+            <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"连胜":lang==="fr"?"Serie":"Streak"}</div>
           </div>
           <div>
             <div style={{color:"#f6d365",fontWeight:900,fontSize:36}}>{solvedRounds}</div>
@@ -2021,7 +2021,7 @@ function JuniorScreen({lang, setLang, onBack}) {
             {"Game 24 | 24点"}
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
-            {lang==="zh"?"儿童模式":"Junior Mode"} · {level}
+            {lang==="zh"?"儿童模式":lang==="fr"?"Mode Junior":"Junior Mode"} · {level}
           </div>
         </div>
 
@@ -2045,7 +2045,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           <div style={{display:"flex",gap:12,justifyContent:"center"}}>
             <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
               <div style={{color:"#f472b6",fontWeight:900,fontSize:20}}>🔥{streak}</div>
-              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"连胜":"Streak"}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"连胜":lang==="fr"?"Serie":"Streak"}</div>
             </div>
             <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
               <div style={{color:"#f6d365",fontWeight:900,fontSize:20}}>{solvedRounds}/{rounds}</div>
@@ -2104,12 +2104,12 @@ function JuniorScreen({lang, setLang, onBack}) {
         <button onClick={()=>{setScreen("setup");setScore(0);setStreak(0);setRound(1);setSolvedRounds(0);}} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",
           borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer",
-        }}>{lang==="zh"?"再玩一次":"Play Again"}</button>
+        }}>{lang==="zh"?"再玩一次":lang==="fr"?"Rejouer":"Play Again"}</button>
         <button onClick={onBack} style={{
           background:"linear-gradient(135deg,#34d399,#059669)",
           border:"none",borderRadius:12,padding:"12px 20px",
           color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
-        }}>{lang==="zh"?"返回主菜单":"Main Menu"}</button>
+        }}>{lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Main Menu"}</button>
       </div>
 
       {/* Share button */}
@@ -2209,7 +2209,7 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
             {/* Mini number pool visual */}
             <div style={{marginBottom:12,textAlign:"center"}}>
               <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
-                {lang==="zh"?"可用数字":"Available Numbers"}
+                {lang==="zh"?"可用数字":lang==="fr"?"Nombres disponibles":"Available Numbers"}
               </div>
               <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
                 {ds.numbers.map((n,i)=>{
@@ -2384,16 +2384,16 @@ function BattleScreen({ lang, setLang, onBack }) {
     if (ab.id==="hint") {
       const steps = getHintSteps(numbers);
       if (steps&&steps.length>0) { setHintText(steps[0].expr); setTimeout(()=>setHintText(null),5000); }
-      flashAbility("💡", lang==="zh"?"提示已激活！":"Hint activated!");
+      flashAbility("💡", lang==="zh"?"提示已激活！":lang==="fr"?"Indice active !":"Hint activated!");
     } else if (ab.id==="double") {
       setDoubleDmg(true);
-      flashAbility("💥", lang==="zh"?"双倍伤害！":"Double damage!");
+      flashAbility("💥", lang==="zh"?"双倍伤害！":lang==="fr"?"Double degats !":"Double damage!");
     } else if (ab.id==="hack") {
       hackPenaltyRef.current += 4;
       setHackActive(true);
       setRobotState("hack");
       setTimeout(()=>{setHackActive(false);setRobotState("thinking");}, 4000);
-      flashAbility("👾", lang==="zh"?"黑客攻击！":"Hacking robot!");
+      flashAbility("👾", lang==="zh"?"黑客攻击！":lang==="fr"?"Piratage du robot !":"Hacking robot!");
     } else if (ab.id==="cancel") {
       const removable = ALL_OPS.filter(op=>op!=="+"&&op!==cancelledOp);
       if (removable.length>0) {
@@ -2403,10 +2403,10 @@ function BattleScreen({ lang, setLang, onBack }) {
       }
     } else if (ab.id==="switch") {
       hackPenaltyRef.current += 4; robotElapsedRef.current = 0;
-      flashAbility("🔄", lang==="zh"?"机器人进度已重置！":"Robot reset!");
+      flashAbility("🔄", lang==="zh"?"机器人进度已重置！":lang==="fr"?"Robot reinitialise !":"Robot reset!");
     } else if (ab.id==="shield") {
       setShield(true);
-      flashAbility("🛡️", lang==="zh"?"护盾已激活！":"Shield up!");
+      flashAbility("🛡️", lang==="zh"?"护盾已激活！":lang==="fr"?"Bouclier actif !":"Shield up!");
     }
   }
 
@@ -2558,17 +2558,17 @@ function BattleScreen({ lang, setLang, onBack }) {
       <style>{`@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
-        <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":"Battle Mode"}</h1>
+        <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h1>
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>{lang==="zh"?"「你的大脑就是你的武器」":"\"Your brain is your weapon\""}</p>
         <LangSwitcher lang={lang} setLang={setLang}/>
       </div>
       <div style={{width:"100%",maxWidth:360,animation:"fadeIn 0.4s ease"}}>
         <div style={{marginBottom:16}}>
-          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"你的名字":"Your Name"}</div>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"你的名字":lang==="fr"?"Votre nom":"Your Name"}</div>
           <input value={playerName} onChange={e=>setPlayerName(e.target.value||"Player")} placeholder="Player" style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,color:"white",padding:"10px 14px",fontSize:15,width:"100%",boxSizing:"border-box",outline:"none"}}/>
         </div>
         <div style={{marginBottom:16}}>
-          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{lang==="zh"?"机器人难度":"Robot Difficulty"}</div>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{lang==="zh"?"机器人难度":lang==="fr"?"Difficulte du robot":"Robot Difficulty"}</div>
           <div style={{display:"flex",gap:8}}>
             {Object.entries(ROBOT_SPEED).map(([key,val])=>(
               <button key={key} onClick={()=>setRobotDiff(key)} style={{flex:1,padding:"10px 6px",borderRadius:14,border:"none",background:robotDiff===key?`${val.color}22`:"rgba(255,255,255,0.05)",outline:robotDiff===key?`2px solid ${val.color}`:"2px solid transparent",color:robotDiff===key?val.color:"#64748b",fontWeight:800,fontSize:13,cursor:"pointer",transition:"all 0.2s"}}>
@@ -2580,7 +2580,7 @@ function BattleScreen({ lang, setLang, onBack }) {
           </div>
         </div>
         <div style={{marginBottom:16,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:14,padding:"10px 14px"}}>
-          <div style={{color:"#ef4444",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>⚡ {lang==="zh"?"每轮随机获得2个技能":"2 random abilities per round"}</div>
+          <div style={{color:"#ef4444",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>⚡ {lang==="zh"?"每轮随机获得2个技能":lang==="fr"?"2 capacites aleatoires par manche":"2 random abilities per round"}</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
             {ABILITIES.map(ab=>(
               <div key={ab.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"4px 8px",display:"flex",alignItems:"center",gap:5}}>
@@ -2596,15 +2596,15 @@ function BattleScreen({ lang, setLang, onBack }) {
           ))}
         </div>
         <div style={{marginBottom:16}}>
-          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length})</div>
+          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":lang==="fr"?"Badges Combat":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length})</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {BATTLE_BADGES.map(b=>(
               <div key={b.id} style={{background:battleBadges.includes(b.id)?"rgba(239,68,68,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${battleBadges.includes(b.id)?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"3px 7px",fontSize:11,color:battleBadges.includes(b.id)?"#fca5a5":"#334155"}}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
             ))}
           </div>
         </div>
-        <button onClick={startCountdown} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#ef4444,#b91c1c)",color:"white",fontSize:17,fontWeight:900,cursor:"pointer",boxShadow:"0 4px 24px rgba(239,68,68,0.4)",marginBottom:10,animation:"popIn 0.4s ease"}}>⚔️ {lang==="zh"?"开始对战！":"Start Battle!"}</button>
-        <button onClick={onBack} style={{width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#64748b",fontSize:14,fontWeight:700,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
+        <button onClick={startCountdown} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#ef4444,#b91c1c)",color:"white",fontSize:17,fontWeight:900,cursor:"pointer",boxShadow:"0 4px 24px rgba(239,68,68,0.4)",marginBottom:10,animation:"popIn 0.4s ease"}}>⚔️ {lang==="zh"?"开始对战！":lang==="fr"?"Commencer !":"Start Battle!"}</button>
+        <button onClick={onBack} style={{width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#64748b",fontSize:14,fontWeight:700,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
       </div>
     </div>
   );
@@ -2613,9 +2613,9 @@ function BattleScreen({ lang, setLang, onBack }) {
   if(phase==="countdown") return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif"}}>
       <style>{`@keyframes bigPop{0%{transform:scale(2);opacity:0}60%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}`}</style>
-      <div style={{fontSize:16,color:"#64748b",marginBottom:16,textTransform:"uppercase",letterSpacing:2}}>{lang==="zh"?"准备！":"Get ready!"}</div>
+      <div style={{fontSize:16,color:"#64748b",marginBottom:16,textTransform:"uppercase",letterSpacing:2}}>{lang==="zh"?"准备！":lang==="fr"?"Prets !":"Get ready!"}</div>
       <div key={countdown} style={{fontSize:110,fontWeight:900,color:"#ef4444",animation:"bigPop 0.6s ease",lineHeight:1}}>{countdown===0?"GO!":countdown}</div>
-      <div style={{marginTop:20,color:"#475569",fontSize:13}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":"Round "}{roundNum}</div>
+      <div style={{marginTop:20,color:"#475569",fontSize:13}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":lang==="fr"?"Manche ":"Round "}{roundNum}</div>
     </div>
   );
 
@@ -2624,18 +2624,18 @@ function BattleScreen({ lang, setLang, onBack }) {
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
       <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}} @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%,85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}`}</style>
       {showConfetti&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{Array.from({length:50}).map((_,i)=>{const c=["#ef4444","#f97316","#f6d365","#34d399","#60a5fa","#a78bfa"];return <div key={i} style={{position:"absolute",top:"-20px",left:`${Math.random()*100}%`,width:6+Math.random()*8,height:6+Math.random()*8,background:c[i%c.length],borderRadius:Math.random()>0.5?"50%":"2px",animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`}}/>;})}</div>}
-      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:b.en}</div></div></div></div>:null;})}
+      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":lang==="fr"?"Badge Combat !":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:b.en}</div></div></div></div>:null;})}
       <div style={{fontSize:64,animation:"trophy 1.5s ease infinite",marginBottom:8}}>{matchWinner==="player"?"🏆":"💀"}</div>
-      <h2 style={{fontSize:30,fontWeight:900,margin:"0 0 4px",background:matchWinner==="player"?"linear-gradient(90deg,#f6d365,#fda085,#f6d365)":"linear-gradient(90deg,#ef4444,#b91c1c,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{matchWinner==="player"?(lang==="zh"?"你赢了！🎉":"You Win! 🎉"):(lang==="zh"?"机器人赢了！":"Robot Wins!")}</h2>
-      <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":"Round "}{roundNum}</p>
+      <h2 style={{fontSize:30,fontWeight:900,margin:"0 0 4px",background:matchWinner==="player"?"linear-gradient(90deg,#f6d365,#fda085,#f6d365)":"linear-gradient(90deg,#ef4444,#b91c1c,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{matchWinner==="player"?(lang==="zh"?"你赢了！🎉":lang==="fr"?"Vous gagnez ! 🎉":"You Win! 🎉"):(lang==="zh"?"机器人赢了！":lang==="fr"?"Le robot gagne !":"Robot Wins!")}</h2>
+      <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":lang==="fr"?"Manche ":"Round "}{roundNum}</p>
       <div style={{display:"flex",gap:20,marginBottom:20,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 22px"}}>
         <div style={{textAlign:"center"}}><div style={{color:"#f6d365",fontSize:12,fontWeight:700,marginBottom:5}}>{playerName}</div><div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div></div>
         <div style={{color:"#334155",fontSize:22,display:"flex",alignItems:"center"}}>VS</div>
-        <div style={{textAlign:"center"}}><div style={{color:rs.color,fontSize:12,fontWeight:700,marginBottom:5}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div><div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div></div>
+        <div style={{textAlign:"center"}}><div style={{color:rs.color,fontSize:12,fontWeight:700,marginBottom:5}}>🤖 {lang==="zh"?rs.labelZh:lang==="fr"?(rs.labelFr||rs.label):rs.label}</div><div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div></div>
       </div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
-        <button onClick={()=>{setPhase("setup");setPlayerLives(BLIVES);setRobotLives(BLIVES);setPlayerLivesLost(0);setRoundNum(1);setMatchWinner(null);setNewBattleBadges([]);setDoubleDmg(false);setShield(false);setRobotDoubleDmg(false);}} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 22px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>⚔️ {lang==="zh"?"再战一局":"Play Again"}</button>
-        <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"14px 22px",color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
+        <button onClick={()=>{setPhase("setup");setPlayerLives(BLIVES);setRobotLives(BLIVES);setPlayerLivesLost(0);setRoundNum(1);setMatchWinner(null);setNewBattleBadges([]);setDoubleDmg(false);setShield(false);setRobotDoubleDmg(false);}} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 22px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>⚔️ {lang==="zh"?"再战一局":lang==="fr"?"Rejouer":"Play Again"}</button>
+        <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"14px 22px",color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
       </div>
     </div>
   );
@@ -2687,7 +2687,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:420,marginBottom:8}}>
-        <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":"Battle Mode"}</h2>
+        <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
         <div style={{display:"flex",gap:6}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
@@ -2724,7 +2724,7 @@ function BattleScreen({ lang, setLang, onBack }) {
           {/* Timer centre */}
           <div style={{textAlign:"center",padding:"0 10px"}}>
             <div style={{color:"#475569",fontSize:9,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>
-              {lang==="zh"?"第":"Rnd "}{roundNum}
+              {lang==="zh"?"第":lang==="fr"?"Man. ":"Rnd "}{roundNum}
             </div>
             <div style={{
               color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",
@@ -2743,7 +2743,7 @@ function BattleScreen({ lang, setLang, onBack }) {
           {/* Robot side */}
           <div style={{flex:1,textAlign:"right"}}>
             <div style={{color:rs.color,fontSize:11,fontWeight:800,marginBottom:4}}>
-              🤖 {lang==="zh"?rs.labelZh:rs.label}{robotDoubleDmg?" 💥":""}
+              🤖 {lang==="zh"?rs.labelZh:lang==="fr"?(rs.labelFr||rs.label):rs.label}{robotDoubleDmg?" 💥":""}
             </div>
             <div style={{display:"flex",gap:3,justifyContent:"flex-end"}}>
               {Array.from({length:BLIVES}).map((_,i)=>(
@@ -2795,10 +2795,10 @@ function BattleScreen({ lang, setLang, onBack }) {
               transition:"color 0.3s",
             }}>
               {robotSolved?(lang==="zh"?"✓ 解出了！":"✓ Solved!"):
-               robotState==="hack"?(lang==="zh"?"系统错误...":"SYSTEM ERROR..."):
-               (lang==="zh"?"正在思考...":"Thinking...")}
+               robotState==="hack"?(lang==="zh"?"系统错误...":lang==="fr"?"ERREUR SYSTEME...":"SYSTEM ERROR..."):
+               (lang==="zh"?"正在思考...":lang==="fr"?"Reflechit...":"Thinking...")}
             </div>
-            {cancelledOp&&<div style={{color:"#f59e0b",fontSize:10,fontWeight:700,marginTop:2}}>✂️ {cancelledOp} {lang==="zh"?"已取消":"cancelled"}</div>}
+            {cancelledOp&&<div style={{color:"#f59e0b",fontSize:10,fontWeight:700,marginTop:2}}>✂️ {cancelledOp} {lang==="zh"?"已取消":lang==="fr"?"annule":"cancelled"}</div>}
           </div>
 
           {/* Thinking dots */}
@@ -2825,7 +2825,7 @@ function BattleScreen({ lang, setLang, onBack }) {
       </div>
 
       {/* Hint */}
-      {hintText&&<div style={{width:"100%",maxWidth:420,marginBottom:8,background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",borderRadius:12,padding:"7px 14px",textAlign:"center",animation:"popIn 0.3s ease"}}><div style={{color:"#c4b5fd",fontSize:11,fontWeight:700,marginBottom:2}}>💡 {lang==="zh"?"提示 — 下一步：":"Hint — next step:"}</div><div style={{color:"#e9d5ff",fontSize:14,fontWeight:800}}>{hintText}</div></div>}
+      {hintText&&<div style={{width:"100%",maxWidth:420,marginBottom:8,background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",borderRadius:12,padding:"7px 14px",textAlign:"center",animation:"popIn 0.3s ease"}}><div style={{color:"#c4b5fd",fontSize:11,fontWeight:700,marginBottom:2}}>💡 {lang==="zh"?"提示 — 下一步：":lang==="fr"?"Indice — prochaine etape :":"Hint — next step:"}</div><div style={{color:"#e9d5ff",fontSize:14,fontWeight:800}}>{hintText}</div></div>}
 
       {/* Cards with 3D flip */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12,width:"fit-content"}}>
@@ -2863,22 +2863,22 @@ function BattleScreen({ lang, setLang, onBack }) {
       </div>
 
       {/* Steps */}
-      {steps.length>0&&<div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"7px 12px",marginBottom:8,width:"100%",maxWidth:360}}>{steps.map((s,i)=><div key={i} style={{color:"#94a3b8",fontSize:12,marginBottom:2}}><span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}</div>)}</div>}
+      {steps.length>0&&<div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"7px 12px",marginBottom:8,width:"100%",maxWidth:360}}>{steps.map((s,i)=><div key={i} style={{color:"#94a3b8",fontSize:12,marginBottom:2}}><span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}</div>)}</div>}
 
       {/* Nudges */}
-      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击数字→运算符→数字":"Tap number → operator → number"}</div>}
-      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:6}}>{lang==="zh"?"选择运算符 ↑":"Pick operator ↑"}</div>}
-      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击第二个数字 ↑":"Tap second number ↑"}</div>}
+      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击数字→运算符→数字":lang==="fr"?"Appuyez nombre → opérateur → nombre":"Tap number → operator → number"}</div>}
+      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:6}}>{lang==="zh"?"选择运算符 ↑":lang==="fr"?"Choisir opérateur ↑":"Pick operator ↑"}</div>}
+      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击第二个数字 ↑":lang==="fr"?"Deuxième nombre ↑":"Tap second number ↑"}</div>}
 
       {/* Message */}
       {message.text&&<div style={{background:`${msgColor}18`,border:`1px solid ${msgColor}`,borderRadius:12,padding:"8px 16px",marginBottom:8,color:msgColor,fontSize:14,fontWeight:700,textAlign:"center",animation:"popIn 0.3s ease",maxWidth:340}}>{message.text}</div>}
 
       {/* Abilities */}
       <div style={{width:"100%",maxWidth:420,marginBottom:8}}>
-        <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:5,textAlign:"center"}}>⚡ {lang==="zh"?"我的技能":"My Abilities"}</div>
+        <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:5,textAlign:"center"}}>⚡ {lang==="zh"?"我的技能":lang==="fr"?"Mes capacites":"My Abilities"}</div>
         <div style={{display:"flex",gap:8,justifyContent:"center"}}>
           {abilities.length===0
-            ?<div style={{color:"#334155",fontSize:12,padding:"8px 0"}}>{lang==="zh"?"技能已用完":"No abilities left"}</div>
+            ?<div style={{color:"#334155",fontSize:12,padding:"8px 0"}}>{lang==="zh"?"技能已用完":lang==="fr"?"Plus de capacites":"No abilities left"}</div>
             :abilities.map(ab=>(
               <button key={ab.id} onClick={()=>useAbility(ab)} style={{background:"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))",border:"2px solid rgba(239,68,68,0.4)",borderRadius:14,padding:"10px 14px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:80,transition:"all 0.2s"}}>
                 <div style={{fontSize:26}}>{ab.icon}</div>
@@ -3198,7 +3198,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         {/* Buttons */}
         <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:12}}>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer"}}>
-            🏠 {lang==="zh"?"返回主页":"Main Menu"}
+            🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}
           </button>
           <button onClick={handleShare} disabled={sharing} style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",border:"none",borderRadius:12,padding:"12px 20px",color:"white",fontSize:14,fontWeight:800,cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,boxShadow:"0 4px 20px rgba(59,130,246,0.35)"}}>
             {sharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share")}
@@ -3301,7 +3301,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         )}
         <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
         <div style={{textAlign:"center"}}>
-          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"连续":"Streak"}</div>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"连续":lang==="fr"?"Serie":"Streak"}</div>
           <div style={{color:"#f472b6",fontWeight:800,fontSize:18}}>🔥{streakNow.count}</div>
         </div>
       </div>
@@ -3353,14 +3353,14 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.steps}</div>
           {steps.map((s,i)=>(
             <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3,animation:"fadeSlide 0.3s ease"}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
+              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>
       )}
 
       {/* Instruction nudges */}
-      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:10}}>{lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":"Tap a number → tap an operator → tap another number"}</div>}
+      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:10}}>{lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":lang==="fr"?"Appuyez nombre → operateur → nombre":"Tap a number → tap an operator → tap another number"}</div>}
       {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请选择运算符 ↑":"Now pick an operator ↑"}</div>}
       {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请点击第二个数字 ↑":"Now tap the second number ↑"}</div>}
 
@@ -3921,10 +3921,10 @@ export default function App() {
               <div style={{fontSize:28}}>{badge.icon}</div>
               <div>
                 <div style={{color:"#f6d365",fontWeight:800,fontSize:13}}>
-                  {lang==="zh"?"新成就解锁！":"Badge Unlocked!"}
+                  {lang==="zh"?"新成就解锁！":lang==="fr"?"Badge debloque !":"Badge Unlocked!"}
                 </div>
                 <div style={{color:"white",fontWeight:700,fontSize:14}}>
-                  {lang==="zh"?badge.zh:badge.en}
+                  {lang==="zh"?badge.zh:lang==="fr"?(badge.fr||badge.en):badge.en}
                 </div>
               </div>
             </div>
@@ -3964,17 +3964,17 @@ export default function App() {
             padding:28,maxWidth:320,width:"100%",textAlign:"center"}}>
             <div style={{fontSize:40,marginBottom:12}}>🏠</div>
             <h3 style={{color:"white",fontSize:18,fontWeight:900,margin:"0 0 8px"}}>
-              {lang==="zh"?"离开游戏？":"Leave game?"}
+              {lang==="zh"?"离开游戏？":lang==="fr"?"Quitter le jeu ?":"Leave game?"}
             </h3>
             <p style={{color:"#64748b",fontSize:13,marginBottom:24}}>
-              {lang==="zh"?"当前进度将会丢失。":"Your progress will be lost."}
+              {lang==="zh"?"当前进度将会丢失。":lang==="fr"?"Votre progression sera perdue.":"Your progress will be lost."}
             </p>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setShowLeaveConfirm(false)} style={{
                 flex:1,padding:"12px",borderRadius:12,
                 border:"1px solid rgba(255,255,255,0.15)",background:"transparent",
                 color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer",
-              }}>{lang==="zh"?"取消":"Cancel"}</button>
+              }}>{lang==="zh"?"取消":lang==="fr"?"Annuler":"Cancel"}</button>
               <button onClick={()=>{
                 setShowLeaveConfirm(false);
                 setPaused(false);
@@ -3985,7 +3985,7 @@ export default function App() {
                 flex:1,padding:"12px",borderRadius:12,border:"none",
                 background:"linear-gradient(135deg,#ef4444,#b91c1c)",
                 color:"white",fontSize:14,fontWeight:700,cursor:"pointer",
-              }}>{lang==="zh"?"离开":"Yes, leave"}</button>
+              }}>{lang==="zh"?"离开":lang==="fr"?"Oui, quitter":"Yes, leave"}</button>
             </div>
           </div>
         </div>
@@ -4010,12 +4010,12 @@ export default function App() {
             border:"none",borderRadius:14,padding:"14px 36px",
             color:"#1a1a2e",fontSize:16,fontWeight:800,cursor:"pointer",
             boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginBottom:12,
-          }}>▶ {lang==="zh"?"继续游戏":"Resume"}</button>
+          }}>▶ {lang==="zh"?"继续游戏":lang==="fr"?"Reprendre":"Resume"}</button>
           <button onClick={()=>{setPaused(false);setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} style={{
             background:"transparent",border:"1px solid rgba(255,255,255,0.15)",
             borderRadius:14,padding:"10px 28px",
             color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer",
-          }}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
+          }}>🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
         </div>
       )}
 
@@ -4157,7 +4157,7 @@ export default function App() {
                   display:"block",width:"100%",padding:"7px 12px",
                   background:"transparent",border:"none",borderRadius:8,
                   color:"#94a3b8",fontWeight:600,fontSize:12,cursor:"pointer",textAlign:"left",
-                }}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
+                }}>🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
               </div>
             </div>
           )}
@@ -4224,7 +4224,7 @@ export default function App() {
           <button onClick={()=>{saveTutorialDone();setTutorialStep(-1);dealCards(deck,difficulty);}} style={{
             marginTop:10,background:"transparent",border:"1px solid rgba(96,165,250,0.3)",
             borderRadius:8,padding:"4px 12px",color:"#64748b",fontSize:11,cursor:"pointer",
-          }}>{lang==="zh"?"跳过教程":"Skip tutorial"}</button>
+          }}>{lang==="zh"?"跳过教程":lang==="fr"?"Passer le tutoriel":"Skip tutorial"}</button>
         </div>
       )}
 
@@ -4318,7 +4318,7 @@ export default function App() {
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.steps}</div>
           {steps.map((s,i)=>(
             <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3,animation:"fadeSlide 0.3s ease"}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
+              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>
@@ -4703,7 +4703,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
               textAlign:"center",
             }}>
               <div style={{color:"#f472b6",fontWeight:900,fontSize:20}}>🔥{winner.streak}</div>
-              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"连胜":"Streak"}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"连胜":lang==="fr"?"Serie":"Streak"}</div>
             </div>
             <div style={{
               background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",
@@ -4792,7 +4792,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
           border:"1px solid rgba(255,255,255,0.15)",
           borderRadius:12,padding:"14px 24px",
           color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer",
-        }}>{lang==="zh"?"返回主页":"Main Menu"}</button>
+        }}>{lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
         <button onClick={onPlayAgain} style={{
           background:"linear-gradient(135deg,#f6d365,#fda085)",
           border:"none",borderRadius:12,padding:"14px 24px",

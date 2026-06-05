@@ -509,6 +509,11 @@ function getHintSteps(currentNumbers) {
 
 function fmt(n) { return Number.isInteger(n)?String(n):n.toFixed(3).replace(/\.?0+$/,""); }
 
+// ── TM superscript component ──────────────────────────────────────────────
+function TM() {
+  return <sup style={{fontSize:"0.45em",verticalAlign:"super",fontWeight:400,WebkitTextFillColor:"currentColor"}}>TM</sup>;
+}
+
 // ── sub-components ─────────────────────────────────────────────────────────
 function PlayingCard({card,selected,used,onClick,animIdx}) {
   const red = card.suit==="♥"||card.suit==="♦";
@@ -599,7 +604,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{"Game 24 | 24点"}</h1>
+        }}>Game 24 | 24点 <TM/></h1>
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
           {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
         </p>
@@ -777,7 +782,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{"Game 24 | 24点"}</h1>
+        }}>Game 24 | 24点 <TM/></h1>
         <p style={{
           color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
         }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
@@ -3164,7 +3169,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
       <h1 style={{fontSize:30,fontWeight:900,margin:"0 0 2px",letterSpacing:-1,
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-        animation:"shimmer 3s linear infinite"}}>{"Game 24 | 24点"}</h1>
+        animation:"shimmer 3s linear infinite"}}>Game 24 | 24点 <TM/></h1>
 
       <div style={{display:"flex",gap:8,marginBottom:12,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{t.language}</button>
@@ -3840,7 +3845,7 @@ export default function App() {
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
-      }}>{"Game 24 | 24点"}</h1>
+      }}>Game 24 | 24点 <TM/></h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",

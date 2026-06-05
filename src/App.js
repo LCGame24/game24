@@ -828,6 +828,12 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
           }}>🎖️ {lang==="zh"?"成就":"Badges"} {badges.length>0?`(${badges.length})`:""}</button>
         </div>
 
+        <button onClick={()=>setShowModeSelect(true)} style={{
+          width:"100%",padding:"10px",borderRadius:12,marginTop:8,
+          border:"none",background:"transparent",
+          color:"#334155",fontSize:13,cursor:"pointer",
+        }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
+
         {/* Badges Modal */}
         {showBadges&&(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",

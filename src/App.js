@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 // ── constants ──────────────────────────────────────────────────────────────
 const SUITS = ["♠","♥","♦","♣"];
@@ -14,6 +15,71 @@ const DIFFICULTY = {
   Hard:   { timeLimit: 60,  pointsPerSolve: 20, hintPenalty: 8, label:"Hard",   color:"#ef4444", maxCard:13, cardNote:"1–13 (J,Q,K)", ops:["+","−","×","÷","^","√","ʸ√","!"] },
 };
 const LEVEL_UP_SCORE = { Easy: 80, Medium: 150 }; // score needed to unlock Hard
+
+// ── Junior Mode constants ──────────────────────────────────────────────────
+const JUNIOR_LEVELS = {
+  "⭐": { label:"⭐ Junior 1", color:"#34d399", maxCard:5,  target:12, ops:["+","−"],     cardNote:"1–5", pointsPerSolve:5,  en:"Junior 1", zh:"初级1" },
+  "⭐⭐": { label:"⭐⭐ Junior 2", color:"#f59e0b", maxCard:8,  target:24, ops:["+","−","×","÷"], cardNote:"1–8", pointsPerSolve:8,  en:"Junior 2", zh:"初级2" },
+};
+
+const JUNIOR_BADGES = [
+  { id:"jr_first",   icon:"🐣", en:"First Steps!",    zh:"第一步！",      desc:"Solve your first Junior puzzle" },
+  { id:"jr_warm",    icon:"🌤️", en:"Getting Warm!",   zh:"越来越棒！",    desc:"Solve 3 puzzles" },
+  { id:"jr_roll",    icon:"🌟", en:"On a Roll!",       zh:"势如破竹！",    desc:"5 solves in a row" },
+  { id:"jr_brain",   icon:"🦸", en:"Super Brain!",     zh:"超级大脑！",    desc:"10 total solves" },
+  { id:"jr_speed",   icon:"⚡", en:"Speed Star!",      zh:"闪电小星！",    desc:"Solve in under 20s" },
+  { id:"jr_grad",    icon:"🎓", en:"Junior Grad!",     zh:"初级毕业！",    desc:"Complete 10 Junior puzzles" },
+  { id:"jr_hero",    icon:"🦸‍♂️", en:"Math Hero!",      zh:"数学英雄！",    desc:"Score 50pts in Junior" },
+];
+
+function loadJuniorBadges() {
+  try { return JSON.parse(localStorage.getItem("game24_jr_badges")||"[]"); } catch { return []; }
+}
+function saveJuniorBadges(b) {
+  try { localStorage.setItem("game24_jr_badges",JSON.stringify(b)); } catch {}
+}
+function loadJuniorLeaderboard() {
+  try { return JSON.parse(localStorage.getItem("game24_jr_leaderboard")||"[]"); } catch { return []; }
+}
+function saveJuniorLeaderboard(entries) {
+  try { localStorage.setItem("game24_jr_leaderboard",JSON.stringify(entries.slice(0,20))); } catch {}
+}
+function loadJuniorSolves() {
+  try { return parseInt(localStorage.getItem("game24_jr_solves")||"0"); } catch { return 0; }
+}
+function saveJuniorSolves(n) {
+  try { localStorage.setItem("game24_jr_solves",String(n)); } catch {}
+}
+
+// Junior solver — 3 cards, target can be 12 or 24
+function solveJunior(nums, target, ops) {
+  if (nums.length===1) return Math.abs(nums[0]-target)<1e-9;
+  for (let i=0;i<nums.length;i++) for (let j=0;j<nums.length;j++) {
+    if (i===j) continue;
+    const rest=nums.filter((_,k)=>k!==i&&k!==j);
+    const [a,b]=[nums[i],nums[j]];
+    const tries=[];
+    if (ops.includes("+")) tries.push(a+b);
+    if (ops.includes("−")) tries.push(a-b);
+    if (ops.includes("×")) tries.push(a*b);
+    if (ops.includes("÷") && Math.abs(b)>1e-9 && Math.abs((a/b)-Math.round(a/b))<1e-9) tries.push(a/b);
+    for (const r of tries) if (solveJunior([...rest,r],target,ops)) return true;
+  }
+  return false;
+}
+
+function checkJuniorBadges(existing, {totalSolves, streak, timeElapsed, score}) {
+  const newBadges=[];
+  const has=id=>existing.includes(id);
+  if (!has("jr_first") && totalSolves>=1) newBadges.push("jr_first");
+  if (!has("jr_warm") && totalSolves>=3) newBadges.push("jr_warm");
+  if (!has("jr_roll") && streak>=5) newBadges.push("jr_roll");
+  if (!has("jr_brain") && totalSolves>=10) newBadges.push("jr_brain");
+  if (!has("jr_speed") && timeElapsed<=20) newBadges.push("jr_speed");
+  if (!has("jr_grad") && totalSolves>=10) newBadges.push("jr_grad");
+  if (!has("jr_hero") && score>=50) newBadges.push("jr_hero");
+  return newBadges;
+}
 
 // ── local storage helpers ─────────────────────────────────────────────────
 function loadUnlocked() {
@@ -362,7 +428,7 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
+function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(!skipInstructions);
@@ -578,6 +644,15 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
           }}>🎖️ {lang==="zh"?"成就":"Badges"} {badges.length>0?`(${badges.length})`:""}</button>
         </div>
 
+        {/* Junior Mode button */}
+        <button onClick={()=>onJunior()} style={{
+          width:"100%",padding:"12px",borderRadius:12,marginTop:8,
+          border:"2px solid #34d399",
+          background:"rgba(52,211,153,0.08)",
+          color:"#34d399",fontSize:14,fontWeight:800,cursor:"pointer",
+          transition:"all 0.2s",
+        }}>🌟 {lang==="zh"?"儿童模式 (5-13岁)":"Junior Mode (Ages 5–13)"}</button>
+
         {/* Badges Modal */}
         {showBadges&&(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
@@ -677,6 +752,634 @@ function SetupScreen({onStart, lang, setLang, unlocked, leaderboard, setLeaderbo
 }
 
 // ── Main game ──────────────────────────────────────────────────────────────
+// ── Junior Mode Screen ─────────────────────────────────────────────────────
+function JuniorScreen({lang, setLang, onBack}) {
+  const [name, setName] = useState("⭐ Player");
+  const [level, setLevel] = useState("⭐");
+  const [rounds, setRounds] = useState(5);
+  const [screen, setScreen] = useState("setup"); // setup | game | end
+  const [juniorBadges, setJuniorBadges] = useState(()=>loadJuniorBadges());
+  const [juniorLB, setJuniorLB] = useState(()=>loadJuniorLeaderboard());
+  const [showLB, setShowLB] = useState(false);
+  const [showBadges, setShowBadges] = useState(false);
+
+  // Game state
+  const [cards, setCards] = useState([]);
+  const [numbers, setNumbers] = useState([]);
+  const [selectedIdx, setSelectedIdx] = useState(null);
+  const [operator, setOperator] = useState(null);
+  const [steps, setSteps] = useState([]);
+  const [message, setMessage] = useState({text:"",type:""});
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [round, setRound] = useState(1);
+  const [turnOver, setTurnOver] = useState(false);
+  const [totalSolves, setTotalSolves] = useState(()=>loadJuniorSolves());
+  const [newBadges, setNewBadges] = useState([]);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [startTime, setStartTime] = useState(null);
+  const [solvedRounds, setSolvedRounds] = useState(0);
+
+  const jl = JUNIOR_LEVELS[level];
+
+  const encouragingMessages = lang==="zh"
+    ? ["🎉 太棒了！","🌟 你真聪明！","💪 厉害！","🎊 好样的！","✨ 继续加油！","🏆 超级棒！"]
+    : ["🎉 Amazing!","🌟 You're so smart!","💪 Awesome!","🎊 Well done!","✨ Keep it up!","🏆 Superstar!"];
+
+  function dealJuniorCards() {
+    const maxCard = jl.maxCard;
+    const target = jl.target;
+    const ops = jl.ops;
+    const pool = [];
+    for (const s of SUITS) for (const v of VALUES) if (v<=maxCard) pool.push({suit:s,val:v,id:s+v});
+    let drawn, attempts=0;
+    do {
+      pool.sort(()=>Math.random()-0.5);
+      drawn = pool.slice(0,3);
+      attempts++;
+      if (attempts>200) break;
+    } while (!solveJunior(drawn.map(c=>c.val), target, ops));
+    setCards(drawn);
+    setNumbers(drawn.map(c=>({value:c.val, label:String(c.val), sourceId:c.id})));
+    setSelectedIdx(null);
+    setOperator(null);
+    setSteps([]);
+    setMessage({text:"",type:""});
+    setTurnOver(false);
+    setStartTime(Date.now());
+  }
+
+  function startJuniorGame() {
+    setScore(0);
+    setStreak(0);
+    setRound(1);
+    setSolvedRounds(0);
+    setScreen("game");
+    dealJuniorCards();
+  }
+
+  function handleNumberClick(idx) {
+    if (turnOver) return;
+    if (selectedIdx===null) {
+      setSelectedIdx(idx);
+      setOperator(null);
+      setMessage({text:"",type:""});
+    } else if (selectedIdx===idx) {
+      setSelectedIdx(null);
+      setOperator(null);
+    } else if (operator!==null) {
+      applyJuniorOp(selectedIdx, operator, idx);
+    }
+  }
+
+  function applyJuniorOp(iA, op, iB) {
+    const a=numbers[iA].value, b=numbers[iB].value;
+    const la=numbers[iA].label, lb=numbers[iB].label;
+    let result;
+    if (op==="+") result=a+b;
+    else if (op==="−") result=a-b;
+    else if (op==="×") result=a*b;
+    else if (op==="÷") {
+      if (Math.abs(b)<1e-9||Math.abs((a/b)-Math.round(a/b))>1e-9) {
+        setMessage({text:lang==="zh"?"不能整除哦！":"That doesn't divide evenly!",type:"bad"});
+        return;
+      }
+      result=a/b;
+    }
+    const expr=`${la} ${op} ${lb} = ${result}`;
+    setSteps(s=>[...s,{expr,result}]);
+    const newNums=numbers.filter((_,i)=>i!==iA&&i!==iB);
+    newNums.push({value:result,label:String(result),sourceId:`step_${steps.length+1}`});
+    setNumbers(newNums);
+    setSelectedIdx(null);
+    setOperator(null);
+    if (newNums.length===1) {
+      if (Math.abs(result-jl.target)<1e-9) {
+        handleJuniorSolve();
+      } else {
+        setMessage({text:lang==="zh"?`结果是${result}，不是${jl.target}，再试试！`:`Got ${result}, not ${jl.target} — try resetting!`,type:"bad"});
+      }
+    } else {
+      setMessage({text:`✓ ${expr}`,type:"step"});
+    }
+  }
+
+  function handleJuniorSolve() {
+    const timeElapsed = Math.round((Date.now()-startTime)/1000);
+    const pts = jl.pointsPerSolve;
+    const newScore = score+pts;
+    const newStreak = streak+1;
+    const newTotalSolves = totalSolves+1;
+    const newSolvedRounds = solvedRounds+1;
+    setScore(newScore);
+    setStreak(newStreak);
+    setTotalSolves(newTotalSolves);
+    setSolvedRounds(newSolvedRounds);
+    saveJuniorSolves(newTotalSolves);
+    setTurnOver(true);
+    setShowConfetti(true);
+    setTimeout(()=>setShowConfetti(false),2500);
+    const msg = encouragingMessages[Math.floor(Math.random()*encouragingMessages.length)];
+    setMessage({text:`${msg} +${pts}pts`,type:"win"});
+    // Check badges
+    const earned = checkJuniorBadges(juniorBadges,{totalSolves:newTotalSolves,streak:newStreak,timeElapsed,score:newScore});
+    if (earned.length>0) {
+      const all=[...juniorBadges,...earned];
+      setJuniorBadges(all);
+      saveJuniorBadges(all);
+      setNewBadges(earned);
+      setTimeout(()=>setNewBadges([]),4000);
+    }
+  }
+
+  function handleReset() {
+    setNumbers(cards.map(c=>({value:c.val,label:String(c.val),sourceId:c.id})));
+    setSelectedIdx(null);
+    setOperator(null);
+    setSteps([]);
+    setMessage({text:"",type:""});
+  }
+
+  function handleNext() {
+    if (round>=rounds) {
+      // Save to leaderboard
+      const date=new Date().toLocaleDateString();
+      const newEntries=[...juniorLB,{name,score,streak,level,date}].sort((a,b)=>b.score-a.score).slice(0,20);
+      setJuniorLB(newEntries);
+      saveJuniorLeaderboard(newEntries);
+      setScreen("end");
+    } else {
+      setRound(r=>r+1);
+      dealJuniorCards();
+    }
+  }
+
+  const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
+
+  // Setup screen
+  if (screen==="setup") return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0d2137,#0a3d2b,#0d2137)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
+      <style>{`@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:white;padding:8px 12px;font-size:14px;width:100%;box-sizing:border-box;outline:none;}
+        input:focus{border-color:#34d399;}`}</style>
+
+      <div style={{fontSize:48,marginBottom:4}}>🌟</div>
+      <h1 style={{fontSize:32,fontWeight:900,margin:"0 0 4px",color:"#34d399"}}>
+        {lang==="zh"?"儿童模式":"Junior Mode"}
+      </h1>
+      <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>
+        {lang==="zh"?"适合 5-13 岁":"Ages 5–13"}
+      </p>
+
+      <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
+        borderRadius:20,padding:24,width:"100%",maxWidth:340,animation:"fadeIn 0.5s ease"}}>
+
+        {/* Name */}
+        <div style={{marginBottom:20}}>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
+            {lang==="zh"?"你的名字":"Your Name"}
+          </div>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder={lang==="zh"?"输入名字":"Enter your name"}/>
+        </div>
+
+        {/* Level */}
+        <div style={{marginBottom:20}}>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
+            {lang==="zh"?"选择等级":"Choose Level"}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {Object.entries(JUNIOR_LEVELS).map(([key,jl])=>(
+              <button key={key} onClick={()=>setLevel(key)} style={{
+                flex:1,padding:"12px 8px",borderRadius:12,border:"none",
+                background:level===key?jl.color:"rgba(255,255,255,0.07)",
+                color:level===key?"#1a1a2e":"#64748b",
+                fontWeight:800,fontSize:13,cursor:"pointer",transition:"all 0.2s",
+              }}>
+                <div style={{fontSize:20,marginBottom:4}}>{key}</div>
+                <div>{lang==="zh"?jl.zh:jl.en}</div>
+                <div style={{fontSize:10,marginTop:2,opacity:0.8}}>{lang==="zh"?"数字":"Cards"} {jl.cardNote}</div>
+                <div style={{fontSize:10,opacity:0.8}}>{lang==="zh"?"目标":"Target"} {jl.target}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Rounds */}
+        <div style={{marginBottom:20}}>
+          <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
+            {lang==="zh"?"题目数量":"Number of Rounds"}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {[3,5,8,10].map(r=>(
+              <button key={r} onClick={()=>setRounds(r)} style={{
+                flex:1,padding:"10px 4px",borderRadius:10,border:"none",
+                background:rounds===r?"#34d399":"rgba(255,255,255,0.07)",
+                color:rounds===r?"#1a1a2e":"#64748b",
+                fontWeight:700,fontSize:15,cursor:"pointer",transition:"all 0.2s",
+              }}>{r}</button>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={startJuniorGame} style={{
+          width:"100%",padding:"14px",borderRadius:12,border:"none",
+          background:"linear-gradient(135deg,#34d399,#059669)",
+          color:"white",fontSize:16,fontWeight:800,cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(52,211,153,0.4)",marginBottom:10,
+        }}>🌟 {lang==="zh"?"开始游戏！":"Let's Play!"}</button>
+
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setShowLB(true)} style={{
+            flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
+            background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
+          }}>🏆 {lang==="zh"?"排行榜":"Leaderboard"}</button>
+          <button onClick={()=>setShowBadges(true)} style={{
+            flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
+            background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
+          }}>🎖️ {lang==="zh"?"成就":"Badges"} {juniorBadges.length>0?`(${juniorBadges.length})`:""}</button>
+        </div>
+
+        <button onClick={onBack} style={{
+          width:"100%",padding:"10px",borderRadius:12,marginTop:8,
+          border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
+          color:"#64748b",fontSize:13,cursor:"pointer",
+        }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
+      </div>
+
+      {/* Leaderboard Modal */}
+      {showLB&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+          display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+          <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid rgba(255,255,255,0.12)",borderRadius:24,
+            padding:24,maxWidth:380,width:"100%",maxHeight:"80vh",overflowY:"auto"}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:36}}>🏆</div>
+              <h2 style={{color:"#34d399",fontSize:20,fontWeight:900,margin:"4px 0"}}>
+                {lang==="zh"?"儿童排行榜":"Junior Leaderboard"}
+              </h2>
+            </div>
+            {juniorLB.length===0?(
+              <p style={{color:"#475569",textAlign:"center",fontSize:14}}>
+                {lang==="zh"?"暂无记录！":"No scores yet — play to get on the board!"}
+              </p>
+            ):(
+              juniorLB.map((entry,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,
+                  background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 14px",marginBottom:8}}>
+                  <div style={{fontSize:18,width:28,textAlign:"center"}}>
+                    {i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}.`}
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{color:"white",fontWeight:700,fontSize:14}}>{entry.name}</div>
+                    <div style={{color:"#64748b",fontSize:11}}>{entry.level} · {entry.date} · 🔥{entry.streak}</div>
+                  </div>
+                  <div style={{color:"#34d399",fontWeight:900,fontSize:20}}>{entry.score}</div>
+                </div>
+              ))
+            )}
+            <button onClick={()=>setShowLB(false)} style={{
+              width:"100%",padding:"12px",borderRadius:12,border:"none",marginTop:8,
+              background:"linear-gradient(135deg,#34d399,#059669)",
+              color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
+            }}>{lang==="zh"?"关闭":"Close"}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Badges Modal */}
+      {showBadges&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+          display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+          <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid rgba(255,255,255,0.12)",borderRadius:24,
+            padding:24,maxWidth:380,width:"100%",maxHeight:"80vh",overflowY:"auto"}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:36}}>🎖️</div>
+              <h2 style={{color:"#34d399",fontSize:20,fontWeight:900,margin:"4px 0"}}>
+                {lang==="zh"?"儿童成就":"Junior Badges"}
+              </h2>
+              <div style={{color:"#64748b",fontSize:12}}>{juniorBadges.length}/{JUNIOR_BADGES.length} {lang==="zh"?"已解锁":"unlocked"}</div>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
+              {JUNIOR_BADGES.map(badge=>{
+                const earned=juniorBadges.includes(badge.id);
+                return (
+                  <div key={badge.id} style={{
+                    background:earned?"rgba(52,211,153,0.1)":"rgba(255,255,255,0.03)",
+                    border:`1px solid ${earned?"#34d399":"rgba(255,255,255,0.06)"}`,
+                    borderRadius:12,padding:"8px 10px",flex:"1",minWidth:"44%",
+                    opacity:earned?1:0.4,
+                  }}>
+                    <div style={{fontSize:22,marginBottom:2}}>{earned?badge.icon:"🔒"}</div>
+                    <div style={{color:earned?"#34d399":"#475569",fontSize:12,fontWeight:700}}>
+                      {lang==="zh"?badge.zh:badge.en}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={()=>setShowBadges(false)} style={{
+              width:"100%",padding:"12px",borderRadius:12,border:"none",
+              background:"linear-gradient(135deg,#34d399,#059669)",
+              color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
+            }}>{lang==="zh"?"关闭":"Close"}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Game screen
+  if (screen==="game") return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0d2137,#0a3d2b,#0d2137)",
+      display:"flex",flexDirection:"column",alignItems:"center",
+      fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",overflowY:"auto"}}>
+      <style>{`
+        @keyframes cardDeal{from{opacity:0;transform:translateY(-30px) scale(0.85)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+        @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+        @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%{transform:translateX(0);opacity:1}85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}
+        @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+      `}</style>
+
+      {/* Confetti */}
+      {showConfetti&&(
+        <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>
+          {Array.from({length:40}).map((_,i)=>{
+            const colors=["#34d399","#f6d365","#f472b6","#60a5fa","#a78bfa","#fb923c"];
+            return <div key={i} style={{
+              position:"absolute",top:"-20px",left:`${Math.random()*100}%`,
+              width:6+Math.random()*8,height:6+Math.random()*8,
+              background:colors[i%colors.length],
+              borderRadius:Math.random()>0.5?"50%":"2px",
+              animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`,
+            }}/>;
+          })}
+        </div>
+      )}
+
+      {/* New badge notifications */}
+      {newBadges.map((id,i)=>{
+        const badge=JUNIOR_BADGES.find(b=>b.id===id);
+        if (!badge) return null;
+        return (
+          <div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,
+            background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid #34d399",borderRadius:14,padding:"10px 16px",minWidth:200,
+            animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(52,211,153,0.3)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{fontSize:28}}>{badge.icon}</div>
+              <div>
+                <div style={{color:"#34d399",fontWeight:800,fontSize:13}}>
+                  {lang==="zh"?"新成就解锁！":"Badge Unlocked!"}
+                </div>
+                <div style={{color:"white",fontWeight:700,fontSize:14}}>
+                  {lang==="zh"?badge.zh:badge.en}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Header */}
+      <h1 style={{fontSize:28,fontWeight:900,margin:"0 0 4px",color:"#34d399"}}>
+        🌟 {lang==="zh"?"儿童模式":"Junior Mode"}
+      </h1>
+
+      {/* Score bar */}
+      <div style={{display:"flex",gap:12,marginBottom:14,
+        background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",
+        borderRadius:14,padding:"8px 18px",flexWrap:"wrap",justifyContent:"center"}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
+            {lang==="zh"?"轮次":"Round"}
+          </div>
+          <div style={{color:"white",fontWeight:800,fontSize:18}}>{round}/{rounds}</div>
+        </div>
+        <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
+            {lang==="zh"?"得分":"Score"}
+          </div>
+          <div style={{color:"#34d399",fontWeight:800,fontSize:18}}>{score}</div>
+        </div>
+        <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
+            {lang==="zh"?"连胜":"Streak"}
+          </div>
+          <div style={{color:"#f472b6",fontWeight:800,fontSize:18}}>🔥{streak}</div>
+        </div>
+        <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>
+            {lang==="zh"?"目标":"Target"}
+          </div>
+          <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{jl.target}</div>
+        </div>
+      </div>
+
+      {/* Target reminder */}
+      <div style={{
+        background:"rgba(246,211,101,0.1)",border:"2px solid #f6d365",
+        borderRadius:16,padding:"8px 24px",marginBottom:16,textAlign:"center",
+      }}>
+        <div style={{color:"#f6d365",fontWeight:900,fontSize:22}}>
+          {lang==="zh"?`目标 = ${jl.target} 🎯`:`Make  ${jl.target}! 🎯`}
+        </div>
+      </div>
+
+      {/* Cards — 3 cards in a row */}
+      <div style={{display:"flex",gap:12,marginBottom:16,justifyContent:"center"}}>
+        {cards.map((card,i)=>{
+          const inPool=numbers.some(n=>n.sourceId===card.id);
+          const red=card.suit==="♥"||card.suit==="♦";
+          return (
+            <div key={card.id} style={{
+              width:86,minWidth:86,height:118,borderRadius:10,
+              background:inPool?"white":"#1e293b",
+              border:inPool?"3px solid #e2e8f0":"2px solid #334155",
+              boxShadow:"0 4px 12px rgba(0,0,0,0.2)",
+              display:"flex",flexDirection:"column",justifyContent:"space-between",
+              padding:"5px 7px",opacity:inPool?1:0.35,
+              transition:"all 0.2s",position:"relative",
+              animation:`cardDeal 0.4s ease ${i*0.1}s both`,
+            }}>
+              {!inPool&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#475569"}}>✓</div>}
+              <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                {card.val}<span style={{fontSize:11}}>{card.suit}</span>
+              </div>
+              <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
+              <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                {card.val}<span style={{fontSize:11}}>{card.suit}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Number pool */}
+      <div style={{marginBottom:14,textAlign:"center"}}>
+        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
+          {lang==="zh"?"可用数字":"Available Numbers"}
+        </div>
+        <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+          {numbers.map((n,i)=>(
+            <div key={i} onClick={()=>handleNumberClick(i)} style={{
+              width:62,height:62,borderRadius:14,
+              background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
+              border:`3px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.2)"}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:22,fontWeight:900,
+              color:selectedIdx===i?"#92400e":"white",
+              cursor:turnOver?"default":"pointer",
+              transform:selectedIdx===i?"scale(1.15)":"scale(1)",
+              transition:"all 0.15s",
+              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
+              animation:"popIn 0.3s ease",
+            }}>{n.label}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Operators */}
+      {!turnOver&&(
+        <div style={{display:"flex",gap:10,marginBottom:14,justifyContent:"center"}}>
+          {jl.ops.map(op=>(
+            <button key={op} onClick={()=>{
+              if (selectedIdx!==null) setOperator(o=>o===op?null:op);
+            }} style={{
+              width:52,height:52,borderRadius:"50%",
+              border:`2px solid ${operator===op?"#f59e0b":"#334155"}`,
+              background:operator===op?"#fef3c7":"rgba(255,255,255,0.05)",
+              fontSize:22,fontWeight:800,cursor:"pointer",
+              color:operator===op?"#92400e":"#94a3b8",
+              transform:operator===op?"scale(1.18)":"scale(1)",
+              transition:"all 0.15s",
+              boxShadow:operator===op?"0 4px 12px rgba(245,158,11,0.4)":"none",
+            }}>{op}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Steps */}
+      {steps.length>0&&(
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",
+          borderRadius:12,padding:"10px 16px",marginBottom:12,width:"100%",maxWidth:320}}>
+          {steps.map((s,i)=>(
+            <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3}}>
+              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Message */}
+      {message.text&&(
+        <div style={{
+          background:`${msgColor}18`,border:`1px solid ${msgColor}`,
+          borderRadius:12,padding:"10px 20px",marginBottom:12,
+          color:msgColor,fontSize:16,fontWeight:700,textAlign:"center",
+          animation:"popIn 0.3s ease",
+        }}>{message.text}</div>
+      )}
+
+      {/* Instruction */}
+      {!turnOver&&selectedIdx===null&&(
+        <div style={{color:"#334155",fontSize:12,textAlign:"center",marginBottom:10}}>
+          {lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":"Tap a number → tap an operator → tap another number"}
+        </div>
+      )}
+
+      {/* Buttons */}
+      {!turnOver?(
+        <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+          <button onClick={handleReset} style={{
+            background:"transparent",border:"2px solid #64748b",
+            borderRadius:10,padding:"8px 18px",color:"#64748b",
+            fontSize:13,fontWeight:700,cursor:"pointer",
+          }}>↺ {lang==="zh"?"重置":"Reset"}</button>
+        </div>
+      ):(
+        <button onClick={handleNext} style={{
+          background:"linear-gradient(135deg,#34d399,#059669)",
+          border:"none",borderRadius:12,padding:"14px 28px",
+          color:"white",fontSize:15,fontWeight:800,cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(52,211,153,0.4)",
+          animation:"popIn 0.4s ease",
+        }}>
+          {round>=rounds
+            ?(lang==="zh"?"🏆 查看结果":"🏆 See Results")
+            :(lang==="zh"?"下一题 ▶":"Next Puzzle ▶")}
+        </button>
+      )}
+    </div>
+  );
+
+  // End screen
+  return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0d2137,#0a3d2b,#0d2137)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
+      <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}}`}</style>
+      <div style={{fontSize:64,animation:"trophy 1.5s ease infinite",marginBottom:8}}>🏆</div>
+      <h2 style={{color:"#34d399",fontSize:28,fontWeight:900,margin:"0 0 4px"}}>
+        {lang==="zh"?"太棒了！":"Amazing job!"}
+      </h2>
+      <p style={{color:"#64748b",fontSize:14,marginBottom:20}}>{name} · {level}</p>
+
+      <div style={{background:"rgba(52,211,153,0.08)",border:"1px solid #34d399",
+        borderRadius:16,padding:20,marginBottom:20,textAlign:"center",width:"100%",maxWidth:300}}>
+        <div style={{display:"flex",gap:20,justifyContent:"center"}}>
+          <div>
+            <div style={{color:"#34d399",fontWeight:900,fontSize:36}}>{score}</div>
+            <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"分数":"Score"}</div>
+          </div>
+          <div>
+            <div style={{color:"#f472b6",fontWeight:900,fontSize:36}}>🔥{streak}</div>
+            <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"连胜":"Streak"}</div>
+          </div>
+          <div>
+            <div style={{color:"#f6d365",fontWeight:900,fontSize:36}}>{solvedRounds}</div>
+            <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"答对":"Solved"}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Badges earned */}
+      {juniorBadges.length>0&&(
+        <div style={{marginBottom:16,textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:11,marginBottom:8}}>
+            {lang==="zh"?"已获得成就":"Badges Earned"}
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+            {JUNIOR_BADGES.filter(b=>juniorBadges.includes(b.id)).map(b=>(
+              <div key={b.id} style={{fontSize:24}}>{b.icon}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+        <button onClick={()=>{setScreen("setup");setScore(0);setStreak(0);setRound(1);setSolvedRounds(0);}} style={{
+          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",
+          borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer",
+        }}>{lang==="zh"?"再玩一次":"Play Again"}</button>
+        <button onClick={onBack} style={{
+          background:"linear-gradient(135deg,#34d399,#059669)",
+          border:"none",borderRadius:12,padding:"12px 20px",
+          color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
+        }}>{lang==="zh"?"返回主菜单":"Main Menu"}</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Help Modal (tabbed: How to Play | Demo) ───────────────────────────────
 function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
   const [tab, setTab] = useState("howto"); // "howto" | "demo"
@@ -857,7 +1560,7 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
 }
 
 export default function App() {
-  const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd
+  const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
   const [showHelp,setShowHelp]=useState(false);
@@ -1297,11 +2000,13 @@ export default function App() {
   const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
-  if (screen==="setup") return <SetupScreen onStart={startGame} lang={lang} setLang={setLang}
+  if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
     autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
     badges={badges} personalBest={personalBest}
     skipInstructions={skipInstructions} preSelectDiff={preSelectDiff}/>;
+
+  if (screen==="junior") return <JuniorScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>;
 
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} onPlayAgain={()=>{ setSkipInstructions(true); setPreSelectDiff(difficulty); setScreen("setup"); }} difficulty={difficulty} lang={lang} setLang={setLang}
@@ -1942,6 +2647,7 @@ export default function App() {
       <p style={{color:"#1e293b",fontSize:10,marginTop:12,textAlign:"center"}}>
         {t.roundsPerPlayerNote(ROUNDS_PER_PLAYER)}
       </p>
+      <Analytics />
     </div>
   );
 }

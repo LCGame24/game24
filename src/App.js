@@ -400,6 +400,8 @@ const T = {
     levelUp: (next) => `🎉 解锁下一难度！试试${next}模式。`,
     playAgain: "再玩一次",
     score: "得分", streak2: "连胜",
+    perRound: (s) => `每轮${s}秒`,
+    ptsPerSolve: (p) => `每题+${p}分`,
     language: "English",
     howToPlayTitle: "游戏说明",
     howToPlayLines: [
@@ -412,11 +414,108 @@ const T = {
       "⏭ 做不出来？点击跳过换一组牌",
     ],
     gotIt: "明白了！开始游戏 🎮",
+  },
+  fr: {
+    title: "24",
+    subtitle: "LE JEU DE CARTES MATHEMATIQUES",
+    difficulty: "DIFFICULTE",
+    easy: "Facile", medium: "Moyen", hard: "Difficile",
+    timerSolo: "MINUTERIE (SOLO)",
+    timerOn: "On — bonus de vitesse",
+    timerOff: "Off — sans bonus",
+    timerOnNote: "Bonus de vitesse pour resolutions rapides",
+    timerOffNote: "Pas de pression — resolvez a votre rythme",
+    players: "JOUEURS",
+    roundsPerPlayer: "MANCHES PAR JOUEUR",
+    roundsNote: (r,n) => n>1?`${r*n} puzzles au total`:`${r} puzzles a resoudre`,
+    startGame: "Commencer !",
+    round: "MANCHE", time: "TEMPS", diff: "DIFF",
+    speedBonus: "bonus vitesse", noBonus: "sans bonus",
+    yourTurn: (name) => `Tour de ${name}`,
+    availableNumbers: "NOMBRES DISPONIBLES",
+    steps: "ETAPES", step: "Etape",
+    tapInstruction: "Appuyez un nombre, un operateur, un autre nombre",
+    pickOperator: "Choisissez un operateur",
+    pickSecond: "Appuyez le deuxieme nombre",
+    reset: "Reinitialiser", hint: "Indice", skip: "Passer",
+    nextPuzzle: "Puzzle suivant",
+    nextPlayer: (name) => `Suivant: ${name}`,
+    seeResults: "Voir les resultats",
+    cantDivideZero: "Division par zero impossible !",
+    notTwentyFour: (n) => `Resultat: ${n}, pas 24. Reessayez !`,
+    timeUp: "Temps ecoule !",
+    roundsPerPlayerNote: (r) => `${r} manches par joueur`,
+    winMsg: (pts, bonus) => bonus>0?`24 ! +${pts} pts (bonus ${bonus})`:`24 ! +${pts} pts`,
+    gameOver: "Partie terminee !",
+    wins: (name) => `${name} gagne !`,
+    finalScore: "Score final",
+    bestStreak: "Meilleure serie",
+    hintsUsed: (n) => `${n} indices utilises`,
+    streak: (n) => `Meilleure serie: ${n}`,
+    levelUp: (next) => `Niveau suivant debloque ! Essayez le mode ${next}.`,
+    playAgain: "Rejouer",
+    score: "Score", streak2: "Serie",
+    perRound: (s) => `${s}s par manche`,
+    ptsPerSolve: (p) => `+${p} pts par resolution`,
+    language: "EN",
+    howToPlayTitle: "Comment jouer",
+    howToPlayLines: [
+      "Quatre cartes — utilisez les QUATRE nombres pour faire 24",
+      "Vous pouvez utiliser + moins x divise et aussi puissance racine carree",
+      "Appuyez un nombre puis un operateur puis un autre nombre",
+      "Le resultat devient un nouveau nombre",
+      "Continuez jusqu a ce qu il reste 24",
+      "Bloque ? Utilisez le bouton Indice",
+      "Pas de solution ? Appuyez Passer",
+    ],
+    gotIt: "Compris ! Jouons !",
   }
 };
 
+// Language switcher component
+const LANGS = [
+  { code:"en", flag:"EN", label:"English" },
+  { code:"zh", flag:"CN", label:"Chinese" },
+  { code:"fr", flag:"FR", label:"Francais" },
+];
 
-// ── helpers ────────────────────────────────────────────────────────────────
+function LangSwitcher({ lang, setLang }) {
+  const [open, setOpen] = useState(false);
+  const current = LANGS.find(l=>l.code===lang)||LANGS[0];
+  return (
+    <div style={{position:"relative",zIndex:200}}>
+      <button
+        onClick={()=>setOpen(o=>!o)}
+        style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
+          borderRadius:16,padding:"3px 10px",color:"#94a3b8",fontSize:12,cursor:"pointer",
+          display:"flex",alignItems:"center",gap:4}}>
+        <span style={{fontSize:13}}>{"\uD83C\uDF10"}</span>
+        <span style={{fontSize:11}}>{current.flag}</span>
+        <span style={{fontSize:9}}>{open?"v":">"}</span>
+      </button>
+      {open&&(
+        <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,
+          background:"#1e293b",border:"1px solid rgba(255,255,255,0.15)",
+          borderRadius:12,overflow:"hidden",minWidth:130,
+          boxShadow:"0 8px 24px rgba(0,0,0,0.4)",zIndex:201}}>
+          {LANGS.map(l=>(
+            <button key={l.code} onClick={()=>{setLang(l.code);setOpen(false);}}
+              style={{width:"100%",padding:"9px 14px",background:lang===l.code?"rgba(255,255,255,0.1)":"transparent",
+                border:"none",color:lang===l.code?"#f6d365":"#94a3b8",
+                fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:10,
+                fontWeight:lang===l.code?700:400}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#64748b"}}>{l.flag}</span>
+              <span>{l.label}</span>
+              {lang===l.code&&<span style={{marginLeft:"auto",color:"#f6d365"}}>ok</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// helpers ────────────────────────────────────────────────────────────────
 function generateDeck() {
   const d = [];
   for (const s of SUITS) for (const v of VALUES) d.push({suit:s,val:v,id:s+v});
@@ -608,10 +707,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
           {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
         </p>
-        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-          background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",
-          borderRadius:20,padding:"4px 14px",color:"#94a3b8",fontSize:13,cursor:"pointer",
-        }}>{t.language}</button>
+        <LangSwitcher lang={lang} setLang={setLang}/>
       </div>
 
       {/* Three mode buttons */}
@@ -743,11 +839,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             animation:"modalIn 0.3s ease",
           }}>
             <div style={{textAlign:"center",marginBottom:16}}>
-              <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-                background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
-                borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,
-                cursor:"pointer",marginBottom:12,
-              }}>{t.language}</button>
+              <div style={{marginBottom:12}}><LangSwitcher lang={lang} setLang={setLang}/></div>
               <div style={{fontSize:40,marginBottom:8}}>🃏</div>
               <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
             </div>
@@ -787,11 +879,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
         }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
       </div>
-      <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-        background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",
-        borderRadius:20,padding:"4px 14px",color:"#94a3b8",fontSize:13,
-        cursor:"pointer",marginBottom:20,
-      }}>{t.language}</button>
+      <div style={{marginBottom:20}}><LangSwitcher lang={lang} setLang={setLang}/></div>
 
       <div style={{
         background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
@@ -2027,11 +2115,7 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
 
         {/* Header */}
         <div style={{textAlign:"center",marginBottom:14}}>
-          <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-            background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",
-            borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,
-            cursor:"pointer",marginBottom:10,
-          }}>{t.language}</button>
+          <div style={{marginBottom:10}}><LangSwitcher lang={lang} setLang={setLang}/></div>
           <div style={{fontSize:36,marginBottom:4}}>🃏</div>
         </div>
 
@@ -2410,7 +2494,7 @@ function BattleScreen({ lang, setLang, onBack }) {
         <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
         <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":"Battle Mode"}</h1>
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>{lang==="zh"?"「你的大脑就是你的武器」":"\"Your brain is your weapon\""}</p>
-        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>{t.language}</button>
+        <LangSwitcher lang={lang} setLang={setLang}/>
       </div>
       <div style={{width:"100%",maxWidth:360,animation:"fadeIn 0.4s ease"}}>
         <div style={{marginBottom:16}}>
@@ -2527,7 +2611,7 @@ function BattleScreen({ lang, setLang, onBack }) {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:420,marginBottom:8}}>
         <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":"Battle Mode"}</h2>
         <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>{t.language}</button>
+          <LangSwitcher lang={lang} setLang={setLang}/>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
         </div>
       </div>
@@ -2855,8 +2939,8 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         )}
 
         {/* Lang toggle + back */}
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>{t.language}</button>
+        <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center"}}>
+          <LangSwitcher lang={lang} setLang={setLang}/>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>🏠</button>
         </div>
 
@@ -2992,7 +3076,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         animation:"shimmer 3s linear infinite"}}>Game24<sup style={{fontSize:"0.48em",WebkitTextFillColor:"#fda085",color:"#fda085",position:"relative",top:"-0.5em",marginLeft:2}}>&trade;</sup></h1>
 
       <div style={{display:"flex",gap:8,marginBottom:12,justifyContent:"center"}}>
-        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{t.language}</button>
+        <LangSwitcher lang={lang} setLang={setLang}/>
         <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>🏠</button>
       </div>
 
@@ -3667,10 +3751,7 @@ export default function App() {
         animation:"shimmer 3s linear infinite",
       }}>Game24<sup style={{fontSize:"0.48em",WebkitTextFillColor:"#fda085",color:"#fda085",position:"relative",top:"-0.5em",marginLeft:2}}>&trade;</sup></h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
-        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
-          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
-          borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",
-        }}>{t.language}</button>
+        <LangSwitcher lang={lang} setLang={setLang}/>
         <button onClick={()=>setShowHelp(true)} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
           borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",

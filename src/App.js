@@ -672,8 +672,13 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
               width:"100%",padding:"14px",borderRadius:12,border:"none",
               background:"linear-gradient(135deg,#f6d365,#fda085)",
               color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
-              boxShadow:"0 4px 20px rgba(246,211,101,0.4)",
+              boxShadow:"0 4px 20px rgba(246,211,101,0.4)",marginBottom:8,
             }}>{t.gotIt}</button>
+            <button onClick={()=>setShowModeSelect(true)} style={{
+              width:"100%",padding:"10px",borderRadius:12,
+              border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
+              color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
+            }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
           </div>
         </div>
       )}

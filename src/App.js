@@ -610,15 +610,10 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
 
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setShowBattleTeaser(false)} style={{
-                flex:1,padding:"12px",borderRadius:12,
+                width:"100%",padding:"12px",borderRadius:12,
                 border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
                 color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer",
               }}>{lang==="zh"?"关闭":"Close"}</button>
-              <button onClick={()=>{setShowBattleTeaser(false);setShowModeSelect(false);}} style={{
-                flex:1,padding:"12px",borderRadius:12,border:"none",
-                background:"linear-gradient(135deg,#f6d365,#fda085)",
-                color:"#1a1a2e",fontSize:14,fontWeight:700,cursor:"pointer",
-              }}>{lang==="zh"?"先玩经典模式":"Play Classic Mode"}</button>
             </div>
           </div>
         </div>
@@ -830,8 +825,8 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
 
         <button onClick={()=>setShowModeSelect(true)} style={{
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
-          border:"none",background:"transparent",
-          color:"#334155",fontSize:13,cursor:"pointer",
+          border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
+          color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
         }}>← {lang==="zh"?"返回主菜单":"Back to Main Menu"}</button>
 
         {/* Badges Modal */}

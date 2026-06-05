@@ -599,7 +599,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{"Game24™ | 24点™"}</h1>
+        }>Game24<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span> | 24点<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span></h1>
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
           {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
         </p>
@@ -777,7 +777,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{"Game24™ | 24点™"}</h1>
+        }>Game24<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span> | 24点<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span></h1>
         <p style={{
           color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
         }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
@@ -1884,7 +1884,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:40,marginBottom:6}}>🌟</div>
           <div style={{fontSize:28,fontWeight:900,color:"#34d399",letterSpacing:-1}}>
-            Game24™ | 24点™
+            Game24<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span> | 24点<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span>
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
             {lang==="zh"?"儿童模式":"Junior Mode"} · {level}
@@ -2175,7 +2175,7 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
 function BattleScreen({ lang, setLang, onBack }) {
   const t = T[lang];
   const BATTLE_OPS = ["+","−","×","÷","^","√"];
-  const LIVES = 5;
+  const LIVES = 3;
 
   // phase: setup | countdown | playing | roundEnd | matchEnd
   const [phase, setPhase] = useState("setup");
@@ -3126,7 +3126,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           fontFamily:"'Trebuchet MS',sans-serif",border:"2px solid rgba(246,211,101,0.5)"}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:36,marginBottom:4}}>📅</div>
-            <div style={{fontSize:26,fontWeight:900,color:"#f6d365"}}>Game24™ | 24点™</div>
+            <div style={{fontSize:26,fontWeight:900,color:"#f6d365"}}>Game24<span style={{fontSize:"0.5em",verticalAlign:"super"}}>™</span> | 24点<span style={{fontSize:"0.5em",verticalAlign:"super"}}>™</span></div>
             <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"每日挑战":"Daily Challenge"} · {displayDate}</div>
           </div>
           <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(246,211,101,0.5),transparent)",marginBottom:16}}/>
@@ -3177,7 +3177,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
       <h1 style={{fontSize:30,fontWeight:900,margin:"0 0 2px",letterSpacing:-1,
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-        animation:"shimmer 3s linear infinite"}}>{"Game24™ | 24点™"}</h1>
+        animation:"shimmer 3s linear infinite"}>Game24<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span> | 24点<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span></h1>
 
       <div style={{display:"flex",gap:8,marginBottom:12,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{t.language}</button>
@@ -3853,7 +3853,7 @@ export default function App() {
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
-      }}>{"Game24™ | 24点™"}</h1>
+      }>Game24<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span> | 24点<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span></h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
@@ -4583,7 +4583,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:40,marginBottom:6}}>🃏</div>
           <div style={{fontSize:30,fontWeight:900,color:"#f6d365",letterSpacing:-1}}>
-            Game24™ | 24点™
+            Game24<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span> | 24点<span style={{fontSize:"0.55em",verticalAlign:"super",fontWeight:400}}>™</span>
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
             {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}

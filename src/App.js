@@ -707,12 +707,15 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
           {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
         </p>
-        <div style={{display:"flex",justifyContent:"center"}}>
+        <div style={{display:"flex",justifyContent:"center",gap:8,alignItems:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>onStats()} title="My Stats" style={{background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:16,padding:"3px 10px",color:"#a78bfa",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <span>📊</span>
+          </button>
         </div>
       </div>
 
-      {/* Three mode buttons */}
+      {/* Four mode buttons */}
       <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:16,animation:"fadeIn 0.5s ease"}}>
 
         {/* Classic Mode */}
@@ -808,27 +811,6 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
           </div>
         </button>
 
-        {/* Stats */}
-        <button onClick={()=>onStats()} style={{
-          width:"100%",padding:"18px 20px",borderRadius:20,
-          background:"linear-gradient(135deg,#1e1b4b,#312e81)",
-          cursor:"pointer",textAlign:"left",
-          boxShadow:"0 8px 32px rgba(167,139,250,0.15)",
-          border:"1px solid rgba(167,139,250,0.3)",
-          transition:"all 0.2s",
-        }}>
-          <div style={{display:"flex",alignItems:"center",gap:16}}>
-            <div style={{fontSize:44}}>📊</div>
-            <div>
-              <div style={{color:"#a78bfa",fontWeight:900,fontSize:20,marginBottom:4}}>
-                {lang==="zh"?"我的统计":lang==="fr"?"Mes Statistiques":"My Stats"}
-              </div>
-              <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"个人记录与成就":lang==="fr"?"Records et trophees":"Personal records & trophies"}
-              </div>
-            </div>
-          </div>
-        </button>
 
       </div>
     </div>

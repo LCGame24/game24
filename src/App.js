@@ -2202,6 +2202,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   const [timeLeft, setTimeLeft] = useState(60);
   const [robotSolved, setRobotSolved] = useState(false);
   const [playerSolved, setPlayerSolved] = useState(false);
+  const [robotSolution, setRobotSolution] = useState(null); // solution steps when robot wins
 
   // Badges
   const [battleBadges, setBattleBadges] = useState(()=>loadBattleBadges());
@@ -2231,7 +2232,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     setNumbers(newCards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
     setSelectedIdx(null); setOperator(null); setSteps([]);
     setMessage({text:"",type:""}); setTimeLeft(60);
-    setRobotSolved(false); setPlayerSolved(false);
+    setRobotSolved(false); setPlayerSolved(false); setRobotSolution(null);
     setRoundWinner(null);
     setPhase("playing");
   }
@@ -2336,7 +2337,14 @@ function BattleScreen({ lang, setLang, onBack }) {
     }
   }
 
-  function handleRobotSolves() { setRobotSolved(true); endRound("robot"); }
+  function handleRobotSolves() {
+    // Compute a full solution from the original cards to show the player
+    const originalNums = cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
+    const sol = getHintSteps(originalNums);
+    setRobotSolution(sol);
+    setRobotSolved(true);
+    endRound("robot");
+  }
   function handleTimeout() { endRound("timeout"); }
 
   function handlePlayerSolve() {
@@ -2626,16 +2634,43 @@ function BattleScreen({ lang, setLang, onBack }) {
       <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",
         display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
         fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
-        <style>{`@keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}`}</style>
+        <style>{`@keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
         <div style={{fontSize:56,marginBottom:12,animation:"popIn 0.4s ease"}}>
-          {won?"⚔️":timeout?"⏱️":"💀"}
+          {won?"⚔️":timeout?"⏱️":"🤖"}
         </div>
         <h2 style={{color:won?"#34d399":timeout?"#f59e0b":"#ef4444",fontSize:26,fontWeight:900,margin:"0 0 8px",animation:"popIn 0.4s ease"}}>
           {won?(lang==="zh"?"你先解出！":"You solved it first!")
            :timeout?(lang==="zh"?"时间到！双方各失1命":"Timeout! Both lose 1 life")
            :(lang==="zh"?"机器人先解出！":"Robot got it first!")}
         </h2>
-        <div style={{display:"flex",gap:20,marginBottom:24,marginTop:8}}>
+
+        {/* Robot solution — shown when robot wins or timeout */}
+        {!won && robotSolution && robotSolution.length > 0 && (
+          <div style={{
+            background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",
+            borderRadius:14,padding:"12px 16px",marginBottom:16,
+            width:"100%",maxWidth:340,animation:"fadeSlide 0.4s ease 0.3s both",
+          }}>
+            <div style={{color:"#ef4444",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
+              🤖 {lang==="zh"?"机器人的解法：":"Robot's solution:"}
+            </div>
+            {robotSolution.map((s,i)=>(
+              <div key={i} style={{
+                color:"#fca5a5",fontSize:14,fontWeight:700,
+                marginBottom:4,padding:"5px 10px",
+                background:"rgba(239,68,68,0.1)",borderRadius:8,
+                animation:`fadeSlide 0.3s ease ${0.4+i*0.1}s both`,
+              }}>
+                <span style={{color:"#7f1d1d",fontSize:11,marginRight:6}}>
+                  {lang==="zh"?`第${i+1}步`:`Step ${i+1}`}
+                </span>
+                {s.expr}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:20,marginBottom:24,marginTop:4}}>
           <div style={{textAlign:"center"}}>
             <div style={{color:"#f6d365",fontSize:12,marginBottom:4}}>{playerName}</div>
             <div style={{display:"flex",gap:3}}>{Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:15,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div>

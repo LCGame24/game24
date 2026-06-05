@@ -2176,28 +2176,51 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
   );
 }
 
+// ── Battle Abilities ──────────────────────────────────────────────────────
+const ABILITIES = [
+  { id:"hint",   icon:"💡", en:"Hint",        zh:"提示",     desc:"Shows your next step",        descZh:"显示下一步" },
+  { id:"double", icon:"💥", en:"Double Dmg",  zh:"双倍伤害", desc:"Next solve steals 2 lives",   descZh:"下次解题夺2命" },
+  { id:"hack",   icon:"👾", en:"Hack",         zh:"黑客",     desc:"Disrupts robot for 4s",      descZh:"干扰机器人4秒" },
+  { id:"cancel", icon:"✂️", en:"Cancel Op",   zh:"取消运算", desc:"Removes one operator",        descZh:"取消一个运算符" },
+  { id:"switch", icon:"🔄", en:"Switch",       zh:"交换",     desc:"Resets robot progress",      descZh:"重置机器人进度" },
+  { id:"shield", icon:"🛡️", en:"Shield",      zh:"护盾",     desc:"Block next life loss",       descZh:"格挡下次失命" },
+];
+
+function pickAbilities() {
+  const arr = [...ABILITIES].sort(()=>Math.random()-0.5);
+  return arr.slice(0,2);
+}
+
 // ── Battle Mode Screen ─────────────────────────────────────────────────────
 function BattleScreen({ lang, setLang, onBack }) {
   const t = T[lang];
-  const BATTLE_OPS = ["+","−","×","÷","^","√"];
-  const LIVES = 3;
+  const ALL_OPS = ["+","−","×","÷","^","√"];
+  const BLIVES = 3;
 
-  // phase: setup | countdown | playing | roundEnd | matchEnd
   const [phase, setPhase] = useState("setup");
   const [robotDiff, setRobotDiff] = useState("Medium");
   const [playerName, setPlayerName] = useState("Player");
-
-  // Match state
-  const [playerLives, setPlayerLives] = useState(LIVES);
-  const [robotLives, setRobotLives] = useState(LIVES);
+  const [playerLives, setPlayerLives] = useState(BLIVES);
+  const [robotLives, setRobotLives] = useState(BLIVES);
   const [playerLivesLost, setPlayerLivesLost] = useState(0);
-  const [roundWinner, setRoundWinner] = useState(null); // "player"|"robot"|"timeout"
-  const [matchWinner, setMatchWinner] = useState(null); // "player"|"robot"
+  const [roundWinner, setRoundWinner] = useState(null);
+  const [matchWinner, setMatchWinner] = useState(null);
   const [roundNum, setRoundNum] = useState(1);
   const [countdown, setCountdown] = useState(3);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Puzzle state
+  // Abilities
+  const [abilities, setAbilities] = useState([]);
+  const [abilityAnim, setAbilityAnim] = useState(null); // {icon, text}
+  const [hackActive, setHackActive] = useState(false);
+  const [cancelledOp, setCancelledOp] = useState(null);
+  const [hintText, setHintText] = useState(null);
+  const [doubleDmg, setDoubleDmg] = useState(false);
+  const [shield, setShield] = useState(false);
+  const hackPenaltyRef = useRef(0);
+  const robotElapsedRef = useRef(0);
+
+  // Puzzle
   const [cards, setCards] = useState([]);
   const [numbers, setNumbers] = useState([]);
   const [selectedIdx, setSelectedIdx] = useState(null);
@@ -2206,8 +2229,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   const [message, setMessage] = useState({text:"",type:""});
   const [timeLeft, setTimeLeft] = useState(60);
   const [robotSolved, setRobotSolved] = useState(false);
-  const [playerSolved, setPlayerSolved] = useState(false);
-  const [robotSolution, setRobotSolution] = useState(null); // solution steps when robot wins
+  const [robotSolution, setRobotSolution] = useState(null);
 
   // Badges
   const [battleBadges, setBattleBadges] = useState(()=>loadBattleBadges());
@@ -2216,252 +2238,185 @@ function BattleScreen({ lang, setLang, onBack }) {
   const timerRef = useRef(null);
   const robotRef = useRef(null);
   const roundEndRef = useRef(false);
+  const msgColor = {win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
+  const rs = ROBOT_SPEED[robotDiff];
 
-  function dealBattleCards() {
-    const deck = [];
+  function flashAbility(icon, text) {
+    setAbilityAnim({icon, text});
+    setTimeout(()=>setAbilityAnim(null), 1600);
+  }
+
+  function useAbility(ab) {
+    setAbilities(prev=>prev.filter(a=>a.id!==ab.id));
+    if (ab.id==="hint") {
+      const steps = getHintSteps(numbers);
+      if (steps&&steps.length>0) { setHintText(steps[0].expr); setTimeout(()=>setHintText(null),5000); }
+      flashAbility("💡", lang==="zh"?"提示已激活！":"Hint activated!");
+    } else if (ab.id==="double") {
+      setDoubleDmg(true);
+      flashAbility("💥", lang==="zh"?"双倍伤害！":"Double damage!");
+    } else if (ab.id==="hack") {
+      hackPenaltyRef.current += 4;
+      setHackActive(true);
+      setTimeout(()=>setHackActive(false), 4000);
+      flashAbility("👾", lang==="zh"?"黑客攻击！":"Hacking robot!");
+    } else if (ab.id==="cancel") {
+      const removable = ALL_OPS.filter(op=>op!=="+"&&op!==cancelledOp);
+      if (removable.length>0) {
+        const picked = removable[Math.floor(Math.random()*removable.length)];
+        setCancelledOp(picked);
+        flashAbility("✂️", (lang==="zh"?"已取消运算符 ":"Cancelled operator ")+picked);
+      }
+    } else if (ab.id==="switch") {
+      hackPenaltyRef.current += 4; robotElapsedRef.current = 0;
+      flashAbility("🔄", lang==="zh"?"机器人进度已重置！":"Robot reset!");
+    } else if (ab.id==="shield") {
+      setShield(true);
+      flashAbility("🛡️", lang==="zh"?"护盾已激活！":"Shield up!");
+    }
+  }
+
+  function dealCards() {
+    const deck=[];
     for (const s of SUITS) for (const v of VALUES.filter(v=>v<=10)) deck.push({suit:s,val:v,id:s+v});
-    let drawn, attempts=0;
-    do {
-      deck.sort(()=>Math.random()-0.5);
-      drawn = deck.slice(0,4);
-      attempts++;
-      if (attempts>100) break;
-    } while (!hasSolution(drawn));
+    let drawn, tries=0;
+    do { deck.sort(()=>Math.random()-0.5); drawn=deck.slice(0,4); tries++; if(tries>100)break; } while(!hasSolution(drawn));
     return drawn;
   }
 
   function startRound() {
-    roundEndRef.current = false;
-    const newCards = dealBattleCards();
-    setCards(newCards);
-    setNumbers(newCards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
-    setSelectedIdx(null); setOperator(null); setSteps([]);
-    setMessage({text:"",type:""}); setTimeLeft(60);
-    setRobotSolved(false); setPlayerSolved(false); setRobotSolution(null);
-    setRoundWinner(null);
+    roundEndRef.current=false; hackPenaltyRef.current=0; robotElapsedRef.current=0;
+    const nc=dealCards();
+    setCards(nc); setNumbers(nc.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+    setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""});
+    setTimeLeft(60); setRobotSolved(false); setRobotSolution(null); setRoundWinner(null);
+    setCancelledOp(null); setHintText(null); setHackActive(false);
+    setAbilities(pickAbilities());
     setPhase("playing");
   }
 
-  function startCountdown() {
-    setPhase("countdown");
-    setCountdown(3);
-  }
+  function startCountdown() { setPhase("countdown"); setCountdown(3); }
 
-  // Countdown effect
-  useEffect(() => {
-    if (phase !== "countdown") return;
-    if (countdown <= 0) { startRound(); return; }
-    const t = setTimeout(()=>setCountdown(c=>c-1), 1000);
-    return ()=>clearTimeout(t);
-  }, [phase, countdown]);
-
-  // Robot AI — waits minThinkTime seconds, then % chance per second
-  useEffect(() => {
-    if (phase !== "playing" || roundEndRef.current) return;
-    const { minThinkTime, solveChance } = ROBOT_SPEED[robotDiff];
-    let elapsed = 0;
-    robotRef.current = setInterval(()=>{
-      if (roundEndRef.current) { clearInterval(robotRef.current); return; }
-      elapsed += 1;
-      if (elapsed < minThinkTime) return; // still in thinking phase
-      if (Math.random() < solveChance) {
-        clearInterval(robotRef.current);
-        handleRobotSolves();
-      }
-    }, 1000);
-    return ()=>clearInterval(robotRef.current);
-  }, [phase, robotDiff, roundNum]);
-
-  // Countdown timer
   useEffect(()=>{
-    if (phase !== "playing") return;
-    timerRef.current = setInterval(()=>{
+    if(phase!=="countdown") return;
+    if(countdown<=0){startRound();return;}
+    const t=setTimeout(()=>setCountdown(c=>c-1),1000);
+    return()=>clearTimeout(t);
+  },[phase,countdown]);
+
+  useEffect(()=>{
+    if(phase!=="playing"||roundEndRef.current) return;
+    const {minThinkTime,solveChance}=ROBOT_SPEED[robotDiff];
+    robotElapsedRef.current=0;
+    robotRef.current=setInterval(()=>{
+      if(roundEndRef.current){clearInterval(robotRef.current);return;}
+      robotElapsedRef.current+=1;
+      if(robotElapsedRef.current<minThinkTime+hackPenaltyRef.current) return;
+      if(Math.random()<solveChance){clearInterval(robotRef.current);doRobotSolve();}
+    },1000);
+    return()=>clearInterval(robotRef.current);
+  },[phase,robotDiff,roundNum]);
+
+  useEffect(()=>{
+    if(phase!=="playing") return;
+    timerRef.current=setInterval(()=>{
       setTimeLeft(t=>{
-        if (t<=1) { clearInterval(timerRef.current); if(!roundEndRef.current) handleTimeout(); return 0; }
+        if(t<=1){clearInterval(timerRef.current);if(!roundEndRef.current)endRound("timeout");return 0;}
         return t-1;
       });
     },1000);
-    return ()=>clearInterval(timerRef.current);
-  },[phase, roundNum]);
+    return()=>clearInterval(timerRef.current);
+  },[phase,roundNum]);
 
   function endRound(winner) {
-    if (roundEndRef.current) return;
-    roundEndRef.current = true;
-    clearInterval(timerRef.current);
-    clearInterval(robotRef.current);
+    if(roundEndRef.current) return;
+    roundEndRef.current=true;
+    clearInterval(timerRef.current); clearInterval(robotRef.current);
     setRoundWinner(winner);
-
-    let newPlayerLives = playerLives;
-    let newRobotLives = robotLives;
-    let newPlayerLivesLost = playerLivesLost;
-
-    if (winner === "robot" || winner === "timeout") {
-      newPlayerLives = playerLives - 1;
-      newPlayerLivesLost = playerLivesLost + 1;
-      setPlayerLives(newPlayerLives);
-      setPlayerLivesLost(newPlayerLivesLost);
+    let pl=playerLives, rl=robotLives, pll=playerLivesLost;
+    const dmg=doubleDmg&&winner==="player"?2:1;
+    if(winner==="robot"||winner==="timeout") {
+      if(shield){setShield(false);}
+      else{pl=playerLives-1;pll=playerLivesLost+1;setPlayerLives(pl);setPlayerLivesLost(pll);}
     }
-    if (winner === "player" || winner === "timeout") {
-      if (winner === "player") {
-        newRobotLives = robotLives - 1;
-        setRobotLives(newRobotLives);
-      } else {
-        // timeout: both lose a life
-        newRobotLives = robotLives - 1;
-        setRobotLives(newRobotLives);
+    if(winner==="player"){rl=Math.max(0,robotLives-dmg);setRobotLives(rl);if(doubleDmg)setDoubleDmg(false);}
+    if(winner==="timeout"){rl=Math.max(0,robotLives-1);setRobotLives(rl);}
+    if(pl<=0||rl<=0){
+      const mw=pl<=0?"robot":"player"; setMatchWinner(mw);
+      if(mw==="player"){
+        setShowConfetti(true); setTimeout(()=>setShowConfetti(false),3000);
+        const tw=loadBattleWins()+1; saveBattleWins(tw);
+        const earned=checkBattleBadges(battleBadges,{won:true,playerLivesLost:pll,robotDifficulty:robotDiff,totalWins:tw});
+        const fe=pl===1?earned:earned.filter(b=>b!=="battle_comeback");
+        if(fe.length>0){const all=[...battleBadges,...fe];setBattleBadges(all);saveBattleBadges(all);setNewBattleBadges(fe);setTimeout(()=>setNewBattleBadges([]),4000);}
       }
-    }
-
-    // Check match end
-    if (newPlayerLives <= 0 || newRobotLives <= 0) {
-      const mWinner = newPlayerLives <= 0 ? "robot" : "player";
-      setMatchWinner(mWinner);
-      if (mWinner === "player") {
-        setShowConfetti(true);
-        setTimeout(()=>setShowConfetti(false), 3000);
-        // Award badges
-        const totalWins = loadBattleWins() + 1;
-        saveBattleWins(totalWins);
-        const earned = checkBattleBadges(battleBadges, {
-          won: true,
-          playerLivesLost: newPlayerLivesLost,
-          robotDifficulty: robotDiff,
-          totalWins,
-        });
-        // Comeback King — only if player was at 1 life
-        const finalEarned = newPlayerLives === 1
-          ? earned
-          : earned.filter(b=>b!=="battle_comeback");
-        if (finalEarned.length > 0) {
-          const all = [...battleBadges, ...finalEarned];
-          setBattleBadges(all); saveBattleBadges(all);
-          setNewBattleBadges(finalEarned);
-          setTimeout(()=>setNewBattleBadges([]), 4000);
-        }
-      }
-      setTimeout(()=>setPhase("matchEnd"), 1800);
+      setTimeout(()=>setPhase("matchEnd"),1600);
     } else {
-      setTimeout(()=>setPhase("roundEnd"), 1200);
+      // No pause — start next round countdown immediately
+      setTimeout(()=>{setRoundNum(r=>r+1);startCountdown();},1800);
     }
   }
 
-  function handleRobotSolves() {
-    // Compute a full solution from the original cards to show the player
-    const originalNums = cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
-    const sol = getHintSteps(originalNums);
-    setRobotSolution(sol);
-    setRobotSolved(true);
-    endRound("robot");
-  }
-  function handleTimeout() { endRound("timeout"); }
-
-  function handlePlayerSolve() {
-    setPlayerSolved(true);
-    setMessage({text:"",type:""});
-    endRound("player");
+  function doRobotSolve() {
+    const orig=cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
+    setRobotSolution(getHintSteps(orig)); setRobotSolved(true); endRound("robot");
   }
 
-  // ── puzzle interaction (same logic as Classic) ──
   function handleNumberClick(idx) {
-    if (phase !== "playing" || roundEndRef.current) return;
-    if (selectedIdx===null) { setSelectedIdx(idx); setOperator(null); setMessage({text:"",type:""}); }
-    else if (selectedIdx===idx) { setSelectedIdx(null); setOperator(null); }
-    else if (operator==="√") { applySqrt(selectedIdx); }
-    else if (operator!==null) { applyOp(selectedIdx,operator,idx); }
+    if(phase!=="playing"||roundEndRef.current) return;
+    if(selectedIdx===null){setSelectedIdx(idx);setOperator(null);setMessage({text:"",type:""});}
+    else if(selectedIdx===idx){setSelectedIdx(null);setOperator(null);}
+    else if(operator==="√"){doSqrt(selectedIdx);}
+    else if(operator!==null){doOp(selectedIdx,operator,idx);}
   }
 
-  function applyOp(iA,op,iB) {
-    const a=numbers[iA].value,b=numbers[iB].value;
-    const la=numbers[iA].label,lb=numbers[iB].label;
-    let result;
-    if (op==="+") result=a+b;
-    else if (op==="−") result=a-b;
-    else if (op==="×") result=a*b;
-    else if (op==="÷") {
-      if(Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}
-      result=a/b;
-    } else if (op==="^") result=Math.pow(a,b);
-    else if (op==="ʸ√") {
-      if(Math.abs(b)<1e-9){setMessage({text:lang==="zh"?"根指数不能为零！":"Root degree can't be zero!",type:"bad"});return;}
-      result=a<0?(Number.isInteger(b)&&b%2!==0?-(Math.pow(-a,1/b)):null):Math.pow(a,1/b);
-      if(result===null){setMessage({text:lang==="zh"?"负数只能开奇数次方根！":"Odd integer roots only for negative base!",type:"bad"});return;}
-    }
-    const expr=`${la} ${op} ${lb} = ${fmt(result)}`;
-    const newNums=numbers.filter((_,i)=>i!==iA&&i!==iB);
-    newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
-    setSteps(s=>[...s,{expr,result}]);
-    setNumbers(newNums); setSelectedIdx(null); setOperator(null);
-    if(newNums.length===1){
-      if(Math.abs(result-24)<1e-9) handlePlayerSolve();
-      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
-    } else setMessage({text:`✓ ${expr}`,type:"step"});
-  }
-
-  function applySqrt(idx) {
-    const a=numbers[idx].value;
-    if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":"Can't take sqrt of a negative!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
-    const result=Math.sqrt(a);
-    const expr=`√${fmt(a)} = ${fmt(result)}`;
-    const newNums=numbers.filter((_,i)=>i!==idx);
-    newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
-    setSteps(s=>[...s,{expr,result}]);
-    setNumbers(newNums); setSelectedIdx(null); setOperator(null);
-    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handlePlayerSolve();else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
+  function doOp(iA,op,iB) {
+    const a=numbers[iA].value,b=numbers[iB].value,la=numbers[iA].label,lb=numbers[iB].label;
+    let r;
+    if(op==="+")r=a+b; else if(op==="−")r=a-b; else if(op==="×")r=a*b;
+    else if(op==="÷"){if(Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}r=a/b;}
+    else if(op==="^")r=Math.pow(a,b);
+    const expr=`${la} ${op} ${lb} = ${fmt(r)}`;
+    const nn=numbers.filter((_,i)=>i!==iA&&i!==iB);
+    nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
+    setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
+    if(nn.length===1){if(Math.abs(r-24)<1e-9){endRound("player");}else setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}
     else setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
-  function handleReset() {
-    setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
-    setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""});
+  function doSqrt(idx) {
+    const a=numbers[idx].value;
+    if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":"Can't sqrt negative!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
+    const r=Math.sqrt(a),expr=`√${fmt(a)} = ${fmt(r)}`;
+    const nn=numbers.filter((_,i)=>i!==idx);
+    nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
+    setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
+    if(nn.length===1){if(Math.abs(r-24)<1e-9)endRound("player");else setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}
+    else setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
-  const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
-  const rs = ROBOT_SPEED[robotDiff];
+  function doReset(){setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));setSelectedIdx(null);setOperator(null);setSteps([]);setMessage({text:"",type:""});}
 
-  // Lives displayed inline throughout
-
-  // ── SETUP screen ──
-  if (phase==="setup") return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
+  // ── SETUP ──
+  if(phase==="setup") return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
       <style>{`@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
-
-      <div style={{textAlign:"center",marginBottom:28}}>
+      <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
-        <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",
-          background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",
-          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-          animation:"shimmer 2s linear infinite"}}>
-          {lang==="zh"?"对战模式":"Battle Mode"}
-        </h1>
-        <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>
-          {lang==="zh"?"「你的大脑就是你的武器」":"\"Your brain is your weapon\""}
-        </p>
+        <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":"Battle Mode"}</h1>
+        <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>{lang==="zh"?"「你的大脑就是你的武器」":"\"Your brain is your weapon\""}</p>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>{t.language}</button>
       </div>
-
       <div style={{width:"100%",maxWidth:360,animation:"fadeIn 0.4s ease"}}>
-
-        {/* Player name */}
-        <div style={{marginBottom:20}}>
+        <div style={{marginBottom:16}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"你的名字":"Your Name"}</div>
-          <input value={playerName} onChange={e=>setPlayerName(e.target.value||"Player")} placeholder="Player"
-            style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,color:"white",padding:"10px 14px",fontSize:15,width:"100%",boxSizing:"border-box",outline:"none"}}/>
+          <input value={playerName} onChange={e=>setPlayerName(e.target.value||"Player")} placeholder="Player" style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,color:"white",padding:"10px 14px",fontSize:15,width:"100%",boxSizing:"border-box",outline:"none"}}/>
         </div>
-
-        {/* Robot difficulty */}
-        <div style={{marginBottom:24}}>
+        <div style={{marginBottom:16}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{lang==="zh"?"机器人难度":"Robot Difficulty"}</div>
           <div style={{display:"flex",gap:8}}>
             {Object.entries(ROBOT_SPEED).map(([key,val])=>(
-              <button key={key} onClick={()=>setRobotDiff(key)} style={{
-                flex:1,padding:"12px 6px",borderRadius:14,border:"none",
-                background:robotDiff===key?`${val.color}22`:"rgba(255,255,255,0.05)",
-                outline:robotDiff===key?`2px solid ${val.color}`:"2px solid transparent",
-                color:robotDiff===key?val.color:"#64748b",
-                fontWeight:800,fontSize:13,cursor:"pointer",transition:"all 0.2s",
-              }}>
+              <button key={key} onClick={()=>setRobotDiff(key)} style={{flex:1,padding:"10px 6px",borderRadius:14,border:"none",background:robotDiff===key?`${val.color}22`:"rgba(255,255,255,0.05)",outline:robotDiff===key?`2px solid ${val.color}`:"2px solid transparent",color:robotDiff===key?val.color:"#64748b",fontWeight:800,fontSize:13,cursor:"pointer",transition:"all 0.2s"}}>
                 <div style={{fontSize:20,marginBottom:4}}>{key==="Easy"?"🐢":key==="Medium"?"🦊":"⚡"}</div>
                 <div>{lang==="zh"?val.labelZh:val.label}</div>
                 <div style={{fontSize:10,fontWeight:400,marginTop:2,color:"#64748b"}}>{lang==="zh"?val.descZh:val.desc}</div>
@@ -2469,342 +2424,202 @@ function BattleScreen({ lang, setLang, onBack }) {
             ))}
           </div>
         </div>
-
-        {/* Match rules summary */}
-        <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:14,padding:"14px 16px",marginBottom:24}}>
-          {[
-            {icon:"❤️", en:`${LIVES} lives each — first to 0 loses`, zh:`各有 ${LIVES} 条命 — 先归零者败`},
-            {icon:"⚔️", en:"Solve 24 first → steal 1 robot life", zh:"先算出24 → 夺取机器人1条命"},
-            {icon:"⏱️", en:"60s per round — timeout = both lose 1 life", zh:"每题60秒 — 超时双方各失1命"},
-            {icon:"🚫", en:"No hints, no skip — pure battle!", zh:"无提示，无跳过 — 纯粹对战！"},
-          ].map((r,i)=>(
-            <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:i<3?8:0}}>
-              <div style={{fontSize:16,flexShrink:0}}>{r.icon}</div>
-              <div style={{color:"#cbd5e1",fontSize:13}}>{lang==="zh"?r.zh:r.en}</div>
-            </div>
+        <div style={{marginBottom:16,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:14,padding:"10px 14px"}}>
+          <div style={{color:"#ef4444",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>⚡ {lang==="zh"?"每轮随机获得2个技能":"2 random abilities per round"}</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            {ABILITIES.map(ab=>(
+              <div key={ab.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"4px 8px",display:"flex",alignItems:"center",gap:5}}>
+                <span style={{fontSize:13}}>{ab.icon}</span>
+                <span style={{color:"#cbd5e1",fontSize:11,fontWeight:700}}>{lang==="zh"?ab.zh:ab.en}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{marginBottom:16,background:"rgba(239,68,68,0.04)",border:"1px solid rgba(239,68,68,0.15)",borderRadius:14,padding:"10px 14px"}}>
+          {[{icon:"❤️",en:`${BLIVES} lives each — first to 0 loses`,zh:`各有${BLIVES}条命`},{icon:"⚔️",en:"Solve 24 first → steal a life",zh:"先解出→夺命"},{icon:"⏱️",en:"60s — timeout = both lose 1",zh:"60秒超时双方各失1命"}].map((r,i)=>(
+            <div key={i} style={{display:"flex",gap:10,marginBottom:i<2?6:0}}><div style={{fontSize:13}}>{r.icon}</div><div style={{color:"#94a3b8",fontSize:12}}>{lang==="zh"?r.zh:r.en}</div></div>
           ))}
         </div>
-
-        {/* Badges preview */}
-        <div style={{marginBottom:24}}>
-          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length} {lang==="zh"?"已解锁":"unlocked"})</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        <div style={{marginBottom:16}}>
+          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length})</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {BATTLE_BADGES.map(b=>(
-              <div key={b.id} style={{background:battleBadges.includes(b.id)?"rgba(239,68,68,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${battleBadges.includes(b.id)?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"4px 8px",fontSize:12,color:battleBadges.includes(b.id)?"#fca5a5":"#334155"}}>
-                {b.icon} {lang==="zh"?b.zh:b.en}
-              </div>
+              <div key={b.id} style={{background:battleBadges.includes(b.id)?"rgba(239,68,68,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${battleBadges.includes(b.id)?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"3px 7px",fontSize:11,color:battleBadges.includes(b.id)?"#fca5a5":"#334155"}}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
             ))}
           </div>
         </div>
-
-        <button onClick={startCountdown} style={{
-          width:"100%",padding:"16px",borderRadius:16,border:"none",
-          background:"linear-gradient(135deg,#ef4444,#b91c1c)",
-          color:"white",fontSize:17,fontWeight:900,cursor:"pointer",
-          boxShadow:"0 4px 24px rgba(239,68,68,0.4)",marginBottom:12,
-          animation:"popIn 0.4s ease",
-        }}>⚔️ {lang==="zh"?"开始对战！":"Start Battle!"}</button>
-
-        <button onClick={onBack} style={{width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#64748b",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-          🏠 {lang==="zh"?"返回主页":"Main Menu"}
-        </button>
+        <button onClick={startCountdown} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#ef4444,#b91c1c)",color:"white",fontSize:17,fontWeight:900,cursor:"pointer",boxShadow:"0 4px 24px rgba(239,68,68,0.4)",marginBottom:10,animation:"popIn 0.4s ease"}}>⚔️ {lang==="zh"?"开始对战！":"Start Battle!"}</button>
+        <button onClick={onBack} style={{width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#64748b",fontSize:14,fontWeight:700,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
       </div>
     </div>
   );
 
-  // ── COUNTDOWN screen ──
-  if (phase==="countdown") return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      fontFamily:"'Trebuchet MS',sans-serif"}}>
+  // ── COUNTDOWN ──
+  if(phase==="countdown") return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif"}}>
       <style>{`@keyframes bigPop{0%{transform:scale(2);opacity:0}60%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}`}</style>
-      <div style={{fontSize:18,color:"#64748b",marginBottom:16,textTransform:"uppercase",letterSpacing:2}}>
-        {lang==="zh"?"准备好了吗？":"Get ready!"}
-      </div>
-      <div key={countdown} style={{fontSize:120,fontWeight:900,color:"#ef4444",animation:"bigPop 0.6s ease",lineHeight:1}}>
-        {countdown===0?"GO!":countdown}
-      </div>
-      <div style={{marginTop:24,color:"#475569",fontSize:14}}>
-        {lang==="zh"?`对战 🤖 ${rs.labelZh} 机器人`:`vs 🤖 ${rs.label} Robot`}
-      </div>
+      <div style={{fontSize:16,color:"#64748b",marginBottom:16,textTransform:"uppercase",letterSpacing:2}}>{lang==="zh"?"准备！":"Get ready!"}</div>
+      <div key={countdown} style={{fontSize:110,fontWeight:900,color:"#ef4444",animation:"bigPop 0.6s ease",lineHeight:1}}>{countdown===0?"GO!":countdown}</div>
+      <div style={{marginTop:20,color:"#475569",fontSize:13}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":"Round "}{roundNum}</div>
     </div>
   );
 
-  // ── MATCH END screen ──
-  if (phase==="matchEnd") return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
-      <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}} @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%{transform:translateX(0);opacity:1}85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}`}</style>
-
-      {/* Confetti for win */}
-      {showConfetti&&(
-        <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>
-          {Array.from({length:50}).map((_,i)=>{
-            const colors=["#ef4444","#f97316","#f6d365","#34d399","#60a5fa","#a78bfa"];
-            return <div key={i} style={{position:"absolute",top:"-20px",left:`${Math.random()*100}%`,width:6+Math.random()*8,height:6+Math.random()*8,background:colors[i%colors.length],borderRadius:Math.random()>0.5?"50%":"2px",animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`}}/>;
-          })}
-        </div>
-      )}
-
-      {/* New badge notifications */}
-      {newBattleBadges.map((id,i)=>{
-        const badge=BATTLE_BADGES.find(b=>b.id===id);
-        if(!badge) return null;
-        return (
-          <div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{fontSize:28}}>{badge.icon}</div>
-              <div>
-                <div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章解锁！":"Battle Badge!"}</div>
-                <div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?badge.zh:badge.en}</div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      <div style={{fontSize:64,animation:"trophy 1.5s ease infinite",marginBottom:8}}>
-        {matchWinner==="player"?"🏆":"💀"}
+  // ── MATCH END ──
+  if(phase==="matchEnd") return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
+      <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}} @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%,85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}`}</style>
+      {showConfetti&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{Array.from({length:50}).map((_,i)=>{const c=["#ef4444","#f97316","#f6d365","#34d399","#60a5fa","#a78bfa"];return <div key={i} style={{position:"absolute",top:"-20px",left:`${Math.random()*100}%`,width:6+Math.random()*8,height:6+Math.random()*8,background:c[i%c.length],borderRadius:Math.random()>0.5?"50%":"2px",animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`}}/>;})}</div>}
+      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:b.en}</div></div></div></div>:null;})}
+      <div style={{fontSize:64,animation:"trophy 1.5s ease infinite",marginBottom:8}}>{matchWinner==="player"?"🏆":"💀"}</div>
+      <h2 style={{fontSize:30,fontWeight:900,margin:"0 0 4px",background:matchWinner==="player"?"linear-gradient(90deg,#f6d365,#fda085,#f6d365)":"linear-gradient(90deg,#ef4444,#b91c1c,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{matchWinner==="player"?(lang==="zh"?"你赢了！🎉":"You Win! 🎉"):(lang==="zh"?"机器人赢了！":"Robot Wins!")}</h2>
+      <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":"Round "}{roundNum}</p>
+      <div style={{display:"flex",gap:20,marginBottom:20,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 22px"}}>
+        <div style={{textAlign:"center"}}><div style={{color:"#f6d365",fontSize:12,fontWeight:700,marginBottom:5}}>{playerName}</div><div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div></div>
+        <div style={{color:"#334155",fontSize:22,display:"flex",alignItems:"center"}}>VS</div>
+        <div style={{textAlign:"center"}}><div style={{color:rs.color,fontSize:12,fontWeight:700,marginBottom:5}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div><div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div></div>
       </div>
-      <h2 style={{fontSize:30,fontWeight:900,margin:"0 0 4px",
-        background:matchWinner==="player"?"linear-gradient(90deg,#f6d365,#fda085,#f6d365)":"linear-gradient(90deg,#ef4444,#b91c1c,#ef4444)",
-        backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-        animation:"shimmer 2s linear infinite"}}>
-        {matchWinner==="player"
-          ?(lang==="zh"?"你赢了！🎉":"You Win! 🎉")
-          :(lang==="zh"?"机器人赢了！":"Robot Wins!")}
-      </h2>
-      <p style={{color:"#64748b",fontSize:13,marginBottom:24}}>
-        {lang==="zh"?`对战 🤖 ${rs.labelZh} 机器人`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":"Round "}{roundNum}
-      </p>
-
-      {/* Final lives */}
-      <div style={{display:"flex",gap:24,marginBottom:24,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"16px 24px"}}>
-        <div style={{textAlign:"center"}}>
-          <div style={{color:"#f6d365",fontSize:12,fontWeight:700,marginBottom:6}}>{playerName}</div>
-          <div style={{display:"flex",gap:3,justifyContent:"center"}}>
-            {Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}
-          </div>
-        </div>
-        <div style={{color:"#334155",fontSize:24,display:"flex",alignItems:"center"}}>VS</div>
-        <div style={{textAlign:"center"}}>
-          <div style={{color:rs.color,fontSize:12,fontWeight:700,marginBottom:6}}>🤖 {lang==="zh"?rs.labelZh:rs.label} {lang==="zh"?"机器人":"Robot"}</div>
-          <div style={{display:"flex",gap:3,justifyContent:"center"}}>
-            {Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}
-          </div>
-        </div>
-      </div>
-
-      {/* Badges earned */}
-      {newBattleBadges.length>0&&(
-        <div style={{marginBottom:16,textAlign:"center",maxWidth:320,width:"100%"}}>
-          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>{lang==="zh"?"获得勋章！":"Badges Earned!"}</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"center"}}>
-            {newBattleBadges.map(id=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"4px 10px",fontSize:13,color:"#fca5a5"}}>{b.icon} {lang==="zh"?b.zh:b.en}</div>:null;})}
-          </div>
-        </div>
-      )}
-
       <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
-        <button onClick={()=>{
-          setPhase("setup"); setPlayerLives(LIVES); setRobotLives(LIVES);
-          setPlayerLivesLost(0); setRoundNum(1); setMatchWinner(null);
-          setNewBattleBadges([]);
-        }} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 24px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>
-          ⚔️ {lang==="zh"?"再战一局":"Play Again"}
-        </button>
-        <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"14px 24px",color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer"}}>
-          🏠 {lang==="zh"?"返回主页":"Main Menu"}
-        </button>
+        <button onClick={()=>{setPhase("setup");setPlayerLives(BLIVES);setRobotLives(BLIVES);setPlayerLivesLost(0);setRoundNum(1);setMatchWinner(null);setNewBattleBadges([]);setDoubleDmg(false);setShield(false);}} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 22px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>⚔️ {lang==="zh"?"再战一局":"Play Again"}</button>
+        <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"14px 22px",color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
       </div>
     </div>
   );
 
-  // ── ROUND END overlay (brief, auto-advances) ──
-  if (phase==="roundEnd") {
-    const won = roundWinner==="player";
-    const timeout = roundWinner==="timeout";
-    return (
-      <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",
-        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-        fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
-        <style>{`@keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
-        <div style={{fontSize:56,marginBottom:12,animation:"popIn 0.4s ease"}}>
-          {won?"⚔️":timeout?"⏱️":"🤖"}
-        </div>
-        <h2 style={{color:won?"#34d399":timeout?"#f59e0b":"#ef4444",fontSize:26,fontWeight:900,margin:"0 0 8px",animation:"popIn 0.4s ease"}}>
-          {won?(lang==="zh"?"你先解出！":"You solved it first!")
-           :timeout?(lang==="zh"?"时间到！双方各失1命":"Timeout! Both lose 1 life")
-           :(lang==="zh"?"机器人先解出！":"Robot got it first!")}
-        </h2>
-
-        {/* Robot solution — shown when robot wins or timeout */}
-        {!won && robotSolution && robotSolution.length > 0 && (
-          <div style={{
-            background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.25)",
-            borderRadius:14,padding:"12px 16px",marginBottom:16,
-            width:"100%",maxWidth:340,animation:"fadeSlide 0.4s ease 0.3s both",
-          }}>
-            <div style={{color:"#ef4444",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
-              🤖 {lang==="zh"?"机器人的解法：":"Robot's solution:"}
-            </div>
-            {robotSolution.map((s,i)=>(
-              <div key={i} style={{
-                color:"#fca5a5",fontSize:14,fontWeight:700,
-                marginBottom:4,padding:"5px 10px",
-                background:"rgba(239,68,68,0.1)",borderRadius:8,
-                animation:`fadeSlide 0.3s ease ${0.4+i*0.1}s both`,
-              }}>
-                <span style={{color:"#7f1d1d",fontSize:11,marginRight:6}}>
-                  {lang==="zh"?`第${i+1}步`:`Step ${i+1}`}
-                </span>
-                {s.expr}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{display:"flex",gap:20,marginBottom:24,marginTop:4}}>
-          <div style={{textAlign:"center"}}>
-            <div style={{color:"#f6d365",fontSize:12,marginBottom:4}}>{playerName}</div>
-            <div style={{display:"flex",gap:3}}>{Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:15,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div>
-          </div>
-          <div style={{color:"#334155",fontSize:18,display:"flex",alignItems:"center"}}>VS</div>
-          <div style={{textAlign:"center"}}>
-            <div style={{color:rs.color,fontSize:12,marginBottom:4}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div>
-            <div style={{display:"flex",gap:3}}>{Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:15,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div>
-          </div>
-        </div>
-        <button onClick={()=>{setRoundNum(r=>r+1); startCountdown();}} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 28px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>
-          ⚔️ {lang==="zh"?"下一题":"Next Round"}
-        </button>
-      </div>
-    );
-  }
-
-  // ── PLAYING screen ──
+  // ── PLAYING ──
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",
-      display:"flex",flexDirection:"column",alignItems:"center",
-      fontFamily:"'Trebuchet MS',sans-serif",padding:"12px 12px",overflowY:"auto"}}>
-      <style>{`@keyframes cardDeal{from{opacity:0;transform:translateY(-30px) scale(0.85)}to{opacity:1;transform:translateY(0) scale(1)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}`}</style>
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:"10px 12px",overflowY:"auto",position:"relative"}}>
+      <style>{`
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+        @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes abilityFlash{0%{transform:translate(-50%,-50%) scale(0.7);opacity:0}15%{transform:translate(-50%,-50%) scale(1.1);opacity:1}75%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(0.9);opacity:0}}
+        @keyframes glitchA{0%{clip-path:inset(20% 0 55% 0);transform:translate(-3px)}50%{clip-path:inset(60% 0 5% 0);transform:translate(3px)}100%{clip-path:inset(20% 0 55% 0);transform:translate(-3px)}}
+        @keyframes glitchB{0%{clip-path:inset(55% 0 20% 0);transform:translate(3px)}50%{clip-path:inset(10% 0 65% 0);transform:translate(-3px)}100%{clip-path:inset(55% 0 20% 0);transform:translate(3px)}}
+        @keyframes flicker{0%,100%{opacity:1}50%{opacity:0.25}}
+      `}</style>
+
+      {/* Hack glitch overlay */}
+      {hackActive&&(
+        <div style={{position:"fixed",inset:0,zIndex:500,pointerEvents:"none",overflow:"hidden"}}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,255,65,0.04)",animation:"flicker 0.12s infinite"}}/>
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#001a00,#1a0505,#000)",opacity:0.92,animation:"glitchA 0.25s infinite"}}/>
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#1a0505,#000,#001a00)",opacity:0.85,animation:"glitchB 0.18s infinite"}}/>
+          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",color:"#00ff41",fontFamily:"monospace",fontSize:15,fontWeight:700,textAlign:"center",textShadow:"0 0 12px #00ff41",animation:"flicker 0.09s infinite",zIndex:501}}>
+            {["SYSTEM OVERRIDE","HACK ACTIVE","ERR 0x4F3A","CTRL+ALT+DEL","GLITCH.EXE"][Math.floor(Date.now()/600)%5]}
+          </div>
+        </div>
+      )}
+
+      {/* Ability flash */}
+      {abilityAnim&&(
+        <div style={{position:"fixed",top:"50%",left:"50%",zIndex:600,pointerEvents:"none",animation:"abilityFlash 1.6s ease forwards",background:"rgba(0,0,0,0.88)",border:"2px solid #ef4444",borderRadius:22,padding:"18px 32px",textAlign:"center",minWidth:200}}>
+          <div style={{fontSize:44,marginBottom:6}}>{abilityAnim.icon}</div>
+          <div style={{color:"#fca5a5",fontWeight:900,fontSize:15}}>{abilityAnim.text}</div>
+        </div>
+      )}
 
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:420,marginBottom:10}}>
-        <h2 style={{fontSize:18,fontWeight:900,margin:0,
-          background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-          ⚔️ {lang==="zh"?"对战模式":"Battle Mode"}
-        </h2>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:420,marginBottom:8}}>
+        <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":"Battle Mode"}</h2>
         <div style={{display:"flex",gap:6}}>
           <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>{t.language}</button>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
         </div>
       </div>
 
-      {/* Lives bar — full width, both sides */}
-      <div style={{width:"100%",maxWidth:420,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:16,padding:"12px 16px",marginBottom:12}}>
+      {/* Lives + timer */}
+      <div style={{width:"100%",maxWidth:420,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:16,padding:"10px 14px",marginBottom:8}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          {/* Player lives */}
           <div style={{textAlign:"center"}}>
-            <div style={{color:"#f6d365",fontSize:11,fontWeight:700,marginBottom:4}}>{playerName}</div>
-            <div style={{display:"flex",gap:3}}>{Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
+            <div style={{color:"#f6d365",fontSize:11,fontWeight:700,marginBottom:3}}>{playerName}{doubleDmg?" 💥":""}{shield?" 🛡️":""}</div>
+            <div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
           </div>
-          {/* Round + timer */}
           <div style={{textAlign:"center"}}>
-            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"第":"Round "}{roundNum}</div>
-            <div style={{
-              color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",
-              fontWeight:900,fontSize:26,
-              animation:timeLeft<=10?"pulse 0.7s infinite":"none",
-            }}>{timeLeft}s</div>
+            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"第":"Rnd "}{roundNum}</div>
+            <div style={{color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",fontWeight:900,fontSize:26,animation:timeLeft<=10?"pulse 0.7s infinite":"none"}}>{timeLeft}s</div>
           </div>
-          {/* Robot lives */}
           <div style={{textAlign:"center"}}>
-            <div style={{color:rs.color,fontSize:11,fontWeight:700,marginBottom:4}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div>
-            <div style={{display:"flex",gap:3}}>{Array.from({length:LIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
+            <div style={{color:rs.color,fontSize:11,fontWeight:700,marginBottom:3}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div>
+            <div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
           </div>
         </div>
       </div>
 
       {/* Robot status */}
-      <div style={{marginBottom:10,width:"100%",maxWidth:420,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.15)",borderRadius:12,padding:"8px 14px",display:"flex",alignItems:"center",gap:10}}>
-        <div style={{fontSize:20}}>🤖</div>
-        <div style={{color:"#94a3b8",fontSize:13}}>
-          {robotSolved
-            ?(lang==="zh"?"✓ 机器人已解出！":"✓ Robot solved it!")
-            :(lang==="zh"?`正在思考... (${rs.descZh})`:`Thinking... (${rs.desc})`)}
-        </div>
-        {!robotSolved&&<div style={{marginLeft:"auto",display:"flex",gap:3}}>
-          {[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:"#ef4444",animation:`pulse 1.2s ease ${i*0.3}s infinite`}}/>)}
-        </div>}
+      <div style={{marginBottom:8,width:"100%",maxWidth:420,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.15)",borderRadius:12,padding:"6px 12px",display:"flex",alignItems:"center",gap:8}}>
+        <div style={{fontSize:18}}>🤖</div>
+        <div style={{color:"#94a3b8",fontSize:12,flex:1}}>{robotSolved?(lang==="zh"?"✓ 解出！":"✓ Solved!"):(lang==="zh"?"正在思考...":"Thinking...")}</div>
+        {cancelledOp&&<div style={{color:"#f59e0b",fontSize:11,fontWeight:700}}>✂️ {cancelledOp} {lang==="zh"?"已取消":"off"}</div>}
+        {!robotSolved&&<div style={{display:"flex",gap:3}}>{[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",animation:`pulse 1.2s ease ${i*0.3}s infinite`}}/>)}</div>}
       </div>
 
-      {/* Cards 2×2 */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14,width:"fit-content"}}>
-        {cards.map((card,i)=>{
-          const inPool=numbers.some(n=>n.sourceId===card.id);
-          return <PlayingCard key={card.id} card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>;
-        })}
+      {/* Hint */}
+      {hintText&&<div style={{width:"100%",maxWidth:420,marginBottom:8,background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",borderRadius:12,padding:"7px 14px",textAlign:"center",animation:"popIn 0.3s ease"}}><div style={{color:"#c4b5fd",fontSize:11,fontWeight:700,marginBottom:2}}>💡 {lang==="zh"?"提示 — 下一步：":"Hint — next step:"}</div><div style={{color:"#e9d5ff",fontSize:14,fontWeight:800}}>{hintText}</div></div>}
+
+      {/* Cards */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12,width:"fit-content"}}>
+        {cards.map((card,i)=>{const inPool=numbers.some(n=>n.sourceId===card.id);return <PlayingCard key={card.id} card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>;  })}
       </div>
 
-      {/* Number pool */}
-      <div style={{marginBottom:12,textAlign:"center"}}>
-        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{t.availableNumbers}</div>
+      {/* Numbers */}
+      <div style={{marginBottom:10,textAlign:"center"}}>
+        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.availableNumbers}</div>
         <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
           {numbers.map((n,i)=>(
-            <div key={i} onClick={()=>handleNumberClick(i)} style={{
-              width:54,height:54,borderRadius:12,
-              background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
-              border:`2px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:18,fontWeight:900,color:selectedIdx===i?"#92400e":"white",
-              cursor:"pointer",transform:selectedIdx===i?"scale(1.15)":"scale(1)",
-              transition:"all 0.15s",boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
-              animation:"popIn 0.3s ease",
-            }}>{n.label}</div>
+            <div key={i} onClick={()=>handleNumberClick(i)} style={{width:54,height:54,borderRadius:12,background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",border:`2px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:selectedIdx===i?"#92400e":"white",cursor:"pointer",transform:selectedIdx===i?"scale(1.15)":"scale(1)",transition:"all 0.15s",animation:"popIn 0.3s ease"}}>{n.label}</div>
           ))}
         </div>
       </div>
 
       {/* Operators */}
-      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",justifyContent:"center"}}>
-        {BATTLE_OPS.map(op=>(
-          <OpBtn key={op} op={op} active={operator===op} onClick={()=>{
-            if(op==="√"&&selectedIdx!==null){applySqrt(selectedIdx);}
-            else if(selectedIdx!==null){setOperator(o=>o===op?null:op);}
-          }} disabled={false}/>
-        ))}
+      <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap",justifyContent:"center"}}>
+        {ALL_OPS.map(op=>{
+          const cancelled=op===cancelledOp;
+          return (
+            <div key={op} style={{position:"relative",opacity:cancelled?0.3:1}}>
+              <OpBtn op={op} active={operator===op} disabled={cancelled} onClick={()=>{if(cancelled)return;if(op==="√"&&selectedIdx!==null)doSqrt(selectedIdx);else if(selectedIdx!==null)setOperator(o=>o===op?null:op);}}/>
+              {cancelled&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",fontSize:10,pointerEvents:"none",color:"#f59e0b",fontWeight:900}}>✂️</div>}
+            </div>
+          );
+        })}
       </div>
 
       {/* Steps */}
-      {steps.length>0&&(
-        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 14px",marginBottom:10,width:"100%",maxWidth:360}}>
-          {steps.map((s,i)=>(
-            <div key={i} style={{color:"#94a3b8",fontSize:12,marginBottom:2,animation:"fadeSlide 0.3s ease"}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
-            </div>
-          ))}
-        </div>
-      )}
+      {steps.length>0&&<div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"7px 12px",marginBottom:8,width:"100%",maxWidth:360}}>{steps.map((s,i)=><div key={i} style={{color:"#94a3b8",fontSize:12,marginBottom:2}}><span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}</div>)}</div>}
 
-      {/* Instruction nudges */}
-      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:8}}>{lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":"Tap a number → tap an operator → tap another number"}</div>}
-      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:8}}>{lang==="zh"?"请选择运算符 ↑":"Now pick an operator ↑"}</div>}
-      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:8}}>{lang==="zh"?"请点击第二个数字 ↑":"Now tap the second number ↑"}</div>}
+      {/* Nudges */}
+      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击数字→运算符→数字":"Tap number → operator → number"}</div>}
+      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:6}}>{lang==="zh"?"选择运算符 ↑":"Pick operator ↑"}</div>}
+      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击第二个数字 ↑":"Tap second number ↑"}</div>}
 
       {/* Message */}
-      {message.text&&<div style={{background:`${msgColor}18`,border:`1px solid ${msgColor}`,borderRadius:12,padding:"9px 18px",marginBottom:10,color:msgColor,fontSize:14,fontWeight:700,textAlign:"center",animation:"popIn 0.3s ease",maxWidth:340}}>{message.text}</div>}
+      {message.text&&<div style={{background:`${msgColor}18`,border:`1px solid ${msgColor}`,borderRadius:12,padding:"8px 16px",marginBottom:8,color:msgColor,fontSize:14,fontWeight:700,textAlign:"center",animation:"popIn 0.3s ease",maxWidth:340}}>{message.text}</div>}
 
-      {/* Reset button only */}
-      <button onClick={handleReset} style={{background:"transparent",border:"2px solid #475569",borderRadius:10,padding:"7px 20px",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-        {t.reset}
-      </button>
+      {/* Abilities */}
+      <div style={{width:"100%",maxWidth:420,marginBottom:8}}>
+        <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:5,textAlign:"center"}}>⚡ {lang==="zh"?"我的技能":"My Abilities"}</div>
+        <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+          {abilities.length===0
+            ?<div style={{color:"#334155",fontSize:12,padding:"8px 0"}}>{lang==="zh"?"技能已用完":"No abilities left"}</div>
+            :abilities.map(ab=>(
+              <button key={ab.id} onClick={()=>useAbility(ab)} style={{background:"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))",border:"2px solid rgba(239,68,68,0.4)",borderRadius:14,padding:"10px 14px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:80,transition:"all 0.2s"}}>
+                <div style={{fontSize:26}}>{ab.icon}</div>
+                <div style={{color:"#fca5a5",fontSize:11,fontWeight:700}}>{lang==="zh"?ab.zh:ab.en}</div>
+                <div style={{color:"#475569",fontSize:9,textAlign:"center",lineHeight:1.2}}>{lang==="zh"?ab.descZh:ab.desc}</div>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+
+      {/* Reset */}
+      <button onClick={doReset} style={{background:"transparent",border:"2px solid #475569",borderRadius:10,padding:"6px 18px",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:4}}>{t.reset}</button>
 
       <Analytics/>
     </div>
   );
 }
+
 
 // ── Daily Challenge Screen ─────────────────────────────────────────────────
 function DailyChallengeScreen({ lang, setLang, onBack }) {

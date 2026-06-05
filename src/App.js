@@ -1451,7 +1451,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           <button onClick={()=>setShowBadges(true)} style={{
             flex:1,padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
             background:"rgba(255,255,255,0.04)",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-          }}>🎖️ {lang==="zh"?"成就":lang==="fr"?"Badges":"Badges"} {juniorBadges.length>0?`(${juniorBadges.length})`:""}</button>
+          }}>🎖️ {lang==="zh"?"成就":lang==="fr"?"Trophees":"Badges"} {juniorBadges.length>0?`(${juniorBadges.length})`:""}</button>
         </div>
 
         <button onClick={onBack} style={{
@@ -1512,7 +1512,7 @@ function JuniorScreen({lang, setLang, onBack}) {
             <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:36}}>🎖️</div>
               <h2 style={{color:"#34d399",fontSize:20,fontWeight:900,margin:"4px 0"}}>
-                {lang==="zh"?"儿童成就":lang==="fr"?"Badges Junior":"Junior Badges"}
+                {lang==="zh"?"儿童成就":lang==="fr"?"Trophees Junior":"Junior Badges"}
               </h2>
               <div style={{color:"#64748b",fontSize:12}}>{juniorBadges.length}/{JUNIOR_BADGES.length} {lang==="zh"?"已解锁":lang==="fr"?"debloque":"unlocked"}</div>
             </div>
@@ -1587,7 +1587,7 @@ function JuniorScreen({lang, setLang, onBack}) {
               <div style={{fontSize:28}}>{badge.icon}</div>
               <div>
                 <div style={{color:"#34d399",fontWeight:800,fontSize:13}}>
-                  {lang==="zh"?"新成就解锁！":lang==="fr"?"Badge debloque !":"Badge Unlocked!"}
+                  {lang==="zh"?"新成就解锁！":lang==="fr"?"Trophee debloque !":"Badge Unlocked!"}
                 </div>
                 <div style={{color:"white",fontWeight:700,fontSize:14}}>
                   {lang==="zh"?badge.zh:lang==="fr"?(badge.fr||badge.en):badge.en}
@@ -2120,7 +2120,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         opacity:jrSharing?0.7:1,
         boxShadow:"0 4px 20px rgba(59,130,246,0.35)",
       }}>
-        {jrSharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share Score")}
+        {jrSharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share Score")}
       </button>
     </div>
   );
@@ -2559,8 +2559,10 @@ function BattleScreen({ lang, setLang, onBack }) {
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
         <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h1>
-        <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>{lang==="zh"?"「你的大脑就是你的武器」":"\"Your brain is your weapon\""}</p>
-        <LangSwitcher lang={lang} setLang={setLang}/>
+        <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>{lang==="zh"?"「你的大脑就是你的武器」":lang==="fr"?"\"Ton cerveau est ton arme\"":"\"Your brain is your weapon\""}</p>
+        <div style={{display:"flex",justifyContent:"center"}}>
+          <LangSwitcher lang={lang} setLang={setLang}/>
+        </div>
       </div>
       <div style={{width:"100%",maxWidth:360,animation:"fadeIn 0.4s ease"}}>
         <div style={{marginBottom:16}}>
@@ -2596,7 +2598,7 @@ function BattleScreen({ lang, setLang, onBack }) {
           ))}
         </div>
         <div style={{marginBottom:16}}>
-          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":lang==="fr"?"Badges Combat":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length})</div>
+          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":lang==="fr"?"Trophees Combat":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length})</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {BATTLE_BADGES.map(b=>(
               <div key={b.id} style={{background:battleBadges.includes(b.id)?"rgba(239,68,68,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${battleBadges.includes(b.id)?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"3px 7px",fontSize:11,color:battleBadges.includes(b.id)?"#fca5a5":"#334155"}}>{b.icon} {lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div>
@@ -2624,7 +2626,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
       <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}} @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%,85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}`}</style>
       {showConfetti&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{Array.from({length:50}).map((_,i)=>{const c=["#ef4444","#f97316","#f6d365","#34d399","#60a5fa","#a78bfa"];return <div key={i} style={{position:"absolute",top:"-20px",left:`${Math.random()*100}%`,width:6+Math.random()*8,height:6+Math.random()*8,background:c[i%c.length],borderRadius:Math.random()>0.5?"50%":"2px",animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`}}/>;})}</div>}
-      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":lang==="fr"?"Badge Combat !":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div></div></div></div>:null;})}
+      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":lang==="fr"?"Trophee Combat !":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div></div></div></div>:null;})}
       <div style={{fontSize:64,animation:"trophy 1.5s ease infinite",marginBottom:8}}>{matchWinner==="player"?"🏆":"💀"}</div>
       <h2 style={{fontSize:30,fontWeight:900,margin:"0 0 4px",background:matchWinner==="player"?"linear-gradient(90deg,#f6d365,#fda085,#f6d365)":"linear-gradient(90deg,#ef4444,#b91c1c,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{matchWinner==="player"?(lang==="zh"?"你赢了！🎉":lang==="fr"?"Vous gagnez ! 🎉":"You Win! 🎉"):(lang==="zh"?"机器人赢了！":lang==="fr"?"Le robot gagne !":"Robot Wins!")}</h2>
       <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":lang==="fr"?"Manche ":"Round "}{roundNum}</p>
@@ -3170,12 +3172,12 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:12}}>
             <div style={{textAlign:"center",flex:1,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 4px"}}>
               <div style={{color:"#f6d365",fontWeight:900,fontSize:28}}>{fmtTime(totalTime)}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"总用时":"Total time"}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"总用时":lang==="fr"?"Temps total":"Total time"}</div>
               {hPen>0&&<div style={{color:"#ef4444",fontSize:10,marginTop:2}}>{lang==="zh"?`(含${hPen}秒提示惩罚)`:`(incl. ${hPen}s hint penalty)`}</div>}
             </div>
             <div style={{textAlign:"center",flex:1,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 4px"}}>
               <div style={{color:"#f472b6",fontWeight:900,fontSize:28}}>🔥{streak.count}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连续天数":"Day streak"}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连续天数":lang==="fr"?"Serie du jour":"Day streak"}</div>
             </div>
           </div>
           {hUsed > 0 && (
@@ -3193,7 +3195,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         {/* Come back tomorrow */}
         <div style={{background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:14,padding:"10px 20px",marginBottom:20,textAlign:"center",maxWidth:320,width:"100%"}}>
           <div style={{color:"#60a5fa",fontSize:13,fontWeight:700}}>
-            {lang==="zh"?"🌅 明天再来！每天都有新题目。":"🌅 Come back tomorrow for a new puzzle!"}
+            {lang==="zh"?"🌅 明天再来！每天都有新题目。":lang==="fr"?"🌅 Revenez demain pour un nouveau puzzle !":"🌅 Come back tomorrow for a new puzzle!"}
           </div>
         </div>
 
@@ -3203,7 +3205,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
             🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}
           </button>
           <button onClick={handleShare} disabled={sharing} style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",border:"none",borderRadius:12,padding:"12px 20px",color:"white",fontSize:14,fontWeight:800,cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,boxShadow:"0 4px 20px rgba(59,130,246,0.35)"}}>
-            {sharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share")}
+            {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"📤 分享成绩":lang==="fr"?"📤 Partager":"📤 Share")}
           </button>
         </div>
 
@@ -3229,16 +3231,16 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           </div>
           <div style={{background:"rgba(246,211,101,0.1)",borderRadius:16,padding:"16px",marginBottom:16,textAlign:"center",border:"1px solid rgba(246,211,101,0.3)"}}>
             <div style={{color:"#f6d365",fontWeight:900,fontSize:48,lineHeight:1}}>{fmtTime(totalTime)}</div>
-            <div style={{color:"#64748b",fontSize:12,marginTop:4}}>{lang==="zh"?"总用时":"Total time"}{hPen>0?(lang==="zh"?`（含${hPen}秒提示惩罚）`:` (incl. ${hPen}s hint penalty)`):""}</div>
+            <div style={{color:"#64748b",fontSize:12,marginTop:4}}>{lang==="zh"?"总用时":lang==="fr"?"Temps total":"Total time"}{hPen>0?(lang==="zh"?`（含${hPen}秒提示惩罚）`:`${lang==="fr"?` (incl. ${hPen}s penalite)`:" (incl. "+hPen+"s hint penalty)"}`):""}</div>
           </div>
           <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:16}}>
             <div style={{background:"rgba(244,114,182,0.1)",borderRadius:12,padding:"10px 20px",textAlign:"center",border:"1px solid rgba(244,114,182,0.2)"}}>
               <div style={{color:"#f472b6",fontWeight:900,fontSize:24}}>🔥{streak.count}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连续天数":"Day streak"}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连续天数":lang==="fr"?"Serie du jour":"Day streak"}</div>
             </div>
             {hUsed===0&&<div style={{background:"rgba(52,211,153,0.1)",borderRadius:12,padding:"10px 20px",textAlign:"center",border:"1px solid rgba(52,211,153,0.2)"}}>
               <div style={{color:"#34d399",fontWeight:900,fontSize:20}}>🧠</div>
-              <div style={{color:"#34d399",fontSize:12,fontWeight:700}}>{lang==="zh"?"无提示":"No hints"}</div>
+              <div style={{color:"#34d399",fontSize:12,fontWeight:700}}>{lang==="zh"?"无提示":lang==="fr"?"Sans indice":"No hints"}</div>
             </div>}
           </div>
           <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:12,padding:"10px",textAlign:"center",marginBottom:12}}>
@@ -3273,14 +3275,14 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
       {/* Daily Challenge label + date */}
       <div style={{background:"linear-gradient(135deg,rgba(96,165,250,0.15),rgba(167,139,250,0.1))",border:"1px solid rgba(96,165,250,0.35)",borderRadius:16,padding:"10px 20px",marginBottom:14,textAlign:"center"}}>
-        <div style={{color:"#93c5fd",fontWeight:900,fontSize:16,letterSpacing:1}}>📅 {lang==="zh"?"每日挑战":"DAILY CHALLENGE"}</div>
+        <div style={{color:"#93c5fd",fontWeight:900,fontSize:16,letterSpacing:1}}>📅 {lang==="zh"?"每日挑战":lang==="fr"?"DEFI DU JOUR":"DAILY CHALLENGE"}</div>
         <div style={{color:"#64748b",fontSize:12,marginTop:2}}>{displayDate}</div>
       </div>
 
       {/* Stopwatch + hints used */}
       <div style={{display:"flex",gap:16,marginBottom:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,padding:"8px 20px",alignItems:"center"}}>
         <div style={{textAlign:"center"}}>
-          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"用时":"Time"}</div>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"用时":lang==="fr"?"Temps":"Time"}</div>
           <div style={{color:"#60a5fa",fontWeight:900,fontSize:22}}>{fmtTime(elapsed)}</div>
         </div>
         {hintPenalty > 0 && (
@@ -3389,13 +3391,13 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         <button onClick={handleReset} style={{background:"transparent",border:"2px solid #64748b",borderRadius:10,padding:"7px 16px",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{t.reset}</button>
         <button onClick={handleHint} style={{background:"transparent",border:"2px solid #a78bfa",borderRadius:10,padding:"7px 16px",color:"#a78bfa",fontSize:13,fontWeight:700,cursor:"pointer"}}>
           {showHintSteps && showHintSteps.revealed < showHintSteps.steps.length
-            ? `💡 ${lang==="zh"?"下一步":"Next"} ${showHintSteps.revealed+1}/${showHintSteps.steps.length} (+30s)`
-            : `💡 ${lang==="zh"?"提示 (+30秒)":"Hint (+30s)"}`}
+            ? `💡 ${lang==="zh"?"下一步":lang==="fr"?"Suivant":"Next"} ${showHintSteps.revealed+1}/${showHintSteps.steps.length} (+30s)`
+            : `💡 ${lang==="zh"?"提示 (+30秒)":lang==="fr"?"Indice (+30s)":"Hint (+30s)"}`}
         </button>
       </div>
 
       <p style={{color:"#1e3a5f",fontSize:11,marginTop:8,textAlign:"center"}}>
-        {lang==="zh"?"每天同一题目，全球玩家一起挑战！":"Same puzzle for everyone today · Worldwide"}
+        {lang==="zh"?"每天同一题目，全球玩家一起挑战！":lang==="fr"?"Meme puzzle pour tous aujourd'hui · Mondial":"Same puzzle for everyone today · Worldwide"}
       </p>
       <Analytics/>
     </div>
@@ -3923,7 +3925,7 @@ export default function App() {
               <div style={{fontSize:28}}>{badge.icon}</div>
               <div>
                 <div style={{color:"#f6d365",fontWeight:800,fontSize:13}}>
-                  {lang==="zh"?"新成就解锁！":lang==="fr"?"Badge debloque !":"Badge Unlocked!"}
+                  {lang==="zh"?"新成就解锁！":lang==="fr"?"Trophee debloque !":"Badge Unlocked!"}
                 </div>
                 <div style={{color:"white",fontWeight:700,fontSize:14}}>
                   {lang==="zh"?badge.zh:lang==="fr"?(badge.fr||badge.en):badge.en}
@@ -4811,7 +4813,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         opacity:sharing?0.7:1,
         boxShadow:"0 4px 20px rgba(59,130,246,0.35)",
       }}>
-        {sharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share Score")}
+        {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share Score")}
       </button>
     </div>
   );

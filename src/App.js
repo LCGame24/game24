@@ -113,6 +113,61 @@ function saveTutorialDone() {
   try { localStorage.setItem("game24_tutorial_done","1"); } catch {}
 }
 
+// ── Daily Challenge helpers ────────────────────────────────────────────────
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+}
+function loadDailyResult() {
+  try { return JSON.parse(localStorage.getItem("game24_daily")||"null"); } catch { return null; }
+}
+function saveDailyResult(data) {
+  try { localStorage.setItem("game24_daily",JSON.stringify(data)); } catch {}
+}
+function loadDailyStreak() {
+  try { return JSON.parse(localStorage.getItem("game24_daily_streak")||'{"count":0,"lastKey":""}'); } catch { return {count:0,lastKey:""}; }
+}
+function saveDailyStreak(s) {
+  try { localStorage.setItem("game24_daily_streak",JSON.stringify(s)); } catch {}
+}
+
+// Deterministic seeded RNG (mulberry32)
+function seededRng(seed) {
+  let s = seed;
+  return () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Generate today's daily puzzle cards — same for everyone worldwide
+// Medium difficulty: cards 1–10, must have whole-number solution
+function getDailyCards() {
+  const dateKey = getTodayKey();
+  const seed = parseInt(dateKey, 10) * 31337;
+  const rng = seededRng(seed);
+  const allCards = [];
+  for (const s of SUITS) for (const v of VALUES.filter(v=>v<=10)) allCards.push({suit:s,val:v,id:s+v});
+
+  // Shuffle deterministically
+  const shuffled = [...allCards];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  // Pick first 4 that have a solution
+  let drawn = [];
+  for (let start = 0; start < shuffled.length - 3; start++) {
+    const candidate = shuffled.slice(start, start + 4);
+    if (hasSolution(candidate)) { drawn = candidate; break; }
+  }
+  if (drawn.length === 0) drawn = shuffled.slice(0, 4); // fallback
+  return drawn;
+}
+
 // Badge definitions
 const BADGES = [
   { id:"first_solve",   icon:"🌟", en:"First Solve!",        zh:"第一次成功！",      desc:"Solve your first puzzle" },
@@ -464,7 +519,7 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
+function SetupScreen({onStart, onJunior, onDaily, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(!skipInstructions);
@@ -558,6 +613,31 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
                 {lang==="zh"?"适合 5-12 岁":"Ages 5–12 · Fun & Easy!"}
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* Daily Challenge */}
+        <button onClick={()=>onDaily()} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,
+          background:"linear-gradient(135deg,#1e2a4a,#0f1f3d)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(96,165,250,0.15)",
+          border:"1px solid rgba(96,165,250,0.35)",
+          transition:"all 0.2s",
+          position:"relative",overflow:"hidden",
+        }}>
+          {/* NEW badge */}
+          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":"DAILY"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>📅</div>
+            <div>
+              <div style={{color:"#93c5fd",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"每日挑战":"Daily Challenge"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"每天同一道题，全球一起挑战！":"Same puzzle, every player, every day"}
               </div>
             </div>
           </div>
@@ -2119,8 +2199,509 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
   );
 }
 
+// ── Daily Challenge Screen ─────────────────────────────────────────────────
+function DailyChallengeScreen({ lang, setLang, onBack }) {
+  const t = T[lang];
+  const todayKey = getTodayKey();
+  const existingResult = loadDailyResult();
+  const alreadyDone = existingResult && existingResult.dateKey === todayKey;
+
+  // Game state
+  const [phase, setPhase] = useState(alreadyDone ? "done" : "playing"); // playing | solved | failed | done
+  const dailyCards = getDailyCards();
+  const [cards] = useState(dailyCards);
+  const [numbers, setNumbers] = useState(dailyCards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+  const [selectedIdx, setSelectedIdx] = useState(null);
+  const [operator, setOperator] = useState(null);
+  const [steps, setSteps] = useState([]);
+  const [message, setMessage] = useState({text:"",type:""});
+  const [elapsed, setElapsed] = useState(0); // stopwatch
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hintPenalty, setHintPenalty] = useState(0); // total added seconds
+  const [showHintSteps, setShowHintSteps] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const dailyStreak = loadDailyStreak();
+  const shareCardRef = useRef(null);
+
+  const timerRef = useRef(null);
+
+  // Format date nicely
+  function formatDate(key) {
+    const y = parseInt(key.slice(0,4));
+    const m = parseInt(key.slice(4,6)) - 1;
+    const d = parseInt(key.slice(6,8));
+    return new Date(y,m,d).toLocaleDateString(lang==="zh"?"zh-CN":"en-GB",{day:"numeric",month:"long",year:"numeric"});
+  }
+
+  const displayDate = formatDate(todayKey);
+  const DAILY_OPS = ["+","−","×","÷","^","√"]; // Medium operators
+
+  // Stopwatch
+  useEffect(() => {
+    if (phase !== "playing") return;
+    timerRef.current = setInterval(() => setElapsed(e => e+1), 1000);
+    return () => clearInterval(timerRef.current);
+  }, [phase]);
+
+  function fmtTime(s) {
+    const m = Math.floor(s/60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${String(sec).padStart(2,"0")}s` : `${sec}s`;
+  }
+
+  function handleNumberClick(idx) {
+    if (phase !== "playing") return;
+    if (selectedIdx === null) {
+      setSelectedIdx(idx); setOperator(null); setMessage({text:"",type:""});
+    } else if (selectedIdx === idx) {
+      setSelectedIdx(null); setOperator(null);
+    } else if (operator === "!") {
+      applyFactorial(selectedIdx);
+    } else if (operator === "√") {
+      applySqrt(selectedIdx);
+    } else if (operator !== null) {
+      applyOp(selectedIdx, operator, idx);
+    }
+  }
+
+  function applyOp(iA, op, iB) {
+    const a=numbers[iA].value, b=numbers[iB].value;
+    const la=numbers[iA].label, lb=numbers[iB].label;
+    let result;
+    if (op==="+") result=a+b;
+    else if (op==="−") result=a-b;
+    else if (op==="×") result=a*b;
+    else if (op==="÷") {
+      if (Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}
+      result=a/b;
+    } else if (op==="^") result=Math.pow(a,b);
+    else if (op==="ʸ√") {
+      if (Math.abs(b)<1e-9){setMessage({text:lang==="zh"?"根指数不能为零！":"Root degree can't be zero!",type:"bad"});return;}
+      if (a<0){
+        if(!Number.isInteger(b)||b%2===0){setMessage({text:lang==="zh"?"负数只能开奇数次方根！":"Odd integer root only for negative base!",type:"bad"});return;}
+        result=-(Math.pow(-a,1/b));
+      } else result=Math.pow(a,1/b);
+    }
+    const expr=`${la} ${op} ${lb} = ${fmt(result)}`;
+    setSteps(s=>[...s,{expr,result}]);
+    const newNums=numbers.filter((_,i)=>i!==iA&&i!==iB);
+    newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
+    setNumbers(newNums);
+    setSelectedIdx(null); setOperator(null);
+    if (newNums.length===1) {
+      if (Math.abs(result-24)<1e-9) handleSolve(newNums);
+      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+    } else {
+      setMessage({text:`✓ ${expr}`,type:"step"});
+    }
+  }
+
+  function applySqrt(idx) {
+    const a=numbers[idx].value;
+    if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":"Can't take sqrt of a negative number!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
+    const result=Math.sqrt(a);
+    const expr=`√${fmt(a)} = ${fmt(result)}`;
+    setSteps(s=>[...s,{expr,result}]);
+    const newNums=numbers.filter((_,i)=>i!==idx);
+    newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
+    setNumbers(newNums); setSelectedIdx(null); setOperator(null);
+    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
+    else setMessage({text:`✓ ${expr}`,type:"step"});
+  }
+
+  function applyFactorial(idx) {
+    const a=numbers[idx].value;
+    if(!Number.isInteger(a)||a<0||a>7){setMessage({text:lang==="zh"?`${fmt(a)}! 超出范围 (只能用 0-7)`:`${fmt(a)}! out of range (0–7 only)`,type:"bad"});setSelectedIdx(null);setOperator(null);return;}
+    let result=1; for(let i=2;i<=a;i++) result*=i;
+    const expr=`${fmt(a)}! = ${fmt(result)}`;
+    setSteps(s=>[...s,{expr,result}]);
+    const newNums=numbers.filter((_,i)=>i!==idx);
+    newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
+    setNumbers(newNums); setSelectedIdx(null); setOperator(null);
+    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
+    else setMessage({text:`✓ ${expr}`,type:"step"});
+  }
+
+  function handleSolve() {
+    clearInterval(timerRef.current);
+    const totalTime = elapsed + hintPenalty;
+    setShowConfetti(true);
+    setTimeout(()=>setShowConfetti(false), 2500);
+
+    // Save result
+    const result = { dateKey: todayKey, solved: true, elapsed, hintsUsed, hintPenalty, totalTime };
+    saveDailyResult(result);
+
+    // Update streak
+    const streak = loadDailyStreak();
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yKey = `${yesterday.getFullYear()}${String(yesterday.getMonth()+1).padStart(2,"0")}${String(yesterday.getDate()).padStart(2,"0")}`;
+    const newCount = (streak.lastKey === yKey || streak.lastKey === todayKey) ? streak.count + (streak.lastKey===todayKey?0:1) : 1;
+    saveDailyStreak({ count: newCount, lastKey: todayKey });
+
+    setPhase("solved");
+    setMessage({text:"",type:""});
+  }
+
+  function handleReset() {
+    setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+    setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""}); setShowHintSteps(null);
+  }
+
+  function handleHint() {
+    const hSteps = getHintSteps(numbers);
+    if (!showHintSteps) {
+      setShowHintSteps({steps: hSteps||[], revealed: 1});
+    } else if (showHintSteps.revealed < showHintSteps.steps.length) {
+      setShowHintSteps(h=>({...h, revealed: h.revealed+1}));
+    }
+    setHintsUsed(h=>h+1);
+    setHintPenalty(p=>p+30);
+    setElapsed(e=>e+30); // add 30s to stopwatch visually
+    setMessage({text: lang==="zh"?"⏱ +30秒 (使用提示)":"⏱ +30s time penalty for hint", type:"bad"});
+    setTimeout(()=>setMessage({text:"",type:""}), 2000);
+  }
+
+  async function handleShare() {
+    setSharing(true);
+    try {
+      await new Promise((resolve, reject) => {
+        if (window.html2canvas) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = resolve; script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      const canvas = await window.html2canvas(shareCardRef.current, {backgroundColor:null, scale:2, logging:false});
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'game24-daily.png', {type:'image/png'});
+        const result = loadDailyResult();
+        const totalTime = result ? result.totalTime : elapsed + hintPenalty;
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({
+            title: lang==="zh"?"我完成了今天的24点日挑战！":"I solved today's Game 24 Daily Challenge!",
+            text: lang==="zh"
+              ? `我用 ${fmtTime(totalTime)} 完成了今天的24点！${hintsUsed>0?`（使用了${hintsUsed}次提示）`:""}来挑战我吧！`
+              : `I solved today's Game 24 in ${fmtTime(totalTime)}!${hintsUsed>0?` (${hintsUsed} hint${hintsUsed>1?"s":""})`:""} Can you beat me?`,
+            url: 'https://game24-taupe.vercel.app',
+            files: [file],
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'game24-daily.png'; a.click();
+          URL.revokeObjectURL(url);
+        }
+        setSharing(false);
+      }, 'image/png');
+    } catch(e) { console.error(e); setSharing(false); }
+  }
+
+  const msgColor = {win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
+  const streakNow = loadDailyStreak();
+  const result = loadDailyResult();
+
+  // ── Solved / Already Done screen ──
+  if (phase === "solved" || phase === "done") {
+    const res = result || {};
+    const totalTime = res.totalTime ?? (elapsed + hintPenalty);
+    const hUsed = res.hintsUsed ?? hintsUsed;
+    const hPen = res.hintPenalty ?? hintPenalty;
+    const rawTime = res.elapsed ?? elapsed;
+    const streak = streakNow;
+
+    return (
+      <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+        fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
+        <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
+
+        {/* Confetti on fresh solve */}
+        {phase==="solved"&&showConfetti&&(
+          <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>
+            {Array.from({length:40}).map((_,i)=>{
+              const colors=["#f6d365","#fda085","#f472b6","#34d399","#60a5fa","#a78bfa"];
+              return <div key={i} style={{position:"absolute",top:"-20px",left:`${Math.random()*100}%`,width:6+Math.random()*8,height:6+Math.random()*8,background:colors[i%colors.length],borderRadius:Math.random()>0.5?"50%":"2px",animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`}}/>;
+            })}
+          </div>
+        )}
+
+        {/* Lang toggle + back */}
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>{t.language}</button>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>🏠</button>
+        </div>
+
+        <div style={{fontSize:56,animation:"trophy 1.5s ease infinite",marginBottom:8}}>📅</div>
+        <h2 style={{fontSize:26,fontWeight:900,margin:"0 0 4px",
+          background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+          animation:"shimmer 2s linear infinite",
+        }}>
+          {lang==="zh"?"每日挑战完成！":"Daily Challenge Complete!"}
+        </h2>
+        <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>{displayDate}</p>
+
+        {/* Result card */}
+        <div style={{width:"100%",maxWidth:340,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(246,211,101,0.3)",borderRadius:20,padding:20,marginBottom:20}}>
+          {/* Cards used */}
+          <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
+            {cards.map((card,i)=>{
+              const red=card.suit==="♥"||card.suit==="♦";
+              return (
+                <div key={i} style={{width:64,height:86,borderRadius:8,background:"white",border:"2px solid #e2e8f0",
+                  display:"flex",flexDirection:"column",justifyContent:"space-between",padding:"4px 6px"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                    {CARD_FACE_LABEL[card.val]}<span style={{fontSize:10}}>{card.suit}</span>
+                  </div>
+                  <div style={{fontSize:16,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                    {CARD_FACE_LABEL[card.val]}<span style={{fontSize:10}}>{card.suit}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Stats */}
+          <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:12}}>
+            <div style={{textAlign:"center",flex:1,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 4px"}}>
+              <div style={{color:"#f6d365",fontWeight:900,fontSize:28}}>{fmtTime(totalTime)}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"总用时":"Total time"}</div>
+              {hPen>0&&<div style={{color:"#ef4444",fontSize:10,marginTop:2}}>{lang==="zh"?`(含${hPen}秒提示惩罚)`:`(incl. ${hPen}s hint penalty)`}</div>}
+            </div>
+            <div style={{textAlign:"center",flex:1,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 4px"}}>
+              <div style={{color:"#f472b6",fontWeight:900,fontSize:28}}>🔥{streak.count}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连续天数":"Day streak"}</div>
+            </div>
+          </div>
+          {hUsed > 0 && (
+            <div style={{textAlign:"center",color:"#a78bfa",fontSize:13,marginBottom:8}}>
+              💡 {lang==="zh"?`使用了 ${hUsed} 次提示`:`${hUsed} hint${hUsed>1?"s":""} used`}
+            </div>
+          )}
+          {hUsed === 0 && (
+            <div style={{textAlign:"center",color:"#34d399",fontSize:13,fontWeight:700,marginBottom:8}}>
+              🧠 {lang==="zh"?"无提示完成！":"Solved without hints!"}
+            </div>
+          )}
+        </div>
+
+        {/* Come back tomorrow */}
+        <div style={{background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:14,padding:"10px 20px",marginBottom:20,textAlign:"center",maxWidth:320,width:"100%"}}>
+          <div style={{color:"#60a5fa",fontSize:13,fontWeight:700}}>
+            {lang==="zh"?"🌅 明天再来！每天都有新题目。":"🌅 Come back tomorrow for a new puzzle!"}
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:12}}>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+            🏠 {lang==="zh"?"返回主页":"Main Menu"}
+          </button>
+          <button onClick={handleShare} disabled={sharing} style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",border:"none",borderRadius:12,padding:"12px 20px",color:"white",fontSize:14,fontWeight:800,cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,boxShadow:"0 4px 20px rgba(59,130,246,0.35)"}}>
+            {sharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share")}
+          </button>
+        </div>
+
+        {/* Hidden share card */}
+        <div ref={shareCardRef} style={{position:"fixed",left:"-9999px",top:0,width:380,
+          background:"linear-gradient(135deg,#1a1a2e,#0f3460)",borderRadius:24,padding:28,
+          fontFamily:"'Trebuchet MS',sans-serif",border:"2px solid rgba(246,211,101,0.5)"}}>
+          <div style={{textAlign:"center",marginBottom:16}}>
+            <div style={{fontSize:36,marginBottom:4}}>📅</div>
+            <div style={{fontSize:26,fontWeight:900,color:"#f6d365"}}>Game 24 | 24点</div>
+            <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"每日挑战":"Daily Challenge"} · {displayDate}</div>
+          </div>
+          <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(246,211,101,0.5),transparent)",marginBottom:16}}/>
+          <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
+            {cards.map((card,i)=>{
+              const red=card.suit==="♥"||card.suit==="♦";
+              return <div key={i} style={{width:60,height:82,borderRadius:8,background:"white",border:"2px solid #e2e8f0",display:"flex",flexDirection:"column",justifyContent:"space-between",padding:"4px 5px"}}>
+                <div style={{fontSize:11,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>{CARD_FACE_LABEL[card.val]}<span style={{fontSize:9}}>{card.suit}</span></div>
+                <div style={{fontSize:15,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
+                <div style={{fontSize:11,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>{CARD_FACE_LABEL[card.val]}<span style={{fontSize:9}}>{card.suit}</span></div>
+              </div>;
+            })}
+          </div>
+          <div style={{background:"rgba(246,211,101,0.1)",borderRadius:16,padding:"16px",marginBottom:16,textAlign:"center",border:"1px solid rgba(246,211,101,0.3)"}}>
+            <div style={{color:"#f6d365",fontWeight:900,fontSize:48,lineHeight:1}}>{fmtTime(totalTime)}</div>
+            <div style={{color:"#64748b",fontSize:12,marginTop:4}}>{lang==="zh"?"总用时":"Total time"}{hPen>0?(lang==="zh"?`（含${hPen}秒提示惩罚）`:` (incl. ${hPen}s hint penalty)`):""}</div>
+          </div>
+          <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:16}}>
+            <div style={{background:"rgba(244,114,182,0.1)",borderRadius:12,padding:"10px 20px",textAlign:"center",border:"1px solid rgba(244,114,182,0.2)"}}>
+              <div style={{color:"#f472b6",fontWeight:900,fontSize:24}}>🔥{streak.count}</div>
+              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连续天数":"Day streak"}</div>
+            </div>
+            {hUsed===0&&<div style={{background:"rgba(52,211,153,0.1)",borderRadius:12,padding:"10px 20px",textAlign:"center",border:"1px solid rgba(52,211,153,0.2)"}}>
+              <div style={{color:"#34d399",fontWeight:900,fontSize:20}}>🧠</div>
+              <div style={{color:"#34d399",fontSize:12,fontWeight:700}}>{lang==="zh"?"无提示":"No hints"}</div>
+            </div>}
+          </div>
+          <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:12,padding:"10px",textAlign:"center",marginBottom:12}}>
+            <div style={{color:"#ef4444",fontWeight:900,fontSize:14}}>{lang==="zh"?"🔥 你能更快吗？":"🔥 Can you beat my time?"}</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{color:"#f6d365",fontWeight:700,fontSize:13}}>🃏 game24-taupe.vercel.app</div>
+            <div style={{color:"#334155",fontSize:10,marginTop:2}}>{lang==="zh"?"免费畅玩，无需下载":"Free to play · No download needed"}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Playing screen ──
+  return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",overflowY:"auto"}}>
+      <style>{`@keyframes cardDeal{from{opacity:0;transform:translateY(-30px) scale(0.85)}to{opacity:1;transform:translateY(0) scale(1)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      {/* Header */}
+      <h1 style={{fontSize:30,fontWeight:900,margin:"0 0 2px",letterSpacing:-1,
+        background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
+        WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+        animation:"shimmer 3s linear infinite"}}>{"Game 24 | 24点"}</h1>
+
+      <div style={{display:"flex",gap:8,marginBottom:12,justifyContent:"center"}}>
+        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{t.language}</button>
+        <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>🏠</button>
+      </div>
+
+      {/* Daily Challenge label + date */}
+      <div style={{background:"linear-gradient(135deg,rgba(96,165,250,0.15),rgba(167,139,250,0.1))",border:"1px solid rgba(96,165,250,0.35)",borderRadius:16,padding:"10px 20px",marginBottom:14,textAlign:"center"}}>
+        <div style={{color:"#93c5fd",fontWeight:900,fontSize:16,letterSpacing:1}}>📅 {lang==="zh"?"每日挑战":"DAILY CHALLENGE"}</div>
+        <div style={{color:"#64748b",fontSize:12,marginTop:2}}>{displayDate}</div>
+      </div>
+
+      {/* Stopwatch + hints used */}
+      <div style={{display:"flex",gap:16,marginBottom:14,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:14,padding:"8px 20px",alignItems:"center"}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"用时":"Time"}</div>
+          <div style={{color:"#60a5fa",fontWeight:900,fontSize:22}}>{fmtTime(elapsed)}</div>
+        </div>
+        {hintPenalty > 0 && (
+          <>
+            <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"提示惩罚":"Penalty"}</div>
+              <div style={{color:"#ef4444",fontWeight:800,fontSize:18}}>+{hintPenalty}s</div>
+            </div>
+          </>
+        )}
+        {hintsUsed > 0 && (
+          <>
+            <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+            <div style={{textAlign:"center"}}>
+              <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"提示":"Hints"}</div>
+              <div style={{color:"#a78bfa",fontWeight:800,fontSize:18}}>💡{hintsUsed}</div>
+            </div>
+          </>
+        )}
+        <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"连续":"Streak"}</div>
+          <div style={{color:"#f472b6",fontWeight:800,fontSize:18}}>🔥{streakNow.count}</div>
+        </div>
+      </div>
+
+      {/* Cards 2×2 */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,width:"fit-content"}}>
+        {cards.map((card,i)=>{
+          const inPool=numbers.some(n=>n.sourceId===card.id);
+          return <PlayingCard key={card.id} card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>;
+        })}
+      </div>
+
+      {/* Number pool */}
+      <div style={{marginBottom:14,textAlign:"center"}}>
+        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{t.availableNumbers}</div>
+        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+          {numbers.map((n,i)=>(
+            <div key={i} onClick={()=>handleNumberClick(i)} style={{
+              width:54,height:54,borderRadius:12,
+              background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
+              border:`2px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:18,fontWeight:900,
+              color:selectedIdx===i?"#92400e":"white",
+              cursor:"pointer",
+              transform:selectedIdx===i?"scale(1.15)":"scale(1)",
+              transition:"all 0.15s",
+              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
+              animation:"popIn 0.3s ease",
+            }}>{n.label}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Operators */}
+      <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",justifyContent:"center"}}>
+        {DAILY_OPS.map(op=>(
+          <OpBtn key={op} op={op} active={operator===op} onClick={()=>{
+            if(op==="!"&&selectedIdx!==null){applyFactorial(selectedIdx);}
+            else if(op==="√"&&selectedIdx!==null){applySqrt(selectedIdx);}
+            else if(selectedIdx!==null){setOperator(o=>o===op?null:op);}
+          }} disabled={false}/>
+        ))}
+      </div>
+
+      {/* Steps log */}
+      {steps.length>0&&(
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"10px 16px",marginBottom:12,width:"100%",maxWidth:360}}>
+          <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.steps}</div>
+          {steps.map((s,i)=>(
+            <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3,animation:"fadeSlide 0.3s ease"}}>
+              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`Step ${i+1}:`}</span>{s.expr}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Instruction nudges */}
+      {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:10}}>{lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":"Tap a number → tap an operator → tap another number"}</div>}
+      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请选择运算符 ↑":"Now pick an operator ↑"}</div>}
+      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请点击第二个数字 ↑":"Now tap the second number ↑"}</div>}
+
+      {/* Message */}
+      {message.text&&<div style={{background:`${msgColor}18`,border:`1px solid ${msgColor}`,borderRadius:12,padding:"9px 18px",marginBottom:12,color:msgColor,fontSize:14,fontWeight:700,textAlign:"center",animation:"popIn 0.3s ease",maxWidth:340}}>{message.text}</div>}
+
+      {/* Hint display */}
+      {showHintSteps&&(
+        <div style={{background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",borderRadius:12,padding:"10px 16px",marginBottom:10,color:"#a78bfa",fontSize:13,textAlign:"center",maxWidth:340,width:"100%"}}>
+          <div style={{fontWeight:700,marginBottom:6,fontSize:12,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:1}}>
+            💡 {lang==="zh"?"逐步提示":"Step-by-step hint"} ({showHintSteps.revealed}/{showHintSteps.steps.length})
+          </div>
+          {showHintSteps.steps.slice(0,showHintSteps.revealed).map((s,i)=>(
+            <div key={i} style={{marginBottom:4,padding:"5px 10px",background:"rgba(167,139,250,0.1)",borderRadius:8,color:"#e9d5ff",fontSize:14,fontWeight:700,animation:"popIn 0.25s ease"}}>
+              <span style={{color:"#7c3aed",fontSize:11,marginRight:6}}>{lang==="zh"?`第${i+1}步`:`Step ${i+1}`}</span>{s.expr}
+            </div>
+          ))}
+          {showHintSteps.revealed < showHintSteps.steps.length && <div style={{color:"#6d28d9",fontSize:11,marginTop:6}}>{lang==="zh"?`再点一次提示查看第${showHintSteps.revealed+1}步`:`Tap hint for step ${showHintSteps.revealed+1}`}</div>}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>
+        <button onClick={handleReset} style={{background:"transparent",border:"2px solid #64748b",borderRadius:10,padding:"7px 16px",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{t.reset}</button>
+        <button onClick={handleHint} style={{background:"transparent",border:"2px solid #a78bfa",borderRadius:10,padding:"7px 16px",color:"#a78bfa",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+          {showHintSteps && showHintSteps.revealed < showHintSteps.steps.length
+            ? `💡 ${lang==="zh"?"下一步":"Next"} ${showHintSteps.revealed+1}/${showHintSteps.steps.length} (+30s)`
+            : `💡 ${lang==="zh"?"提示 (+30秒)":"Hint (+30s)"}`}
+        </button>
+      </div>
+
+      <p style={{color:"#1e3a5f",fontSize:11,marginTop:8,textAlign:"center"}}>
+        {lang==="zh"?"每天同一题目，全球玩家一起挑战！":"Same puzzle for everyone today · Worldwide"}
+      </p>
+      <Analytics/>
+    </div>
+  );
+}
+
 export default function App() {
-  const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior
+  const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior | daily
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
   const [showHelp,setShowHelp]=useState(false);
@@ -2561,13 +3142,15 @@ export default function App() {
   const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
-  if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} lang={lang} setLang={setLang}
+  if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
     autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
     badges={badges} personalBest={personalBest}
     skipInstructions={skipInstructions} preSelectDiff={preSelectDiff}/>;
 
   if (screen==="junior") return <JuniorScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>;
+
+  if (screen==="daily") return <DailyChallengeScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>;
 
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} onPlayAgain={()=>{ setSkipInstructions(true); setPreSelectDiff(difficulty); setScreen("setup"); }} difficulty={difficulty} lang={lang} setLang={setLang}

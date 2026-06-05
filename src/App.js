@@ -18,8 +18,8 @@ const LEVEL_UP_SCORE = { Easy: 80, Medium: 150 }; // score needed to unlock Hard
 
 // ── Junior Mode constants ──────────────────────────────────────────────────
 const JUNIOR_LEVELS = {
-  "⭐": { label:"⭐ Junior 1", color:"#34d399", maxCard:5,  target:12, ops:["+","−"],     cardNote:"1–5", pointsPerSolve:5,  en:"Junior 1", zh:"初级1" },
-  "⭐⭐": { label:"⭐⭐ Junior 2", color:"#f59e0b", maxCard:8,  target:24, ops:["+","−","×","÷"], cardNote:"1–8", pointsPerSolve:8,  en:"Junior 2", zh:"初级2" },
+  "⭐": { label:"⭐ Junior 1", color:"#34d399", maxCard:6, target:12, ops:["+","−","×"], cardNote:"1–6", pointsPerSolve:5, en:"Junior 1", zh:"初级1" },
+  "⭐⭐": { label:"⭐⭐ Junior 2", color:"#f59e0b", maxCard:8, target:24, ops:["+","−","×","÷"], cardNote:"1–8", pointsPerSolve:8, en:"Junior 2", zh:"初级2" },
 };
 
 const JUNIOR_BADGES = [
@@ -434,13 +434,100 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
   const [showInstructions,setShowInstructions]=useState(!skipInstructions);
   const [showLB,setShowLB]=useState(false);
   const [showBadges,setShowBadges]=useState(false);
+  const [showModeSelect, setShowModeSelect] = useState(!skipInstructions);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
   const [diff,setDiff]=useState(autoSelectHard?"Hard":preSelectDiff||"Easy");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
   const defaultRounds = (d) => d==="Easy" ? 5 : 10;
   const [rounds,setRounds]=useState(()=>defaultRounds(autoSelectHard?"Hard":preSelectDiff||"Easy"));
 
+  // If coming back from progression nudge, skip mode select
+  useEffect(()=>{
+    if (skipInstructions) setShowModeSelect(false);
+  },[skipInstructions]);
+
   function updateName(i,v){const n=[...names];n[i]=v;setNames(n);}
+
+  // Mode selection screen — two large buttons
+  if (showModeSelect) return (
+    <div style={{
+      minHeight:"100vh",background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      fontFamily:"'Trebuchet MS',sans-serif",padding:24,
+    }}>
+      <style>{`
+        @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+      `}</style>
+
+      {/* Title */}
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{fontSize:48,marginBottom:8}}>🃏</div>
+        <h1 style={{
+          fontSize:42,fontWeight:900,margin:"0 0 4px",letterSpacing:-2,
+          background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+          animation:"shimmer 3s linear infinite",
+        }}>{"Game 24 | 24点"}</h1>
+        <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
+          {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
+        </p>
+        <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
+          background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.2)",
+          borderRadius:20,padding:"4px 14px",color:"#94a3b8",fontSize:13,cursor:"pointer",
+        }}>{t.language}</button>
+      </div>
+
+      {/* Two large mode buttons */}
+      <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:16,animation:"fadeIn 0.5s ease"}}>
+
+        {/* Practice Mode */}
+        <button onClick={()=>setShowModeSelect(false)} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,border:"none",
+          background:"linear-gradient(135deg,#1e3a5f,#0f2744)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(96,165,250,0.2)",
+          border:"1px solid rgba(96,165,250,0.3)",
+          transition:"all 0.2s",
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>🎮</div>
+            <div>
+              <div style={{color:"white",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"练习模式":"Practice Mode"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"简单 → 中等 → 困难":"Easy → Medium → Hard"}
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* Junior Mode */}
+        <button onClick={()=>onJunior()} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,border:"none",
+          background:"linear-gradient(135deg,#0a3d2b,#052e1c)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(52,211,153,0.2)",
+          border:"1px solid rgba(52,211,153,0.3)",
+          transition:"all 0.2s",
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>🌟</div>
+            <div>
+              <div style={{color:"#34d399",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"儿童模式":"Junior Mode"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"适合 5-12 岁":"Ages 5–12 · Fun & Easy!"}
+              </div>
+            </div>
+          </div>
+        </button>
+
+      </div>
+    </div>
+  );
 
   return (
     <div style={{
@@ -651,7 +738,13 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
           background:"rgba(52,211,153,0.08)",
           color:"#34d399",fontSize:14,fontWeight:800,cursor:"pointer",
           transition:"all 0.2s",
-        }}>🌟 {lang==="zh"?"儿童模式 (5-13岁)":"Junior Mode (Ages 5–13)"}</button>
+        }}>🌟 {lang==="zh"?"儿童模式 (5-12岁)":"Junior Mode (Ages 5–12)"}</button>
+
+        <button onClick={()=>setShowModeSelect(true)} style={{
+          width:"100%",padding:"8px",borderRadius:10,marginTop:4,
+          border:"none",background:"transparent",
+          color:"#334155",fontSize:12,cursor:"pointer",
+        }}>← {lang==="zh"?"返回模式选择":"Back to mode select"}</button>
 
         {/* Badges Modal */}
         {showBadges&&(
@@ -931,7 +1024,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         {lang==="zh"?"儿童模式":"Junior Mode"}
       </h1>
       <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>
-        {lang==="zh"?"适合 5-13 岁":"Ages 5–13"}
+        {lang==="zh"?"适合 5-12 岁":"Ages 5–12"}
       </p>
 
       <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",

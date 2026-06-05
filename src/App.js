@@ -173,7 +173,43 @@ const TUTORIAL_STEPS = [
   { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  to make 6×4=24! 🎉",        bubbleZh:"点击  4  凑成 6×4=24！🎉" },
 ];
 
-// ── translations ───────────────────────────────────────────────────────────
+// Junior tutorial — separate per level
+// Junior 1: 2 + 4 + 6 = 12 (pure addition, 3 steps)
+const JR1_TUTORIAL_CARDS = [
+  {suit:"♠",val:2,id:"jt1_2"},
+  {suit:"♥",val:4,id:"jt1_4"},
+  {suit:"♦",val:6,id:"jt1_6"},
+];
+const JR1_TUTORIAL_STEPS = [
+  { type:"number", target:"2",  isSecond:false, bubble:"👆 Tap  2  to start!",           bubbleZh:"👆 点击数字  2  开始！" },
+  { type:"op",     target:"+",                  bubble:"Now tap  +  to add!",             bubbleZh:"点击  +  进行加法！" },
+  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  — to make 2+4!",          bubbleZh:"点击  4  — 算出 2+4！" },
+  { type:"number", target:"6",  isSecond:false, bubble:"✓ 2+4=6!  Now tap  6  again!",    bubbleZh:"✓ 2+4=6！再点击结果  6  ！" },
+  { type:"op",     target:"+",                  bubble:"Tap  +  again!",                  bubbleZh:"再次点击  +  ！" },
+  { type:"number", target:"6",  isSecond:true,  bubble:"Tap  6  to make 6+6=12! 🎉",      bubbleZh:"点击  6  凑成 6+6=12！🎉" },
+];
+
+// Junior 2: 2 × 4 × 3 = 24 (multiplication, 3 steps)
+const JR2_TUTORIAL_CARDS = [
+  {suit:"♠",val:2,id:"jt2_2"},
+  {suit:"♥",val:4,id:"jt2_4"},
+  {suit:"♦",val:3,id:"jt2_3"},
+];
+const JR2_TUTORIAL_STEPS = [
+  { type:"number", target:"2",  isSecond:false, bubble:"👆 Tap  2  to start!",            bubbleZh:"👆 点击数字  2  开始！" },
+  { type:"op",     target:"×",                  bubble:"Now tap  ×  to multiply!",        bubbleZh:"点击  ×  进行乘法！" },
+  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  — to make 2×4!",          bubbleZh:"点击  4  — 算出 2×4！" },
+  { type:"number", target:"8",  isSecond:false, bubble:"✓ 2×4=8!  Now tap  8 !",         bubbleZh:"✓ 2×4=8！点击结果  8  ！" },
+  { type:"op",     target:"×",                  bubble:"Tap  ×  again!",                  bubbleZh:"再次点击  ×  ！" },
+  { type:"number", target:"3",  isSecond:true,  bubble:"Tap  3  to make 8×3=24! 🎉",      bubbleZh:"点击  3  凑成 8×3=24！🎉" },
+];
+
+function loadJrTutorialDone(level) {
+  try { return localStorage.getItem(`game24_jr_tut_${level}`)==="1"; } catch { return false; }
+}
+function saveJrTutorialDone(level) {
+  try { localStorage.setItem(`game24_jr_tut_${level}`,"1"); } catch {}
+}
 const T = {
   en: {
     title: "24",
@@ -961,12 +997,16 @@ function JuniorScreen({lang, setLang, onBack}) {
   const [startTime, setStartTime] = useState(null);
   const [solvedRounds, setSolvedRounds] = useState(0);
   const [showJrLeaveConfirm, setShowJrLeaveConfirm] = useState(false);
+  const [jrTutStep, setJrTutStep] = useState(-1); // -1 = not in tutorial
 
   const jl = JUNIOR_LEVELS[level];
 
   const encouragingMessages = lang==="zh"
     ? ["🎉 太棒了！","🌟 你真聪明！","💪 厉害！","🎊 好样的！","✨ 继续加油！","🏆 超级棒！"]
     : ["🎉 Amazing!","🌟 You're so smart!","💪 Awesome!","🎊 Well done!","✨ Keep it up!","🏆 Superstar!"];
+
+  const jrTutCards = level==="⭐" ? JR1_TUTORIAL_CARDS : JR2_TUTORIAL_CARDS;
+  const jrTutSteps = level==="⭐" ? JR1_TUTORIAL_STEPS : JR2_TUTORIAL_STEPS;
 
   function dealJuniorCards() {
     const maxCard = jl.maxCard;
@@ -997,11 +1037,45 @@ function JuniorScreen({lang, setLang, onBack}) {
     setRound(1);
     setSolvedRounds(0);
     setScreen("game");
-    dealJuniorCards();
+    // Show tutorial on first visit for this level
+    const isFirstTime = !loadJrTutorialDone(level);
+    if (isFirstTime) {
+      setCards(jrTutCards);
+      setNumbers(jrTutCards.map(c=>({value:c.val, label:String(c.val), sourceId:c.id})));
+      setSelectedIdx(null);
+      setOperator(null);
+      setSteps([]);
+      setMessage({text:"",type:""});
+      setTurnOver(false);
+      setStartTime(Date.now());
+      setJrTutStep(0);
+    } else {
+      dealJuniorCards();
+      setJrTutStep(-1);
+    }
   }
 
   function handleNumberClick(idx) {
     if (turnOver) return;
+    // Tutorial mode
+    if (jrTutStep>=0) {
+      const step = jrTutSteps[jrTutStep];
+      if (step.type!=="number") return;
+      if (numbers[idx].label!==step.target) {
+        setMessage({text:lang==="zh"?`👆 点击  ${step.target}  ！`:`👆 Tap  ${step.target}  !`,type:"bad"});
+        return;
+      }
+      if (!step.isSecond) {
+        setSelectedIdx(idx);
+        setOperator(null);
+        setMessage({text:"",type:""});
+        setJrTutStep(s=>s+1);
+      } else {
+        setJrTutStep(s=>s+1);
+        applyJuniorOp(selectedIdx, operator, idx);
+      }
+      return;
+    }
     if (selectedIdx===null) {
       setSelectedIdx(idx);
       setOperator(null);
@@ -1047,6 +1121,11 @@ function JuniorScreen({lang, setLang, onBack}) {
   }
 
   function handleJuniorSolve() {
+    // Mark tutorial done
+    if (jrTutStep>=0) {
+      saveJrTutorialDone(level);
+      setJrTutStep(-1);
+    }
     const timeElapsed = Math.round((Date.now()-startTime)/1000);
     const pts = jl.pointsPerSolve;
     const newScore = score+pts;
@@ -1447,41 +1526,100 @@ function JuniorScreen({lang, setLang, onBack}) {
           {lang==="zh"?"可用数字":"Available Numbers"}
         </div>
         <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-          {numbers.map((n,i)=>(
-            <div key={i} onClick={()=>handleNumberClick(i)} style={{
-              width:62,height:62,borderRadius:14,
-              background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
-              border:`3px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.2)"}`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:22,fontWeight:900,
-              color:selectedIdx===i?"#92400e":"white",
-              cursor:turnOver?"default":"pointer",
-              transform:selectedIdx===i?"scale(1.15)":"scale(1)",
-              transition:"all 0.15s",
-              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
-              animation:"popIn 0.3s ease",
-            }}>{n.label}</div>
-          ))}
+          {numbers.map((n,i)=>{
+            const isTutTarget = jrTutStep>=0
+              && jrTutStep<jrTutSteps.length
+              && jrTutSteps[jrTutStep].type==="number"
+              && n.label===jrTutSteps[jrTutStep].target;
+            return (
+              <div key={i} onClick={()=>handleNumberClick(i)} style={{
+                width:62,height:62,borderRadius:14,
+                background:selectedIdx===i?"#fef3c7":isTutTarget?"rgba(52,211,153,0.2)":"rgba(255,255,255,0.08)",
+                border:`3px solid ${selectedIdx===i?"#f59e0b":isTutTarget?"#34d399":"rgba(255,255,255,0.2)"}`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:22,fontWeight:900,
+                color:selectedIdx===i?"#92400e":isTutTarget?"#34d399":"white",
+                cursor:turnOver?"default":"pointer",
+                transform:selectedIdx===i?"scale(1.15)":isTutTarget?"scale(1.12)":"scale(1)",
+                transition:"all 0.15s",
+                boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":isTutTarget?"0 0 0 3px rgba(52,211,153,0.3), 0 4px 16px rgba(52,211,153,0.2)":"none",
+                animation:"popIn 0.3s ease",
+              }}>{n.label}</div>
+            );
+          })}
         </div>
       </div>
+
+      {/* Tutorial bubble */}
+      {jrTutStep>=0&&jrTutStep<jrTutSteps.length&&(
+        <div style={{
+          background:"linear-gradient(135deg,#0a3d2b,#052e1c)",
+          border:"2px solid #34d399",borderRadius:16,
+          padding:"12px 20px",marginBottom:12,
+          textAlign:"center",maxWidth:320,width:"100%",
+          animation:"popIn 0.3s ease",
+          boxShadow:"0 0 0 4px rgba(52,211,153,0.15)",
+        }}>
+          <div style={{fontSize:14,color:"white",fontWeight:700,lineHeight:1.6}}>
+            {lang==="zh"?jrTutSteps[jrTutStep].bubbleZh:jrTutSteps[jrTutStep].bubble}
+          </div>
+          <div style={{marginTop:8,display:"flex",gap:4,justifyContent:"center"}}>
+            {jrTutSteps.map((_,i)=>(
+              <div key={i} style={{
+                width:7,height:7,borderRadius:"50%",
+                background:i<jrTutStep?"#34d399":i===jrTutStep?"#f6d365":"rgba(255,255,255,0.15)",
+                transition:"all 0.3s",
+              }}/>
+            ))}
+          </div>
+          <button onClick={()=>{saveJrTutorialDone(level);setJrTutStep(-1);dealJuniorCards();}} style={{
+            marginTop:10,background:"transparent",border:"1px solid rgba(52,211,153,0.3)",
+            borderRadius:8,padding:"4px 12px",color:"#64748b",fontSize:11,cursor:"pointer",
+          }}>{lang==="zh"?"跳过教程":"Skip tutorial"}</button>
+        </div>
+      )}
 
       {/* Operators */}
       {!turnOver&&(
         <div style={{display:"flex",gap:10,marginBottom:14,justifyContent:"center"}}>
-          {jl.ops.map(op=>(
-            <button key={op} onClick={()=>{
-              if (selectedIdx!==null) setOperator(o=>o===op?null:op);
-            }} style={{
-              width:52,height:52,borderRadius:"50%",
-              border:`2px solid ${operator===op?"#f59e0b":"#334155"}`,
-              background:operator===op?"#fef3c7":"rgba(255,255,255,0.05)",
-              fontSize:22,fontWeight:800,cursor:"pointer",
-              color:operator===op?"#92400e":"#94a3b8",
-              transform:operator===op?"scale(1.18)":"scale(1)",
-              transition:"all 0.15s",
-              boxShadow:operator===op?"0 4px 12px rgba(245,158,11,0.4)":"none",
-            }}>{op}</button>
-          ))}
+          {jl.ops.map(op=>{
+            const isTutOp = jrTutStep>=0
+              && jrTutStep<jrTutSteps.length
+              && jrTutSteps[jrTutStep].type==="op"
+              && op===jrTutSteps[jrTutStep].target;
+            return (
+              <div key={op} style={{
+                filter:isTutOp?"drop-shadow(0 0 8px rgba(52,211,153,0.9))":"none",
+                transform:isTutOp?"scale(1.18)":"scale(1)",
+                transition:"all 0.2s",
+              }}>
+                <button onClick={()=>{
+                  if (jrTutStep>=0) {
+                    const step=jrTutSteps[jrTutStep];
+                    if (step.type!=="op") return;
+                    if (op!==step.target) {
+                      setMessage({text:lang==="zh"?`👆 点击  ${step.target}  ！`:`👆 Tap  ${step.target}  !`,type:"bad"});
+                      return;
+                    }
+                    setOperator(op);
+                    setMessage({text:"",type:""});
+                    setJrTutStep(s=>s+1);
+                    return;
+                  }
+                  if (selectedIdx!==null) setOperator(o=>o===op?null:op);
+                }} style={{
+                  width:52,height:52,borderRadius:"50%",
+                  border:`2px solid ${operator===op?"#f59e0b":isTutOp?"#34d399":"#334155"}`,
+                  background:operator===op?"#fef3c7":isTutOp?"rgba(52,211,153,0.1)":"rgba(255,255,255,0.05)",
+                  fontSize:22,fontWeight:800,cursor:"pointer",
+                  color:operator===op?"#92400e":isTutOp?"#34d399":"#94a3b8",
+                  transform:operator===op?"scale(1.18)":"scale(1)",
+                  transition:"all 0.15s",
+                  boxShadow:operator===op?"0 4px 12px rgba(245,158,11,0.4)":"none",
+                }}>{op}</button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -3032,14 +3170,15 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
       {/* Shareable card — hidden off-screen, captured by html2canvas */}
       <div ref={shareCardRef} style={{
         position:"fixed", left:"-9999px", top:0,
-        width:360, background:"linear-gradient(135deg,#1a1a2e,#0f3460)",
-        borderRadius:20, padding:24, fontFamily:"'Trebuchet MS',sans-serif",
-        border:"2px solid rgba(246,211,101,0.4)",
+        width:380, background:"linear-gradient(135deg,#1a1a2e,#0f3460)",
+        borderRadius:24, padding:28, fontFamily:"'Trebuchet MS',sans-serif",
+        border:"2px solid rgba(246,211,101,0.5)",
+        boxShadow:"0 0 40px rgba(246,211,101,0.15)",
       }}>
         {/* Header */}
-        <div style={{textAlign:"center",marginBottom:16}}>
-          <div style={{fontSize:36,marginBottom:4}}>🃏</div>
-          <div style={{fontSize:28,fontWeight:900,color:"#f6d365",letterSpacing:-1}}>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:40,marginBottom:6}}>🃏</div>
+          <div style={{fontSize:30,fontWeight:900,color:"#f6d365",letterSpacing:-1}}>
             Game 24 | 24点
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
@@ -3048,39 +3187,51 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         </div>
 
         {/* Divider */}
-        <div style={{height:1,background:"rgba(246,211,101,0.2)",marginBottom:16}}/>
+        <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(246,211,101,0.5),transparent)",marginBottom:20}}/>
 
-        {/* Winner stats */}
+        {/* Big score hero */}
         <div style={{
-          background:"rgba(246,211,101,0.08)",borderRadius:12,
-          padding:"12px 16px",marginBottom:12,
+          background:"linear-gradient(135deg,rgba(246,211,101,0.15),rgba(253,160,133,0.1))",
+          borderRadius:16,padding:"20px 16px",marginBottom:16,
+          border:"1px solid rgba(246,211,101,0.3)",textAlign:"center",
         }}>
-          {/* Player name prominently */}
-          <div style={{color:"white",fontWeight:900,fontSize:18,marginBottom:6}}>
+          <div style={{color:"white",fontWeight:900,fontSize:20,marginBottom:12}}>
             👤 {winner.name}
           </div>
-          <div style={{color:"#f6d365",fontWeight:700,fontSize:12,marginBottom:10,letterSpacing:1}}>
-            {diffLabel} {lang==="zh"?"模式":"Mode"} · {lang==="zh"?"等级":"Level"} {Math.floor(winner.score/10)+1}
+          <div style={{color:"#f6d365",fontWeight:900,fontSize:64,lineHeight:1,marginBottom:4}}>
+            {winner.score}
           </div>
-          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            <div style={{textAlign:"center"}}>
-              <div style={{color:"#f6d365",fontWeight:900,fontSize:32}}>{winner.score}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"分数":"Score"}</div>
+          <div style={{color:"#64748b",fontSize:13,marginBottom:12}}>
+            {lang==="zh"?"分数":"points"}
+          </div>
+          <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+            <div style={{
+              background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",
+              textAlign:"center",
+            }}>
+              <div style={{color:"white",fontWeight:900,fontSize:20}}>{Math.floor(winner.score/10)+1}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Level"}</div>
             </div>
-            <div style={{textAlign:"center"}}>
-              <div style={{color:"#f472b6",fontWeight:900,fontSize:32}}>🔥{winner.streak}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"连胜":"Streak"}</div>
+            <div style={{
+              background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",
+              textAlign:"center",
+            }}>
+              <div style={{color:"#f472b6",fontWeight:900,fontSize:20}}>🔥{winner.streak}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"连胜":"Streak"}</div>
             </div>
-            <div style={{textAlign:"center"}}>
-              <div style={{color:DIFFICULTY[difficulty].color,fontWeight:900,fontSize:32}}>{Math.floor(winner.score/10)+1}</div>
-              <div style={{color:"#64748b",fontSize:11}}>{lang==="zh"?"等级":"Level"}</div>
+            <div style={{
+              background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",
+              textAlign:"center",
+            }}>
+              <div style={{color:DIFFICULTY[difficulty].color,fontWeight:900,fontSize:16,marginTop:2}}>{diffLabel}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"难度":"Mode"}</div>
             </div>
           </div>
         </div>
 
         {/* Multiplayer scores */}
         {players.length>1&&(
-          <div style={{marginBottom:12}}>
+          <div style={{marginBottom:16}}>
             {sorted.slice(1).map((p,i)=>(
               <div key={i} style={{
                 display:"flex",justifyContent:"space-between",
@@ -3094,16 +3245,16 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
           </div>
         )}
 
-        {/* Badges earned */}
+        {/* Badges */}
         {earnedBadges.length>0&&(
-          <div style={{marginBottom:12}}>
-            <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>
+          <div style={{marginBottom:16}}>
+            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>
               {lang==="zh"?"成就徽章":"Badges Earned"}
             </div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {earnedBadges.map(b=>(
                 <div key={b.id} style={{
-                  background:"rgba(246,211,101,0.1)",border:"1px solid rgba(246,211,101,0.2)",
+                  background:"rgba(246,211,101,0.1)",border:"1px solid rgba(246,211,101,0.25)",
                   borderRadius:8,padding:"4px 8px",fontSize:12,color:"#f6d365",
                 }}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
               ))}
@@ -3112,15 +3263,28 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         )}
 
         {/* Divider */}
-        <div style={{height:1,background:"rgba(246,211,101,0.2)",marginBottom:12}}/>
+        <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(246,211,101,0.5),transparent)",marginBottom:16}}/>
 
-        {/* CTA */}
-        <div style={{textAlign:"center"}}>
-          <div style={{color:"#94a3b8",fontSize:12,marginBottom:4}}>
-            {lang==="zh"?"你能超过我的分数吗？":"Can you beat my score?"}
+        {/* Challenge CTA — the social hook */}
+        <div style={{
+          background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",
+          borderRadius:12,padding:"12px 16px",marginBottom:12,textAlign:"center",
+        }}>
+          <div style={{color:"#ef4444",fontWeight:900,fontSize:15,marginBottom:4}}>
+            {lang==="zh"?"🔥 你能超过我吗？":"🔥 Think you can beat me?"}
           </div>
+          <div style={{color:"#94a3b8",fontSize:12}}>
+            {lang==="zh"?`挑战我的 ${winner.score} 分！`:`Challenge my score of ${winner.score} pts!`}
+          </div>
+        </div>
+
+        {/* URL */}
+        <div style={{textAlign:"center"}}>
           <div style={{color:"#f6d365",fontWeight:700,fontSize:13}}>
-            game24-taupe.vercel.app
+            🃏 game24-taupe.vercel.app
+          </div>
+          <div style={{color:"#334155",fontSize:10,marginTop:2}}>
+            {lang==="zh"?"免费畅玩，无需下载":"Free to play · No download needed"}
           </div>
         </div>
       </div>

@@ -204,17 +204,17 @@ function checkBadges(existing, {totalSolves, streak, timeLeft, difficulty, hintU
 
 // ── Battle Mode constants & helpers ───────────────────────────────────────
 const BATTLE_BADGES = [
-  { id:"battle_first",    icon:"⚔️",  en:"First Blood!",      zh:"初战告捷！",    desc:"Win your first battle" },
-  { id:"battle_flawless", icon:"🛡️",  en:"Flawless Victory!", zh:"完美胜利！",    desc:"Win without losing a single life" },
-  { id:"battle_slayer",   icon:"🤖",  en:"Robot Slayer!",     zh:"机器人终结者！", desc:"Beat the Hard robot" },
-  { id:"battle_comeback", icon:"👊",  en:"Comeback King!",    zh:"绝地反击！",    desc:"Win from just 1 life remaining" },
-  { id:"battle_hardened", icon:"🔥",  en:"Battle Hardened!",  zh:"久经沙场！",    desc:"Win 10 battles total" },
+  { id:"battle_first",    icon:"⚔️",  en:"First Blood!",      zh:"初战告捷！",    fr:"Premier sang !",      desc:"Win your first battle" },
+  { id:"battle_flawless", icon:"🛡️",  en:"Flawless Victory!", zh:"完美胜利！",    fr:"Victoire parfaite !", desc:"Win without losing a single life" },
+  { id:"battle_slayer",   icon:"🤖",  en:"Robot Slayer!",     zh:"机器人终结者！", fr:"Chasseur de robot !", desc:"Beat the Hard robot" },
+  { id:"battle_comeback", icon:"👊",  en:"Comeback King!",    zh:"绝地反击！",    fr:"Retour gagnant !",    desc:"Win from just 1 life remaining" },
+  { id:"battle_hardened", icon:"🔥",  en:"Battle Hardened!",  zh:"久经沙场！",    fr:"Endurci au combat !", desc:"Win 10 battles total" },
 ];
 
 const ROBOT_SPEED = {
-  Easy:   { minThinkTime: 35, solveChance: 0.08, label:"Easy",   labelZh:"简单", labelFr:"Facile",    color:"#34d399", desc:"Slow thinker (~47s avg)",   descZh:"反应迟缓（约47秒）" },
-  Medium: { minThinkTime: 25, solveChance: 0.10, label:"Medium", labelZh:"中等", labelFr:"Moyen",     color:"#f59e0b", desc:"Quick mind (~35s avg)",      descZh:"反应一般（约35秒）" },
-  Hard:   { minThinkTime: 15, solveChance: 0.15, label:"Hard",   labelZh:"困难", labelFr:"Difficile", color:"#ef4444", desc:"Sharp focus (~21s avg)",    descZh:"反应敏锐（约21秒）" },
+  Easy:   { minThinkTime: 35, solveChance: 0.08, label:"Easy",   labelZh:"简单", labelFr:"Facile",    color:"#34d399", desc:"Slow thinker (~47s avg)", descFr:"Penseur lent (~47s)",   descZh:"反应迟缓（约47秒）" },
+  Medium: { minThinkTime: 25, solveChance: 0.10, label:"Medium", labelZh:"中等", labelFr:"Moyen",     color:"#f59e0b", desc:"Quick mind (~35s avg)", descFr:"Esprit vif (~35s)",      descZh:"反应一般（约35秒）" },
+  Hard:   { minThinkTime: 15, solveChance: 0.15, label:"Hard",   labelZh:"困难", labelFr:"Difficile", color:"#ef4444", desc:"Sharp focus (~21s avg)", descFr:"Tres concentre (~21s)",    descZh:"反应敏锐（约21秒）" },
 };
 
 function loadBattleBadges() {
@@ -254,17 +254,17 @@ const TUTORIAL_CARDS = [
 ];
 // Each step: type="number"|"op", target=label to match, isSecond=true means this tap triggers applyOp
 const TUTORIAL_STEPS = [
-  { type:"number", target:"1",  isSecond:false, bubble:"👆 Tap  1  to start!",              bubbleZh:"👆 点击数字  1  开始！" },
-  { type:"op",     target:"×",                  bubble:"Now tap  ×  to multiply!",           bubbleZh:"点击  ×  进行乘法！" },
-  { type:"number", target:"2",  isSecond:true,  bubble:"Tap  2  — to make 1×2!",            bubbleZh:"点击  2  — 算出 1×2！" },
+  { type:"number", target:"1",  isSecond:false, bubble:"👆 Tap  1  to start!",              bubbleZh:"👆 点击数字  1  开始！",  bubbleFr:"👆 Appuie sur  1  pour commencer !" },
+  { type:"op",     target:"×",                  bubble:"Now tap  ×  to multiply!",           bubbleZh:"点击  ×  进行乘法！",     bubbleFr:"Appuie sur  ×  pour multiplier !" },
+  { type:"number", target:"2",  isSecond:true,  bubble:"Tap  2  — to make 1×2!",            bubbleZh:"点击  2  — 算出 1×2！",   bubbleFr:"Appuie sur  2  — pour faire 1×2 !" },
   // after this applyOp fires → result "2" appears in pool
-  { type:"number", target:"2",  isSecond:false, bubble:"✓ 1×2=2!  Now tap  2  again!",      bubbleZh:"✓ 1×2=2！再点击结果  2  ！" },
-  { type:"op",     target:"×",                  bubble:"Tap  ×  again!",                    bubbleZh:"再次点击  ×  ！" },
-  { type:"number", target:"3",  isSecond:true,  bubble:"Tap  3  — to make 2×3!",            bubbleZh:"点击  3  — 算出 2×3！" },
+  { type:"number", target:"2",  isSecond:false, bubble:"✓ 1×2=2!  Now tap  2  again!",      bubbleZh:"✓ 1×2=2！再点击结果  2  ！", bubbleFr:"✓ 1×2=2 !  Appuie encore sur  2 !" },
+  { type:"op",     target:"×",                  bubble:"Tap  ×  again!",                    bubbleZh:"再次点击  ×  ！",          bubbleFr:"Appuie encore sur  × !" },
+  { type:"number", target:"3",  isSecond:true,  bubble:"Tap  3  — to make 2×3!",            bubbleZh:"点击  3  — 算出 2×3！",   bubbleFr:"Appuie sur  3  — pour faire 2×3 !" },
   // after this applyOp fires → result "6" appears in pool
-  { type:"number", target:"6",  isSecond:false, bubble:"✓ 2×3=6!  Now tap  6 !",           bubbleZh:"✓ 2×3=6！点击结果  6  ！" },
-  { type:"op",     target:"×",                  bubble:"Last  ×  — nearly there! 🎯",       bubbleZh:"最后一个  ×  — 快成功了！🎯" },
-  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  to make 6×4=24! 🎉",        bubbleZh:"点击  4  凑成 6×4=24！🎉" },
+  { type:"number", target:"6",  isSecond:false, bubble:"✓ 2×3=6!  Now tap  6 !",           bubbleZh:"✓ 2×3=6！点击结果  6  ！", bubbleFr:"✓ 2×3=6 !  Appuie sur  6 !" },
+  { type:"op",     target:"×",                  bubble:"Last  ×  — nearly there! 🎯",       bubbleZh:"最后一个  ×  — 快成功了！🎯", bubbleFr:"Dernier  ×  — presque fini ! 🎯" },
+  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  to make 6×4=24! 🎉",        bubbleZh:"点击  4  凑成 6×4=24！🎉", bubbleFr:"Appuie sur  4  pour faire 6×4=24 ! 🎉" },
 ];
 
 // Junior tutorial — separate per level
@@ -275,12 +275,12 @@ const JR1_TUTORIAL_CARDS = [
   {suit:"♦",val:6,id:"jt1_6"},
 ];
 const JR1_TUTORIAL_STEPS = [
-  { type:"number", target:"2",  isSecond:false, bubble:"👆 Tap  2  to start!",           bubbleZh:"👆 点击数字  2  开始！" },
-  { type:"op",     target:"+",                  bubble:"Now tap  +  to add!",             bubbleZh:"点击  +  进行加法！" },
-  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  — to make 2+4!",          bubbleZh:"点击  4  — 算出 2+4！" },
-  { type:"number", target:"6",  isSecond:false, bubble:"✓ 2+4=6!  Now tap  6  again!",    bubbleZh:"✓ 2+4=6！再点击结果  6  ！" },
-  { type:"op",     target:"+",                  bubble:"Tap  +  again!",                  bubbleZh:"再次点击  +  ！" },
-  { type:"number", target:"6",  isSecond:true,  bubble:"Tap  6  to make 6+6=12! 🎉",      bubbleZh:"点击  6  凑成 6+6=12！🎉" },
+  { type:"number", target:"2",  isSecond:false, bubble:"👆 Tap  2  to start!",           bubbleZh:"👆 点击数字  2  开始！",  bubbleFr:"👆 Appuie sur  2  pour commencer !" },
+  { type:"op",     target:"+",                  bubble:"Now tap  +  to add!",             bubbleZh:"点击  +  进行加法！",     bubbleFr:"Appuie sur  +  pour additionner !" },
+  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  — to make 2+4!",          bubbleZh:"点击  4  — 算出 2+4！",   bubbleFr:"Appuie sur  4  — pour faire 2+4 !" },
+  { type:"number", target:"6",  isSecond:false, bubble:"✓ 2+4=6!  Now tap  6  again!",    bubbleZh:"✓ 2+4=6！再点击结果  6  ！", bubbleFr:"✓ 2+4=6 !  Appuie encore sur  6 !" },
+  { type:"op",     target:"+",                  bubble:"Tap  +  again!",                  bubbleZh:"再次点击  +  ！",          bubbleFr:"Appuie encore sur  + !" },
+  { type:"number", target:"6",  isSecond:true,  bubble:"Tap  6  to make 6+6=12! 🎉",      bubbleZh:"点击  6  凑成 6+6=12！🎉", bubbleFr:"Appuie sur  6  pour faire 6+6=12 ! 🎉" },
 ];
 
 // Junior 2: 2 × 4 × 3 = 24 (multiplication, 3 steps)
@@ -290,12 +290,12 @@ const JR2_TUTORIAL_CARDS = [
   {suit:"♦",val:3,id:"jt2_3"},
 ];
 const JR2_TUTORIAL_STEPS = [
-  { type:"number", target:"2",  isSecond:false, bubble:"👆 Tap  2  to start!",            bubbleZh:"👆 点击数字  2  开始！" },
-  { type:"op",     target:"×",                  bubble:"Now tap  ×  to multiply!",        bubbleZh:"点击  ×  进行乘法！" },
-  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  — to make 2×4!",          bubbleZh:"点击  4  — 算出 2×4！" },
-  { type:"number", target:"8",  isSecond:false, bubble:"✓ 2×4=8!  Now tap  8 !",         bubbleZh:"✓ 2×4=8！点击结果  8  ！" },
-  { type:"op",     target:"×",                  bubble:"Tap  ×  again!",                  bubbleZh:"再次点击  ×  ！" },
-  { type:"number", target:"3",  isSecond:true,  bubble:"Tap  3  to make 8×3=24! 🎉",      bubbleZh:"点击  3  凑成 8×3=24！🎉" },
+  { type:"number", target:"2",  isSecond:false, bubble:"👆 Tap  2  to start!",            bubbleZh:"👆 点击数字  2  开始！",  bubbleFr:"👆 Appuie sur  2  pour commencer !" },
+  { type:"op",     target:"×",                  bubble:"Now tap  ×  to multiply!",        bubbleZh:"点击  ×  进行乘法！",     bubbleFr:"Appuie sur  ×  pour multiplier !" },
+  { type:"number", target:"4",  isSecond:true,  bubble:"Tap  4  — to make 2×4!",          bubbleZh:"点击  4  — 算出 2×4！",   bubbleFr:"Appuie sur  4  — pour faire 2×4 !" },
+  { type:"number", target:"8",  isSecond:false, bubble:"✓ 2×4=8!  Now tap  8 !",         bubbleZh:"✓ 2×4=8！点击结果  8  ！", bubbleFr:"✓ 2×4=8 !  Appuie sur  8 !" },
+  { type:"op",     target:"×",                  bubble:"Tap  ×  again!",                  bubbleZh:"再次点击  ×  ！",          bubbleFr:"Appuie encore sur  × !" },
+  { type:"number", target:"3",  isSecond:true,  bubble:"Tap  3  to make 8×3=24! 🎉",      bubbleZh:"点击  3  凑成 8×3=24！🎉", bubbleFr:"Appuie sur  3  pour faire 8×3=24 ! 🎉" },
 ];
 
 function loadJrTutorialDone(level) {
@@ -770,7 +770,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           position:"relative",overflow:"hidden",
         }}>
           {/* NEW badge */}
-          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":"DAILY"}</div>
+          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":lang==="fr"?"QUOTIDIEN":"DAILY"}</div>
           <div style={{display:"flex",alignItems:"center",gap:16}}>
             <div style={{fontSize:44}}>📅</div>
             <div>
@@ -794,7 +794,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           transition:"all 0.2s",
           position:"relative",overflow:"hidden",
         }}>
-          <div style={{position:"absolute",top:12,right:12,background:"rgba(239,68,68,0.2)",border:"1px solid #ef4444",borderRadius:8,padding:"2px 8px",color:"#ef4444",fontSize:10,fontWeight:700,letterSpacing:1}}>⚔️ NEW</div>
+          <div style={{position:"absolute",top:12,right:12,background:"rgba(239,68,68,0.2)",border:"1px solid #ef4444",borderRadius:8,padding:"2px 8px",color:"#ef4444",fontSize:10,fontWeight:700,letterSpacing:1}}>⚔️ {lang==="zh"?"最新":lang==="fr"?"NOUVEAU":"NEW"}</div>
           <div style={{display:"flex",alignItems:"center",gap:16}}>
             <div style={{fontSize:44}}>⚔️</div>
             <div>
@@ -906,7 +906,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             })}
           </div>
           <div style={{color:"#475569",fontSize:11,marginTop:8,textAlign:"center"}}>
-            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":"basic ops only"}`:""}{!unlocked.Hard?` · ${lang==="zh"?"Medium 150分解锁Hard":"Score 150pts on Medium to unlock Hard"}`:""}
+            {DIFFICULTY[diff].timeLimit}s · +{DIFFICULTY[diff].pointsPerSolve} {lang==="zh"?"分":"pts"} · {lang==="zh"?"数字":"cards"} {DIFFICULTY[diff].cardNote}{diff==="Easy"?` · ${lang==="zh"?"基础运算":lang==="fr"?"operations de base seulement":"basic ops only"}`:""}{!unlocked.Hard?` · ${lang==="zh"?"Medium 150分解锁Hard":lang==="fr"?"150pts en Moyen pour debloquer Difficile":"Score 150pts on Medium to unlock Hard"}`:""}
           </div>
         </div>
 
@@ -982,9 +982,9 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
               {Object.entries(personalBest).map(([diff,score])=>(
                 <div key={diff} style={{textAlign:"center"}}>
-                  <div style={{color:DIFFICULTY[diff]?.color||"#94a3b8",fontSize:11,fontWeight:700}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[diff]||diff:diff}</div>
+                  <div style={{color:DIFFICULTY[diff]?.color||"#94a3b8",fontSize:11,fontWeight:700}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[diff]||diff:lang==="fr"?{Easy:"Facile",Medium:"Moyen",Hard:"Difficile"}[diff]||diff:diff}</div>
                   <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{score}</div>
-                  <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Level"} {Math.floor(score/10)+1}</div>
+                  <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":lang==="fr"?"Niveau":"Level"} {Math.floor(score/10)+1}</div>
                 </div>
               ))}
             </div>
@@ -1088,7 +1088,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
                     <div style={{flex:1}}>
                       <div style={{color:"white",fontWeight:700,fontSize:14}}>{entry.name}</div>
                       <div style={{color:"#64748b",fontSize:11}}>
-                        {entry.difficulty} · {lang==="zh"?"等级":"Level"}{Math.floor(entry.score/10)+1} · {entry.date} · 🔥{entry.streak}
+                        {entry.difficulty} · {lang==="zh"?"等级":lang==="fr"?"Niveau":lang==="fr"?"Niveau":"Level"}{Math.floor(entry.score/10)+1} · {entry.date} · 🔥{entry.streak}
                       </div>
                     </div>
                     <div style={{color:"#f6d365",fontWeight:900,fontSize:20}}>{entry.score}</div>
@@ -1599,11 +1599,11 @@ function JuniorScreen({lang, setLang, onBack}) {
       })}
 
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:360,marginBottom:4}}>
-        <h1 style={{fontSize:22,fontWeight:900,margin:0,color:"#34d399"}}>
+      <div style={{width:"100%",maxWidth:360,marginBottom:4}}>
+        <h1 style={{fontSize:22,fontWeight:900,margin:"0 0 6px",color:"#34d399",textAlign:"center"}}>
           🌟 {lang==="zh"?"儿童模式":lang==="fr"?"Mode Junior":"Junior Mode"}
         </h1>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
           <button onClick={()=>setShowJrHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:12,cursor:"pointer"}}>❓</button>
           <button onClick={()=>setJrPaused(p=>!p)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{jrPaused?"▶":"⏸"}</button>
@@ -1904,12 +1904,12 @@ function JuniorScreen({lang, setLang, onBack}) {
             background:"transparent",border:"2px solid #64748b",
             borderRadius:10,padding:"8px 18px",color:"#64748b",
             fontSize:13,fontWeight:700,cursor:"pointer",
-          }}>↺ {lang==="zh"?"重置":"Reset"}</button>
+          }}>↺ {lang==="zh"?"重置":lang==="fr"?"Reinitialiser":"Reset"}</button>
           <button onClick={handleJrHint} style={{
             background:"rgba(167,139,250,0.1)",border:"2px solid #a78bfa",
             borderRadius:10,padding:"8px 18px",color:"#a78bfa",
             fontSize:13,fontWeight:700,cursor:"pointer",
-          }}>💡 {lang==="zh"?"帮帮我！":"Help!"}</button>
+          }}>💡 {lang==="zh"?"帮帮我！":lang==="fr"?"Aide !":"Help!"}</button>
         </div>
       ):(
         <button onClick={handleNext} style={{
@@ -2053,7 +2053,7 @@ function JuniorScreen({lang, setLang, onBack}) {
             </div>
             <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
               <div style={{color:"#34d399",fontWeight:900,fontSize:16,marginTop:4}}>{level}</div>
-              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Level"}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":lang==="fr"?"Niveau":"Level"}</div>
             </div>
           </div>
         </div>
@@ -2069,7 +2069,7 @@ function JuniorScreen({lang, setLang, onBack}) {
                 <div key={b.id} style={{
                   background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.25)",
                   borderRadius:8,padding:"4px 8px",fontSize:12,color:"#34d399",
-                }}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
+                }}>{b.icon} {lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div>
               ))}
             </div>
           </div>
@@ -2303,12 +2303,12 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
 
 // ── Battle Abilities ──────────────────────────────────────────────────────
 const ABILITIES = [
-  { id:"hint",   icon:"💡", en:"Hint",        zh:"提示",     desc:"Shows your next step",        descZh:"显示下一步" },
-  { id:"double", icon:"💥", en:"Double Dmg",  zh:"双倍伤害", desc:"Next solve steals 2 lives",   descZh:"下次解题夺2命" },
-  { id:"hack",   icon:"👾", en:"Hack",         zh:"黑客",     desc:"Disrupts robot for 4s",      descZh:"干扰机器人4秒" },
-  { id:"cancel", icon:"✂️", en:"Cancel Op",   zh:"取消运算", desc:"Removes one operator",        descZh:"取消一个运算符" },
-  { id:"switch", icon:"🔄", en:"Switch",       zh:"交换",     desc:"Resets robot progress",      descZh:"重置机器人进度" },
-  { id:"shield", icon:"🛡️", en:"Shield",      zh:"护盾",     desc:"Block next life loss",       descZh:"格挡下次失命" },
+  { id:"hint",   icon:"💡", en:"Hint",        zh:"提示",     fr:"Indice",       desc:"Shows your next step",        descZh:"显示下一步",      descFr:"Montre la prochaine etape" },
+  { id:"double", icon:"💥", en:"Double Dmg",  zh:"双倍伤害", fr:"Double Degats",desc:"Next solve steals 2 lives",   descZh:"下次解题夺2命",   descFr:"Vole 2 vies au prochain solve" },
+  { id:"hack",   icon:"👾", en:"Hack",         zh:"黑客",     fr:"Piratage",     desc:"Disrupts robot for 4s",      descZh:"干扰机器人4秒",   descFr:"Perturbe le robot 4 secondes" },
+  { id:"cancel", icon:"✂️", en:"Cancel Op",   zh:"取消运算", fr:"Annuler Op",   desc:"Removes one operator",        descZh:"取消一个运算符", descFr:"Supprime un operateur" },
+  { id:"switch", icon:"🔄", en:"Switch",       zh:"交换",     fr:"Echange",      desc:"Resets robot progress",      descZh:"重置机器人进度",  descFr:"Reinitialise le robot" },
+  { id:"shield", icon:"🛡️", en:"Shield",      zh:"护盾",     fr:"Bouclier",     desc:"Block next life loss",       descZh:"格挡下次失命",   descFr:"Bloque la prochaine perte" },
 ];
 
 function pickAbilities() {
@@ -2399,7 +2399,7 @@ function BattleScreen({ lang, setLang, onBack }) {
       if (removable.length>0) {
         const picked = removable[Math.floor(Math.random()*removable.length)];
         setCancelledOp(picked);
-        flashAbility("✂️", (lang==="zh"?"已取消运算符 ":"Cancelled operator ")+picked);
+        flashAbility("✂️", (lang==="zh"?"已取消运算符 ":lang==="fr"?"Operateur annule ":"Cancelled operator ")+picked);
       }
     } else if (ab.id==="switch") {
       hackPenaltyRef.current += 4; robotElapsedRef.current = 0;
@@ -2541,7 +2541,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   function doSqrt(idx) {
     const a=numbers[idx].value;
-    if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":"Can't sqrt negative!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
+    if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":lang==="fr"?"Impossible avec un negatif !":"Can't sqrt negative!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
     const r=Math.sqrt(a),expr=`√${fmt(a)} = ${fmt(r)}`;
     const nn=numbers.filter((_,i)=>i!==idx);
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
@@ -2573,8 +2573,8 @@ function BattleScreen({ lang, setLang, onBack }) {
             {Object.entries(ROBOT_SPEED).map(([key,val])=>(
               <button key={key} onClick={()=>setRobotDiff(key)} style={{flex:1,padding:"10px 6px",borderRadius:14,border:"none",background:robotDiff===key?`${val.color}22`:"rgba(255,255,255,0.05)",outline:robotDiff===key?`2px solid ${val.color}`:"2px solid transparent",color:robotDiff===key?val.color:"#64748b",fontWeight:800,fontSize:13,cursor:"pointer",transition:"all 0.2s"}}>
                 <div style={{fontSize:20,marginBottom:4}}>{key==="Easy"?"🐢":key==="Medium"?"🦊":"⚡"}</div>
-                <div>{lang==="zh"?val.labelZh:val.label}</div>
-                <div style={{fontSize:10,fontWeight:400,marginTop:2,color:"#64748b"}}>{lang==="zh"?val.descZh:val.desc}</div>
+                <div>{lang==="zh"?val.labelZh:lang==="fr"?(val.labelFr||val.label):val.label}</div>
+                <div style={{fontSize:10,fontWeight:400,marginTop:2,color:"#64748b"}}>{lang==="zh"?val.descZh:lang==="fr"?(val.descFr||val.desc):val.desc}</div>
               </button>
             ))}
           </div>
@@ -2585,21 +2585,21 @@ function BattleScreen({ lang, setLang, onBack }) {
             {ABILITIES.map(ab=>(
               <div key={ab.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"4px 8px",display:"flex",alignItems:"center",gap:5}}>
                 <span style={{fontSize:13}}>{ab.icon}</span>
-                <span style={{color:"#cbd5e1",fontSize:11,fontWeight:700}}>{lang==="zh"?ab.zh:ab.en}</span>
+                <span style={{color:"#cbd5e1",fontSize:11,fontWeight:700}}>{lang==="zh"?ab.zh:lang==="fr"?(ab.fr||ab.en):ab.en}</span>
               </div>
             ))}
           </div>
         </div>
         <div style={{marginBottom:16,background:"rgba(239,68,68,0.04)",border:"1px solid rgba(239,68,68,0.15)",borderRadius:14,padding:"10px 14px"}}>
-          {[{icon:"❤️",en:`${BLIVES} lives each — first to 0 loses`,zh:`各有${BLIVES}条命`},{icon:"⚔️",en:"Solve 24 first → steal a life",zh:"先解出→夺命"},{icon:"⏱️",en:"60s — timeout = both lose 1",zh:"60秒超时双方各失1命"}].map((r,i)=>(
-            <div key={i} style={{display:"flex",gap:10,marginBottom:i<2?6:0}}><div style={{fontSize:13}}>{r.icon}</div><div style={{color:"#94a3b8",fontSize:12}}>{lang==="zh"?r.zh:r.en}</div></div>
+          {[{icon:"❤️",en:`${BLIVES} lives each — first to 0 loses`,zh:`各有${BLIVES}条命`,fr:`${BLIVES} vies — le premier a 0 perd`},{icon:"⚔️",en:"Solve 24 first → steal a life",zh:"先解出→夺命",fr:"Resoudre 24 en premier → voler une vie"},{icon:"⏱️",en:"60s — timeout = both lose 1",zh:"60秒超时双方各失1命",fr:"60s — temps ecoule = les deux perdent 1"}].map((r,i)=>(
+            <div key={i} style={{display:"flex",gap:10,marginBottom:i<2?6:0}}><div style={{fontSize:13}}>{r.icon}</div><div style={{color:"#94a3b8",fontSize:12}}>{lang==="zh"?r.zh:lang==="fr"?(r.fr||r.en):r.en}</div></div>
           ))}
         </div>
         <div style={{marginBottom:16}}>
           <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"战斗勋章":lang==="fr"?"Badges Combat":"Battle Badges"} ({battleBadges.length}/{BATTLE_BADGES.length})</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {BATTLE_BADGES.map(b=>(
-              <div key={b.id} style={{background:battleBadges.includes(b.id)?"rgba(239,68,68,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${battleBadges.includes(b.id)?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"3px 7px",fontSize:11,color:battleBadges.includes(b.id)?"#fca5a5":"#334155"}}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
+              <div key={b.id} style={{background:battleBadges.includes(b.id)?"rgba(239,68,68,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${battleBadges.includes(b.id)?"rgba(239,68,68,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"3px 7px",fontSize:11,color:battleBadges.includes(b.id)?"#fca5a5":"#334155"}}>{b.icon} {lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div>
             ))}
           </div>
         </div>
@@ -2624,7 +2624,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
       <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}} @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%,85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}`}</style>
       {showConfetti&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{Array.from({length:50}).map((_,i)=>{const c=["#ef4444","#f97316","#f6d365","#34d399","#60a5fa","#a78bfa"];return <div key={i} style={{position:"absolute",top:"-20px",left:`${Math.random()*100}%`,width:6+Math.random()*8,height:6+Math.random()*8,background:c[i%c.length],borderRadius:Math.random()>0.5?"50%":"2px",animation:`confettiFall ${1.5+Math.random()}s ease-in ${Math.random()*0.8}s forwards`}}/>;})}</div>}
-      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":lang==="fr"?"Badge Combat !":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:b.en}</div></div></div></div>:null;})}
+      {newBattleBadges.map((id,i)=>{const b=BATTLE_BADGES.find(x=>x.id===id);return b?<div key={id} style={{position:"fixed",top:`${70+i*70}px`,right:16,zIndex:1000,background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid #ef4444",borderRadius:14,padding:"10px 16px",minWidth:200,animation:"badgeSlide 4s ease forwards",boxShadow:"0 4px 20px rgba(239,68,68,0.3)"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:28}}>{b.icon}</div><div><div style={{color:"#ef4444",fontWeight:800,fontSize:13}}>{lang==="zh"?"战斗勋章！":lang==="fr"?"Badge Combat !":"Battle Badge!"}</div><div style={{color:"white",fontWeight:700,fontSize:14}}>{lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div></div></div></div>:null;})}
       <div style={{fontSize:64,animation:"trophy 1.5s ease infinite",marginBottom:8}}>{matchWinner==="player"?"🏆":"💀"}</div>
       <h2 style={{fontSize:30,fontWeight:900,margin:"0 0 4px",background:matchWinner==="player"?"linear-gradient(90deg,#f6d365,#fda085,#f6d365)":"linear-gradient(90deg,#ef4444,#b91c1c,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{matchWinner==="player"?(lang==="zh"?"你赢了！🎉":lang==="fr"?"Vous gagnez ! 🎉":"You Win! 🎉"):(lang==="zh"?"机器人赢了！":lang==="fr"?"Le robot gagne !":"Robot Wins!")}</h2>
       <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>{lang==="zh"?`对战 🤖 ${rs.labelZh}`:`vs 🤖 ${rs.label} Robot`} · {lang==="zh"?"第":lang==="fr"?"Manche ":"Round "}{roundNum}</p>
@@ -2686,11 +2686,13 @@ function BattleScreen({ lang, setLang, onBack }) {
       )}
 
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:420,marginBottom:8}}>
-        <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
-        <div style={{display:"flex",gap:6}}>
-          <LangSwitcher lang={lang} setLang={setLang}/>
+      <div style={{width:"100%",maxWidth:420,marginBottom:8,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
+          <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
+        </div>
+        <div style={{display:"flex",justifyContent:"center"}}>
+          <LangSwitcher lang={lang} setLang={setLang}/>
         </div>
       </div>
 
@@ -2794,7 +2796,7 @@ function BattleScreen({ lang, setLang, onBack }) {
               fontSize:12,fontWeight:robotState!=="thinking"?700:400,
               transition:"color 0.3s",
             }}>
-              {robotSolved?(lang==="zh"?"✓ 解出了！":"✓ Solved!"):
+              {robotSolved?(lang==="zh"?"✓ 解出了！":lang==="fr"?"✓ Resolu !":"✓ Solved!"):
                robotState==="hack"?(lang==="zh"?"系统错误...":lang==="fr"?"ERREUR SYSTEME...":"SYSTEM ERROR..."):
                (lang==="zh"?"正在思考...":lang==="fr"?"Reflechit...":"Thinking...")}
             </div>
@@ -2882,8 +2884,8 @@ function BattleScreen({ lang, setLang, onBack }) {
             :abilities.map(ab=>(
               <button key={ab.id} onClick={()=>useAbility(ab)} style={{background:"linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))",border:"2px solid rgba(239,68,68,0.4)",borderRadius:14,padding:"10px 14px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:80,transition:"all 0.2s"}}>
                 <div style={{fontSize:26}}>{ab.icon}</div>
-                <div style={{color:"#fca5a5",fontSize:11,fontWeight:700}}>{lang==="zh"?ab.zh:ab.en}</div>
-                <div style={{color:"#475569",fontSize:9,textAlign:"center",lineHeight:1.2}}>{lang==="zh"?ab.descZh:ab.desc}</div>
+                <div style={{color:"#fca5a5",fontSize:11,fontWeight:700}}>{lang==="zh"?ab.zh:lang==="fr"?(ab.fr||ab.en):ab.en}</div>
+                <div style={{color:"#475569",fontSize:9,textAlign:"center",lineHeight:1.2}}>{lang==="zh"?ab.descZh:lang==="fr"?(ab.descFr||ab.desc):ab.desc}</div>
               </button>
             ))
           }
@@ -3361,8 +3363,8 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
       {/* Instruction nudges */}
       {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:10}}>{lang==="zh"?"点击数字 → 选择运算符 → 点击另一个数字":lang==="fr"?"Appuyez nombre → operateur → nombre":"Tap a number → tap an operator → tap another number"}</div>}
-      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请选择运算符 ↑":"Now pick an operator ↑"}</div>}
-      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请点击第二个数字 ↑":"Now tap the second number ↑"}</div>}
+      {selectedIdx!==null&&operator===null&&<div style={{color:"#f59e0b",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请选择运算符 ↑":lang==="fr"?"Choisir un operateur ↑":"Now pick an operator ↑"}</div>}
+      {selectedIdx!==null&&operator!==null&&<div style={{color:"#34d399",fontSize:12,textAlign:"center",marginBottom:10}}>{lang==="zh"?"请点击第二个数字 ↑":lang==="fr"?"Appuyez le 2eme nombre ↑":"Now tap the second number ↑"}</div>}
 
       {/* Message */}
       {message.text&&<div style={{background:`${msgColor}18`,border:`1px solid ${msgColor}`,borderRadius:12,padding:"9px 18px",marginBottom:12,color:msgColor,fontSize:14,fontWeight:700,textAlign:"center",animation:"popIn 0.3s ease",maxWidth:340}}>{message.text}</div>}
@@ -3555,7 +3557,7 @@ export default function App() {
       const step=TUTORIAL_STEPS[tutorialStep];
       if (step.type!=="number") return; // waiting for op tap
       if (numbers[idx].label!==step.target) {
-        setMessage({text:lang==="zh"?`👆 请点击  ${step.target}  ！`:`👆 Tap the  ${step.target}  first!`,type:"bad"});
+        setMessage({text:lang==="zh"?`👆 请点击  ${step.target}  ！`:`👆 ${lang==="fr"?"Appuie d'abord sur":"Tap the"}  ${step.target}  ${lang==="fr"?"!":"first!"}`,type:"bad"});
         return;
       }
       // Correct number tapped
@@ -3693,7 +3695,7 @@ export default function App() {
 
     const newLevel=Math.floor(newScore/10)+1;
     const prevLevel=Math.floor(players[currentPlayer].score/10)+1;
-    const levelUpMsg=newLevel>prevLevel?` 🆙 ${lang==="zh"?`升至等级${newLevel}`:`Level ${newLevel}!`}`:"";
+    const levelUpMsg=newLevel>prevLevel?` 🆙 ${lang==="zh"?`升至等级${newLevel}`:`${lang==="fr"?"Niveau":"Level"} ${newLevel}!`}`:"";
     setMessage({text:t.winMsg(pts,timerActive?speedBonus:0)+levelUpMsg,type:"win"});
     setTurnOver(true);
     // Suggest Medium when Easy score reaches 40pts
@@ -4047,7 +4049,7 @@ export default function App() {
             </div>
             <div style={{fontSize:20,fontWeight:900,color:"white"}}>{p.score}</div>
             <div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>
-              {lang==="zh"?"等级":"Level"} {Math.floor(p.score/10)+1}
+              {lang==="zh"?"等级":lang==="fr"?"Niveau":"Level"} {Math.floor(p.score/10)+1}
             </div>
             {p.streak>1&&<div style={{fontSize:10,color:"#f472b6"}}>🔥{p.streak}</div>}
           </div>
@@ -4122,7 +4124,7 @@ export default function App() {
             background:"transparent",border:"none",cursor:"pointer",padding:"2px 4px",
           }}>
             <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{t.diff} ▾</div>
-            <div style={{color:DIFFICULTY[difficulty].color,fontWeight:800,fontSize:13}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[difficulty]||difficulty:difficulty}</div>
+            <div style={{color:DIFFICULTY[difficulty].color,fontWeight:800,fontSize:13}}>{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[difficulty]||difficulty:lang==="fr"?{Easy:"Facile",Medium:"Moyen",Hard:"Difficile"}[difficulty]||difficulty:difficulty}</div>
           </button>
           {showDiffMenu&&(
             <div style={{
@@ -4147,7 +4149,7 @@ export default function App() {
                     fontWeight:700,fontSize:13,cursor:isLocked?"not-allowed":"pointer",
                     textAlign:"left",marginBottom:2,
                   }}>
-                    {isLocked?"🔒 ":""}{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[d]||d:d}
+                    {isLocked?"🔒 ":""}{lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[d]||d:lang==="fr"?{Easy:"Facile",Medium:"Moyen",Hard:"Difficile"}[d]||d:d}
                     {d===difficulty?" ✓":""}
                   </button>
                 );
@@ -4210,7 +4212,7 @@ export default function App() {
           boxShadow:"0 0 0 4px rgba(96,165,250,0.15)",
         }}>
           <div style={{fontSize:13,color:"white",fontWeight:700,lineHeight:1.6}}>
-            {lang==="zh"?TUTORIAL_STEPS[tutorialStep].bubbleZh:TUTORIAL_STEPS[tutorialStep].bubble}
+            {lang==="zh"?TUTORIAL_STEPS[tutorialStep].bubbleZh:lang==="fr"?(TUTORIAL_STEPS[tutorialStep].bubbleFr||TUTORIAL_STEPS[tutorialStep].bubble):TUTORIAL_STEPS[tutorialStep].bubble}
           </div>
           <div style={{marginTop:8,display:"flex",gap:4,justifyContent:"center"}}>
             {TUTORIAL_STEPS.map((_,i)=>(
@@ -4279,7 +4281,7 @@ export default function App() {
                     const step=TUTORIAL_STEPS[tutorialStep];
                     if (step.type!=="op") return;
                     if (op!==step.target) {
-                      setMessage({text:lang==="zh"?`👆 请点击  ${step.target}  ！`:`👆 Tap  ${step.target}  now!`,type:"bad"});
+                      setMessage({text:lang==="zh"?`👆 请点击  ${step.target}  ！`:`👆 ${lang==="fr"?"Appuie sur":"Tap"}  ${step.target}  ${lang==="fr"?"maintenant !":"now!"}`,type:"bad"});
                       return;
                     }
                     setOperator(op);
@@ -4383,7 +4385,7 @@ export default function App() {
               ))}
               {showHint.revealed < showHint.steps.length && (
                 <div style={{color:"#6d28d9",fontSize:11,marginTop:6}}>
-                  {lang==="zh"?`再点一次提示查看第${showHint.revealed+1}步`:`Tap hint again for step ${showHint.revealed+1}`}
+                  {lang==="zh"?`再点一次提示查看第${showHint.revealed+1}步`:`${lang==="fr"?"Indice suivant":"Tap hint again"} ${showHint.revealed+1}`}
                 </div>
               )}
               {showHint.revealed === showHint.steps.length && (
@@ -4452,7 +4454,7 @@ export default function App() {
             }}>
               <div style={{fontSize:28,marginBottom:4}}>🔓🔥</div>
               <div style={{color:"#ef4444",fontWeight:900,fontSize:16,marginBottom:4}}>
-                {lang==="zh"?"困难模式已解锁！":"Hard Mode Unlocked!"}
+                {lang==="zh"?"困难模式已解锁！":lang==="fr"?"Mode Difficile debloque !":"Hard Mode Unlocked!"}
               </div>
               <div style={{color:"#94a3b8",fontSize:12}}>
                 {lang==="zh"?"准备好迎接挑战了吗？":"Ready for the real challenge?"}
@@ -4472,7 +4474,7 @@ export default function App() {
                 {lang==="zh"?"你做得很棒！准备好升级了吗？":"You're doing great! Ready for more?"}
               </div>
               <div style={{color:"#94a3b8",fontSize:12,marginBottom:10}}>
-                {lang==="zh"?"试试中等难度，挑战更多运算！":"Try Medium mode for a bigger challenge!"}
+                {lang==="zh"?"试试中等难度，挑战更多运算！":lang==="fr"?"Essayez le mode Moyen !":"Try Medium mode for a bigger challenge!"}
               </div>
             </div>
           )}
@@ -4491,7 +4493,7 @@ export default function App() {
                 boxShadow:"0 4px 20px rgba(239,68,68,0.4)",
                 animation:"popIn 0.4s ease",
               }}>
-                🔥 {lang==="zh"?"去玩困难模式！":"Play Hard Mode!"}
+                🔥 {lang==="zh"?"去玩困难模式！":lang==="fr"?"Jouer en mode Difficile !":"Play Hard Mode!"}
               </button>
             )}
             {showMediumNudge&&!justUnlockedHard&&(
@@ -4509,7 +4511,7 @@ export default function App() {
                 boxShadow:"0 4px 20px rgba(245,158,11,0.4)",
                 animation:"popIn 0.4s ease",
               }}>
-                ⬆️ {lang==="zh"?"试试中等难度！":"Try Medium Mode!"}
+                ⬆️ {lang==="zh"?"试试中等难度！":lang==="fr"?"Essayez le mode Moyen !":"Try Medium Mode!"}
               </button>
             )}
             <button onClick={handleNextTurn} style={{
@@ -4601,7 +4603,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
     }
   }
 
-  const diffLabel = {Easy:lang==="zh"?"简单":"Easy", Medium:lang==="zh"?"中等":"Medium", Hard:lang==="zh"?"困难":"Hard"}[difficulty]||difficulty;
+  const diffLabel = lang==="zh"?{Easy:"简单",Medium:"中等",Hard:"困难"}[difficulty]||difficulty:lang==="fr"?{Easy:"Facile",Medium:"Moyen",Hard:"Difficile"}[difficulty]||difficulty:difficulty;
 
   return (
     <div style={{
@@ -4696,7 +4698,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
               textAlign:"center",
             }}>
               <div style={{color:"white",fontWeight:900,fontSize:20}}>{Math.floor(winner.score/10)+1}</div>
-              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Level"}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":lang==="fr"?"Niveau":"Level"}</div>
             </div>
             <div style={{
               background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",
@@ -4742,7 +4744,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
                 <div key={b.id} style={{
                   background:"rgba(246,211,101,0.1)",border:"1px solid rgba(246,211,101,0.25)",
                   borderRadius:8,padding:"4px 8px",fontSize:12,color:"#f6d365",
-                }}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
+                }}>{b.icon} {lang==="zh"?b.zh:lang==="fr"?(b.fr||b.en):b.en}</div>
               ))}
             </div>
           </div>
@@ -4782,7 +4784,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
           borderRadius:12,padding:"10px 18px",marginBottom:16,textAlign:"center",
           color:"#34d399",fontSize:13,fontWeight:600,
         }}>
-          {t.levelUp(difficulty==="Easy"?(lang==="zh"?"中等":"Medium"):(lang==="zh"?"困难":"Hard"))}
+          {t.levelUp(difficulty==="Easy"?(lang==="zh"?"中等":lang==="fr"?"Moyen":"Medium"):(lang==="zh"?"困难":lang==="fr"?"Difficile":"Hard"))}
         </div>
       )}
 

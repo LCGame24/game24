@@ -662,7 +662,7 @@ function OpBtn({op,active,onClick,disabled}) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
+function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(!skipInstructions);
@@ -803,6 +803,28 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
                 {lang==="zh"?"你的大脑就是你的武器":lang==="fr"?"Ton cerveau est ton arme":"Your brain is your weapon"}
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* Stats */}
+        <button onClick={()=>onStats()} style={{
+          width:"100%",padding:"18px 20px",borderRadius:20,
+          background:"linear-gradient(135deg,#1e1b4b,#312e81)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(167,139,250,0.15)",
+          border:"1px solid rgba(167,139,250,0.3)",
+          transition:"all 0.2s",
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>📊</div>
+            <div>
+              <div style={{color:"#a78bfa",fontWeight:900,fontSize:20,marginBottom:4}}>
+                {lang==="zh"?"我的统计":lang==="fr"?"Mes Statistiques":"My Stats"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"个人记录与成就":lang==="fr"?"Records et trophees":"Personal records & trophies"}
               </div>
             </div>
           </div>
@@ -2904,6 +2926,189 @@ function BattleScreen({ lang, setLang, onBack }) {
 }
 
 
+// ── Personal Stats Screen ──────────────────────────────────────────────────
+function StatsScreen({ lang, setLang, onBack }) {
+  // Load all data from localStorage
+  const lb        = (() => { try { return JSON.parse(localStorage.getItem("game24_leaderboard")||"[]"); } catch { return []; } })();
+  const pb        = (() => { try { return JSON.parse(localStorage.getItem("game24_pb")||"{}"); } catch { return {}; } })();
+  const badges    = (() => { try { return JSON.parse(localStorage.getItem("game24_badges")||"[]"); } catch { return []; } })();
+  const bWins     = (() => { try { return parseInt(localStorage.getItem("game24_battle_wins")||"0"); } catch { return 0; } })();
+  const bBadges   = (() => { try { return JSON.parse(localStorage.getItem("game24_battle_badges")||"[]"); } catch { return []; } })();
+  const daily     = (() => { try { return JSON.parse(localStorage.getItem("game24_daily")||"null"); } catch { return null; } })();
+  const dailyStr  = (() => { try { return JSON.parse(localStorage.getItem("game24_daily_streak")||'{"count":0}'); } catch { return {count:0}; } })();
+  const jrSolves  = (() => { try { return parseInt(localStorage.getItem("game24_jr_solves")||"0"); } catch { return 0; } })();
+  const jrBadges  = (() => { try { return JSON.parse(localStorage.getItem("game24_jr_badges")||"[]"); } catch { return []; } })();
+  const jrLB      = (() => { try { return JSON.parse(localStorage.getItem("game24_jr_leaderboard")||"[]"); } catch { return []; } })();
+
+  // Derive stats
+  const totalClassicGames = lb.length;
+  const bestClassicScore  = lb.length ? Math.max(...lb.map(e=>e.score)) : 0;
+  const bestStreak        = lb.length ? Math.max(...lb.map(e=>e.streak||0)) : 0;
+  const totalBadges       = badges.length + bBadges.length + jrBadges.length;
+  const totalBadgesMax    = 15 + 5 + 6; // classic + battle + junior (approx)
+  const jrBestScore       = jrLB.length ? Math.max(...jrLB.map(e=>e.score)) : 0;
+  const hasAnyData        = totalClassicGames > 0 || bWins > 0 || jrSolves > 0 || daily;
+
+  function fmtTime(s) {
+    if (!s) return "--";
+    const m = Math.floor(s/60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${String(sec).padStart(2,"0")}s` : `${sec}s`;
+  }
+
+  const L = {
+    title:      { en:"My Stats",           zh:"我的统计",         fr:"Mes Statistiques" },
+    noData:     { en:"No games played yet — start playing to see your stats!",
+                  zh:"还没有游戏记录，快去玩吧！",
+                  fr:"Pas encore de parties — commencez a jouer !" },
+    classic:    { en:"Classic Mode",       zh:"经典模式",         fr:"Mode Classique" },
+    junior:     { en:"Junior Mode",        zh:"儿童模式",         fr:"Mode Junior" },
+    battle:     { en:"Battle Mode",        zh:"对战模式",         fr:"Mode Combat" },
+    daily:      { en:"Daily Challenge",    zh:"每日挑战",         fr:"Defi du Jour" },
+    badges:     { en:"Trophies",           zh:"成就",             fr:"Trophees" },
+    games:      { en:"Games played",       zh:"游戏次数",         fr:"Parties jouees" },
+    bestScore:  { en:"Best score",         zh:"最高分",           fr:"Meilleur score" },
+    bestStreak: { en:"Best streak",        zh:"最长连胜",         fr:"Meilleure serie" },
+    wins:       { en:"Battles won",        zh:"胜利次数",         fr:"Batailles gagnees" },
+    solves:     { en:"Puzzles solved",     zh:"解题次数",         fr:"Puzzles resolus" },
+    streak:     { en:"Daily streak",       zh:"每日连续",         fr:"Serie quotidienne" },
+    bestTime:   { en:"Best time",          zh:"最佳用时",         fr:"Meilleur temps" },
+    pb:         { en:"Personal bests",     zh:"个人最佳",         fr:"Records personnels" },
+    easy:       { en:"Easy",               zh:"简单",             fr:"Facile" },
+    medium:     { en:"Medium",             zh:"中等",             fr:"Moyen" },
+    hard:       { en:"Hard",               zh:"困难",             fr:"Difficile" },
+    earned:     { en:"earned",             zh:"已获得",           fr:"obtenus" },
+    days:       { en:"days",               zh:"天",               fr:"jours" },
+    hints:      { en:"hints used",         zh:"提示次数",         fr:"indices utilises" },
+    noHints:    { en:"No hints!",          zh:"未使用提示！",     fr:"Sans indices !" },
+    back:       { en:"Back",               zh:"返回",             fr:"Retour" },
+  };
+  const t = (key) => L[key]?.[lang] || L[key]?.en || key;
+
+  function StatCard({ icon, label, value, color="#f6d365", sub }) {
+    return (
+      <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",
+        borderRadius:14,padding:"12px 14px",flex:1,minWidth:0}}>
+        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{icon} {label}</div>
+        <div style={{color,fontWeight:900,fontSize:22,lineHeight:1}}>{value}</div>
+        {sub&&<div style={{color:"#475569",fontSize:10,marginTop:3}}>{sub}</div>}
+      </div>
+    );
+  }
+
+  function Section({ icon, title, color, children }) {
+    return (
+      <div style={{width:"100%",maxWidth:420,marginBottom:16}}>
+        <div style={{color,fontSize:13,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+          <span>{icon}</span>{title}
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+      display:"flex",flexDirection:"column",alignItems:"center",
+      fontFamily:"'Trebuchet MS',sans-serif",padding:"20px 16px",overflowY:"auto",
+      animation:"fadeInScreen 0.3s ease"}}>
+      <style>{`@keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}`}</style>
+
+      {/* Header */}
+      <div style={{width:"100%",maxWidth:420,marginBottom:20,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+        <div style={{fontSize:40,marginBottom:4}}>📊</div>
+        <h1 style={{fontSize:28,fontWeight:900,margin:0,
+          background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+          animation:"shimmer 3s linear infinite"}}>{t("title")}</h1>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>🏠</button>
+        </div>
+      </div>
+
+      {!hasAnyData ? (
+        <div style={{textAlign:"center",color:"#475569",fontSize:14,marginTop:40,maxWidth:300}}>
+          <div style={{fontSize:48,marginBottom:16}}>🎮</div>
+          {t("noData")}
+        </div>
+      ) : (
+        <>
+          {/* ── Classic Mode ── */}
+          {totalClassicGames > 0 && (
+            <Section icon="🎮" title={t("classic")} color="#f6d365">
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <StatCard icon="🎯" label={t("games")} value={totalClassicGames} color="#f6d365"/>
+                <StatCard icon="⭐" label={t("bestScore")} value={bestClassicScore} color="#f6d365"/>
+                <StatCard icon="🔥" label={t("bestStreak")} value={bestStreak} color="#f97316"/>
+              </div>
+              {Object.keys(pb).length > 0 && (
+                <div style={{background:"rgba(246,211,101,0.06)",border:"1px solid rgba(246,211,101,0.15)",borderRadius:12,padding:"10px 14px"}}>
+                  <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>{t("pb")}</div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    {["Easy","Medium","Hard"].map(d => pb[d] ? (
+                      <div key={d} style={{textAlign:"center"}}>
+                        <div style={{color:{Easy:"#34d399",Medium:"#f59e0b",Hard:"#ef4444"}[d],fontSize:10,fontWeight:700,marginBottom:2}}>{t(d.toLowerCase())}</div>
+                        <div style={{color:"#f6d365",fontWeight:900,fontSize:18}}>{pb[d]}</div>
+                      </div>
+                    ) : null)}
+                  </div>
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* ── Junior Mode ── */}
+          {jrSolves > 0 && (
+            <Section icon="🌟" title={t("junior")} color="#34d399">
+              <div style={{display:"flex",gap:8}}>
+                <StatCard icon="✅" label={t("solves")} value={jrSolves} color="#34d399"/>
+                {jrBestScore > 0 && <StatCard icon="⭐" label={t("bestScore")} value={jrBestScore} color="#34d399"/>}
+                <StatCard icon="🎖️" label={t("badges")} value={`${jrBadges.length}/6`} color="#34d399"/>
+              </div>
+            </Section>
+          )}
+
+          {/* ── Battle Mode ── */}
+          {bWins > 0 && (
+            <Section icon="⚔️" title={t("battle")} color="#ef4444">
+              <div style={{display:"flex",gap:8}}>
+                <StatCard icon="🏆" label={t("wins")} value={bWins} color="#ef4444"/>
+                <StatCard icon="🎖️" label={t("badges")} value={`${bBadges.length}/5`} color="#ef4444"/>
+              </div>
+            </Section>
+          )}
+
+          {/* ── Daily Challenge ── */}
+          {(daily || dailyStr.count > 0) && (
+            <Section icon="📅" title={t("daily")} color="#60a5fa">
+              <div style={{display:"flex",gap:8}}>
+                <StatCard icon="🔥" label={t("streak")} value={`${dailyStr.count} ${t("days")}`} color="#f472b6"/>
+                {daily && <StatCard icon="⏱️" label={t("bestTime")} value={fmtTime(daily.totalTime)} color="#60a5fa"
+                  sub={daily.hintsUsed===0 ? t("noHints") : `${daily.hintsUsed} ${t("hints")}`}/>}
+              </div>
+            </Section>
+          )}
+
+          {/* ── Total Trophies ── */}
+          <Section icon="🏅" title={t("badges")} color="#a78bfa">
+            <div style={{background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:14,padding:"14px 16px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:16}}>
+                <div style={{fontSize:40}}>🏅</div>
+                <div>
+                  <div style={{color:"#a78bfa",fontWeight:900,fontSize:32}}>{totalBadges}</div>
+                  <div style={{color:"#64748b",fontSize:12}}>{t("earned")} · {badges.length} {t("classic")} · {bBadges.length} {t("battle")} · {jrBadges.length} {t("junior")}</div>
+                </div>
+              </div>
+            </div>
+          </Section>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 // ── Daily Challenge Screen ─────────────────────────────────────────────────
 function DailyChallengeScreen({ lang, setLang, onBack }) {
   const t = T[lang];
@@ -3407,7 +3612,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 }
 
 export default function App() {
-  const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior | daily
+  const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior | daily | battle | stats
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
   const [showHelp,setShowHelp]=useState(false);
@@ -3848,7 +4053,7 @@ export default function App() {
   const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
-  if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} onBattle={()=>setScreen("battle")} lang={lang} setLang={setLang}
+  if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} onBattle={()=>setScreen("battle")} onStats={()=>setScreen("stats")} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
     autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
     badges={badges} personalBest={personalBest}
@@ -3858,7 +4063,9 @@ export default function App() {
 
   if (screen==="daily") return <DailyChallengeScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>;
 
-  if (screen==="battle") return <BattleScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>;
+  if (screen==="battle") return <BattleScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>
+
+  if (screen==="stats") return <StatsScreen lang={lang} setLang={setLang} onBack={()=>setScreen("setup")}/>
 
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} onPlayAgain={()=>{ setSkipInstructions(true); setPreSelectDiff(difficulty); setScreen("setup"); }} difficulty={difficulty} lang={lang} setLang={setLang}

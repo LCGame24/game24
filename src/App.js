@@ -2217,6 +2217,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   const [hintText, setHintText] = useState(null);
   const [doubleDmg, setDoubleDmg] = useState(false);
   const [shield, setShield] = useState(false);
+  const [robotDoubleDmg, setRobotDoubleDmg] = useState(false);
   const hackPenaltyRef = useRef(0);
   const robotElapsedRef = useRef(0);
 
@@ -2291,6 +2292,9 @@ function BattleScreen({ lang, setLang, onBack }) {
     setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""});
     setTimeLeft(60); setRobotSolved(false); setRobotSolution(null); setRoundWinner(null);
     setCancelledOp(null); setHintText(null); setHackActive(false);
+    // Robot double damage chance scales with difficulty
+    const ddChance={Easy:0.15,Medium:0.25,Hard:0.40}[robotDiff]||0.25;
+    setRobotDoubleDmg(Math.random()<ddChance);
     setAbilities(pickAbilities());
     setPhase("playing");
   }
@@ -2335,9 +2339,10 @@ function BattleScreen({ lang, setLang, onBack }) {
     setRoundWinner(winner);
     let pl=playerLives, rl=robotLives, pll=playerLivesLost;
     const dmg=doubleDmg&&winner==="player"?2:1;
+    const robotDmg=robotDoubleDmg&&winner==="robot"?2:1;
     if(winner==="robot"||winner==="timeout") {
       if(shield){setShield(false);}
-      else{pl=playerLives-1;pll=playerLivesLost+1;setPlayerLives(pl);setPlayerLivesLost(pll);}
+      else{pl=Math.max(0,playerLives-robotDmg);pll=playerLivesLost+robotDmg;setPlayerLives(pl);setPlayerLivesLost(pll);}
     }
     if(winner==="player"){rl=Math.max(0,robotLives-dmg);setRobotLives(rl);if(doubleDmg)setDoubleDmg(false);}
     if(winner==="timeout"){rl=Math.max(0,robotLives-1);setRobotLives(rl);}
@@ -2479,7 +2484,7 @@ function BattleScreen({ lang, setLang, onBack }) {
         <div style={{textAlign:"center"}}><div style={{color:rs.color,fontSize:12,fontWeight:700,marginBottom:5}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div><div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)"}}>❤️</div>)}</div></div>
       </div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
-        <button onClick={()=>{setPhase("setup");setPlayerLives(BLIVES);setRobotLives(BLIVES);setPlayerLivesLost(0);setRoundNum(1);setMatchWinner(null);setNewBattleBadges([]);setDoubleDmg(false);setShield(false);}} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 22px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>⚔️ {lang==="zh"?"再战一局":"Play Again"}</button>
+        <button onClick={()=>{setPhase("setup");setPlayerLives(BLIVES);setRobotLives(BLIVES);setPlayerLivesLost(0);setRoundNum(1);setMatchWinner(null);setNewBattleBadges([]);setDoubleDmg(false);setShield(false);setRobotDoubleDmg(false);}} style={{background:"linear-gradient(135deg,#ef4444,#b91c1c)",border:"none",borderRadius:12,padding:"14px 22px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(239,68,68,0.35)"}}>⚔️ {lang==="zh"?"再战一局":"Play Again"}</button>
         <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"14px 22px",color:"#94a3b8",fontSize:15,fontWeight:800,cursor:"pointer"}}>🏠 {lang==="zh"?"返回主页":"Main Menu"}</button>
       </div>
     </div>
@@ -2539,7 +2544,7 @@ function BattleScreen({ lang, setLang, onBack }) {
             <div style={{color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",fontWeight:900,fontSize:26,animation:timeLeft<=10?"pulse 0.7s infinite":"none"}}>{timeLeft}s</div>
           </div>
           <div style={{textAlign:"center"}}>
-            <div style={{color:rs.color,fontSize:11,fontWeight:700,marginBottom:3}}>🤖 {lang==="zh"?rs.labelZh:rs.label}</div>
+            <div style={{color:rs.color,fontSize:11,fontWeight:700,marginBottom:3}}>🤖 {lang==="zh"?rs.labelZh:rs.label}{robotDoubleDmg?" 💥":""}</div>
             <div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
           </div>
         </div>

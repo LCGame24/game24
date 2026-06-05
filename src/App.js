@@ -1678,6 +1678,44 @@ function JuniorScreen({lang, setLang, onBack}) {
   );
 
   // End screen
+  const jrShareCardRef = useRef(null);
+  const [jrSharing, setJrSharing] = useState(false);
+  const earnedJrBadges = JUNIOR_BADGES.filter(b=>juniorBadges.includes(b.id));
+
+  async function handleJrShare() {
+    setJrSharing(true);
+    try {
+      await new Promise((resolve, reject) => {
+        if (window.html2canvas) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      const canvas = await window.html2canvas(jrShareCardRef.current, {
+        backgroundColor: null, scale: 2, logging: false,
+      });
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'game24-junior-score.png', {type:'image/png'});
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({
+            title: lang==="zh"?"看看我的成绩！":"Look what I did!",
+            text: lang==="zh"?`我在24点儿童模式得了${score}分！`:`I scored ${score} pts in Game 24 Junior Mode!`,
+            url: 'https://game24-taupe.vercel.app',
+            files: [file],
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'game24-junior-score.png'; a.click();
+          URL.revokeObjectURL(url);
+        }
+        setJrSharing(false);
+      }, 'image/png');
+    } catch(e) { console.error(e); setJrSharing(false); }
+  }
+
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0d2137,#0a3d2b,#0d2137)",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
@@ -1708,20 +1746,113 @@ function JuniorScreen({lang, setLang, onBack}) {
       </div>
 
       {/* Badges earned */}
-      {juniorBadges.length>0&&(
+      {earnedJrBadges.length>0&&(
         <div style={{marginBottom:16,textAlign:"center"}}>
           <div style={{color:"#64748b",fontSize:11,marginBottom:8}}>
             {lang==="zh"?"已获得成就":"Badges Earned"}
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-            {JUNIOR_BADGES.filter(b=>juniorBadges.includes(b.id)).map(b=>(
+            {earnedJrBadges.map(b=>(
               <div key={b.id} style={{fontSize:24}}>{b.icon}</div>
             ))}
           </div>
         </div>
       )}
 
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
+      {/* Hidden share card */}
+      <div ref={jrShareCardRef} style={{
+        position:"fixed",left:"-9999px",top:0,
+        width:380,background:"linear-gradient(135deg,#0d2137,#0a3d2b)",
+        borderRadius:24,padding:28,fontFamily:"'Trebuchet MS',sans-serif",
+        border:"2px solid rgba(52,211,153,0.5)",
+      }}>
+        {/* Header */}
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:40,marginBottom:6}}>🌟</div>
+          <div style={{fontSize:28,fontWeight:900,color:"#34d399",letterSpacing:-1}}>
+            Game 24 | 24点
+          </div>
+          <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
+            {lang==="zh"?"儿童模式":"Junior Mode"} · {level}
+          </div>
+        </div>
+
+        <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(52,211,153,0.5),transparent)",marginBottom:20}}/>
+
+        {/* Big score */}
+        <div style={{
+          background:"linear-gradient(135deg,rgba(52,211,153,0.15),rgba(52,211,153,0.05))",
+          borderRadius:16,padding:"20px 16px",marginBottom:16,
+          border:"1px solid rgba(52,211,153,0.3)",textAlign:"center",
+        }}>
+          <div style={{color:"white",fontWeight:900,fontSize:20,marginBottom:12}}>
+            👤 {name}
+          </div>
+          <div style={{color:"#34d399",fontWeight:900,fontSize:64,lineHeight:1,marginBottom:4}}>
+            {score}
+          </div>
+          <div style={{color:"#64748b",fontSize:13,marginBottom:12}}>
+            {lang==="zh"?"分数":"points"}
+          </div>
+          <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+            <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+              <div style={{color:"#f472b6",fontWeight:900,fontSize:20}}>🔥{streak}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"连胜":"Streak"}</div>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+              <div style={{color:"#f6d365",fontWeight:900,fontSize:20}}>{solvedRounds}/{rounds}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"答对":"Solved"}</div>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+              <div style={{color:"#34d399",fontWeight:900,fontSize:16,marginTop:4}}>{level}</div>
+              <div style={{color:"#64748b",fontSize:10}}>{lang==="zh"?"等级":"Level"}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Badges */}
+        {earnedJrBadges.length>0&&(
+          <div style={{marginBottom:16}}>
+            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>
+              {lang==="zh"?"成就徽章":"Badges Earned"}
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {earnedJrBadges.map(b=>(
+                <div key={b.id} style={{
+                  background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.25)",
+                  borderRadius:8,padding:"4px 8px",fontSize:12,color:"#34d399",
+                }}>{b.icon} {lang==="zh"?b.zh:b.en}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(52,211,153,0.5),transparent)",marginBottom:16}}/>
+
+        {/* Kid-friendly CTA */}
+        <div style={{
+          background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.3)",
+          borderRadius:12,padding:"12px 16px",marginBottom:12,textAlign:"center",
+        }}>
+          <div style={{color:"#34d399",fontWeight:900,fontSize:15,marginBottom:4}}>
+            {lang==="zh"?"🌟 看看我做到了！":"🌟 Look what I did!"}
+          </div>
+          <div style={{color:"#94a3b8",fontSize:12}}>
+            {lang==="zh"?"你也来试试吧！":"Come play with me!"}
+          </div>
+        </div>
+
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#34d399",fontWeight:700,fontSize:13}}>
+            🃏 game24-taupe.vercel.app
+          </div>
+          <div style={{color:"#334155",fontSize:10,marginTop:2}}>
+            {lang==="zh"?"免费畅玩，无需下载":"Free to play · No download needed"}
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:10}}>
         <button onClick={()=>{setScreen("setup");setScore(0);setStreak(0);setRound(1);setSolvedRounds(0);}} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",
           borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer",
@@ -1732,6 +1863,17 @@ function JuniorScreen({lang, setLang, onBack}) {
           color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
         }}>{lang==="zh"?"返回主菜单":"Main Menu"}</button>
       </div>
+
+      {/* Share button */}
+      <button onClick={handleJrShare} disabled={jrSharing} style={{
+        background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",
+        border:"none",borderRadius:12,padding:"12px 28px",
+        color:"white",fontSize:14,fontWeight:800,cursor:jrSharing?"not-allowed":"pointer",
+        opacity:jrSharing?0.7:1,
+        boxShadow:"0 4px 20px rgba(59,130,246,0.35)",
+      }}>
+        {jrSharing?(lang==="zh"?"生成中...":"Generating..."):(lang==="zh"?"📤 分享成绩":"📤 Share Score")}
+      </button>
     </div>
   );
 }

@@ -2346,6 +2346,13 @@ function BattleScreen({ lang, setLang, onBack }) {
   const hackPenaltyRef = useRef(0);
   const robotElapsedRef = useRef(0);
 
+  // 3D effect states
+  const [robotState, setRobotState] = useState("idle");
+  const [playerHit, setPlayerHit] = useState(false);
+  const [robotHit, setRobotHit] = useState(false);
+  const [cardFlip, setCardFlip] = useState(false);
+  const [screenShake, setScreenShake] = useState(false);
+
   // Puzzle
   const [cards, setCards] = useState([]);
   const [numbers, setNumbers] = useState([]);
@@ -2384,7 +2391,8 @@ function BattleScreen({ lang, setLang, onBack }) {
     } else if (ab.id==="hack") {
       hackPenaltyRef.current += 4;
       setHackActive(true);
-      setTimeout(()=>setHackActive(false), 4000);
+      setRobotState("hack");
+      setTimeout(()=>{setHackActive(false);setRobotState("thinking");}, 4000);
       flashAbility("👾", lang==="zh"?"黑客攻击！":"Hacking robot!");
     } else if (ab.id==="cancel") {
       const removable = ALL_OPS.filter(op=>op!=="+"&&op!==cancelledOp);
@@ -2421,6 +2429,11 @@ function BattleScreen({ lang, setLang, onBack }) {
     const ddChance={Easy:0.15,Medium:0.25,Hard:0.40}[robotDiff]||0.25;
     setRobotDoubleDmg(Math.random()<ddChance);
     setAbilities(pickAbilities());
+    // Trigger card flip animation
+    setCardFlip(false);
+    setTimeout(()=>setCardFlip(true), 50);
+    setRobotState("thinking");
+    setPlayerHit(false); setRobotHit(false);
     setPhase("playing");
   }
 
@@ -2465,6 +2478,16 @@ function BattleScreen({ lang, setLang, onBack }) {
     let pl=playerLives, rl=robotLives, pll=playerLivesLost;
     const dmg=doubleDmg&&winner==="player"?2:1;
     const robotDmg=robotDoubleDmg&&winner==="robot"?2:1;
+    // Trigger hit animations
+    if(winner==="player"){
+      setRobotHit(true); setTimeout(()=>{setRobotHit(false);setRobotState(pl<=1?"explode":"hit");setTimeout(()=>setRobotState("idle"),600);},100);
+      setScreenShake(true); setTimeout(()=>setScreenShake(false),400);
+    }
+    if(winner==="robot"||winner==="timeout"){
+      setPlayerHit(true); setTimeout(()=>setPlayerHit(false),600);
+      setScreenShake(true); setTimeout(()=>setScreenShake(false),400);
+      setRobotState("solved");
+    }
     if(winner==="robot"||winner==="timeout") {
       if(shield){setShield(false);}
       else{pl=Math.max(0,playerLives-robotDmg);pll=playerLivesLost+robotDmg;setPlayerLives(pl);setPlayerLivesLost(pll);}
@@ -2489,7 +2512,9 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   function doRobotSolve() {
     const orig=cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
-    setRobotSolution(getHintSteps(orig)); setRobotSolved(true); endRound("robot");
+    setRobotSolution(getHintSteps(orig)); setRobotSolved(true);
+    setRobotState("solved");
+    endRound("robot");
   }
 
   function handleNumberClick(idx) {
@@ -2617,7 +2642,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   // ── PLAYING ──
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:"10px 12px",overflowY:"auto",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:"10px 12px",overflowY:"auto",position:"relative",animation:screenShake?"screenShakeAnim 0.4s ease":"none"}}>
       <style>{`
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
         @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
@@ -2626,6 +2651,18 @@ function BattleScreen({ lang, setLang, onBack }) {
         @keyframes glitchA{0%{clip-path:inset(20% 0 55% 0);transform:translate(-3px)}50%{clip-path:inset(60% 0 5% 0);transform:translate(3px)}100%{clip-path:inset(20% 0 55% 0);transform:translate(-3px)}}
         @keyframes glitchB{0%{clip-path:inset(55% 0 20% 0);transform:translate(3px)}50%{clip-path:inset(10% 0 65% 0);transform:translate(-3px)}100%{clip-path:inset(55% 0 20% 0);transform:translate(3px)}}
         @keyframes flicker{0%,100%{opacity:1}50%{opacity:0.25}}
+        @keyframes robotBounce{0%,100%{transform:translateY(0) scale(1)}25%{transform:translateY(-8px) scale(1.05)}75%{transform:translateY(-4px) scale(1.02)}}
+        @keyframes robotShake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-8px) rotate(-5deg)}40%{transform:translateX(8px) rotate(5deg)}60%{transform:translateX(-5px) rotate(-3deg)}80%{transform:translateX(5px) rotate(3deg)}}
+        @keyframes robotExplode{0%{transform:scale(1);opacity:1}30%{transform:scale(1.4);opacity:0.8;filter:brightness(3) hue-rotate(40deg)}60%{transform:scale(0.8);opacity:0.5}100%{transform:scale(1.1);opacity:1;filter:brightness(1)}}
+        @keyframes robotHack{0%,100%{transform:skewX(0) skewY(0);filter:hue-rotate(0)}25%{transform:skewX(8deg) skewY(-3deg);filter:hue-rotate(120deg) brightness(1.5)}50%{transform:skewX(-6deg) skewY(2deg);filter:hue-rotate(240deg) brightness(0.8)}75%{transform:skewX(4deg) skewY(-1deg);filter:hue-rotate(180deg) brightness(1.3)}}
+        @keyframes robotThink{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+        @keyframes playerHitAnim{0%,100%{transform:translateX(0);filter:none}20%{transform:translateX(-6px);filter:brightness(2) saturate(0)}40%{transform:translateX(6px);filter:brightness(0.5)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+        @keyframes heartLose{0%{transform:scale(1) rotate(0);opacity:1}30%{transform:scale(1.3) rotate(-15deg);filter:brightness(2)}60%{transform:scale(0.5) rotate(30deg);opacity:0.5}100%{transform:scale(0) rotate(45deg);opacity:0}}
+        @keyframes heartPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+        @keyframes cardFlipIn{0%{transform:perspective(600px) rotateY(-90deg) scale(0.8);opacity:0}60%{transform:perspective(600px) rotateY(10deg) scale(1.05)}100%{transform:perspective(600px) rotateY(0) scale(1);opacity:1}}
+        @keyframes screenShakeAnim{0%,100%{transform:translate(0)}20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,3px)}80%{transform:translate(3px,-1px)}}
+        @keyframes vsGlow{0%,100%{text-shadow:0 0 10px #ef4444,0 0 20px #ef4444}50%{text-shadow:0 0 20px #f97316,0 0 40px #f97316,0 0 60px #ef4444}}
+        @keyframes doubleDmgPulse{0%,100%{box-shadow:0 0 8px #f97316}50%{box-shadow:0 0 20px #f97316,0 0 40px #ef4444}}
       `}</style>
 
       {/* Hack glitch overlay */}
@@ -2657,38 +2694,149 @@ function BattleScreen({ lang, setLang, onBack }) {
         </div>
       </div>
 
-      {/* Lives + timer */}
-      <div style={{width:"100%",maxWidth:420,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:16,padding:"10px 14px",marginBottom:8}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{textAlign:"center"}}>
-            <div style={{color:"#f6d365",fontSize:11,fontWeight:700,marginBottom:3}}>{playerName}{doubleDmg?" 💥":""}{shield?" 🛡️":""}</div>
-            <div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<playerLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
+      {/* ── 3D Battle Arena ── */}
+      <div style={{width:"100%",maxWidth:420,marginBottom:8,animation:screenShake?"screenShakeAnim 0.4s ease":"none"}}>
+
+        {/* VS Bar — timer centred, names + lives on sides */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,
+          background:"linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.04))",
+          border:"1px solid rgba(239,68,68,0.2)",borderRadius:16,padding:"8px 12px"}}>
+
+          {/* Player side */}
+          <div style={{flex:1,textAlign:"left"}}>
+            <div style={{color:"#f6d365",fontSize:11,fontWeight:800,marginBottom:4}}>
+              {playerName}{shield?" 🛡️":""}
+            </div>
+            <div style={{display:"flex",gap:3}}>
+              {Array.from({length:BLIVES}).map((_,i)=>(
+                <div key={i} style={{
+                  fontSize:18,
+                  filter:i<playerLives?"none":"grayscale(1) opacity(0.15)",
+                  transform:i<playerLives?"scale(1)":"scale(0.7)",
+                  transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                  animation:i===playerLives-1&&playerHit?"heartLose 0.5s ease forwards":
+                            i<playerLives&&doubleDmg?"heartPulse 0.8s ease infinite":"none",
+                }}>❤️</div>
+              ))}
+            </div>
           </div>
-          <div style={{textAlign:"center"}}>
-            <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:1}}>{lang==="zh"?"第":"Rnd "}{roundNum}</div>
-            <div style={{color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",fontWeight:900,fontSize:26,animation:timeLeft<=10?"pulse 0.7s infinite":"none"}}>{timeLeft}s</div>
+
+          {/* Timer centre */}
+          <div style={{textAlign:"center",padding:"0 10px"}}>
+            <div style={{color:"#475569",fontSize:9,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>
+              {lang==="zh"?"第":"Rnd "}{roundNum}
+            </div>
+            <div style={{
+              color:timeLeft<=10?"#ef4444":timeLeft<=20?"#f59e0b":"#34d399",
+              fontWeight:900,fontSize:28,lineHeight:1,
+              animation:timeLeft<=10?"pulse 0.7s infinite":"none",
+              textShadow:timeLeft<=10?"0 0 12px #ef4444":"none",
+            }}>{timeLeft}s</div>
+            <div style={{
+              fontSize:12,fontWeight:900,
+              background:"linear-gradient(90deg,#ef4444,#f97316)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              animation:"vsGlow 2s ease infinite",
+            }}>VS</div>
           </div>
-          <div style={{textAlign:"center"}}>
-            <div style={{color:rs.color,fontSize:11,fontWeight:700,marginBottom:3}}>🤖 {lang==="zh"?rs.labelZh:rs.label}{robotDoubleDmg?" 💥":""}</div>
-            <div style={{display:"flex",gap:3}}>{Array.from({length:BLIVES}).map((_,i)=><div key={i} style={{fontSize:16,filter:i<robotLives?"none":"grayscale(1) opacity(0.2)",transition:"all 0.3s"}}>❤️</div>)}</div>
+
+          {/* Robot side */}
+          <div style={{flex:1,textAlign:"right"}}>
+            <div style={{color:rs.color,fontSize:11,fontWeight:800,marginBottom:4}}>
+              🤖 {lang==="zh"?rs.labelZh:rs.label}{robotDoubleDmg?" 💥":""}
+            </div>
+            <div style={{display:"flex",gap:3,justifyContent:"flex-end"}}>
+              {Array.from({length:BLIVES}).map((_,i)=>(
+                <div key={i} style={{
+                  fontSize:18,
+                  filter:i<robotLives?"none":"grayscale(1) opacity(0.15)",
+                  transform:i<robotLives?"scale(1)":"scale(0.7)",
+                  transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                  animation:i===robotLives-1&&robotHit?"heartLose 0.5s ease forwards":"none",
+                }}>❤️</div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Robot status */}
-      <div style={{marginBottom:8,width:"100%",maxWidth:420,background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.15)",borderRadius:12,padding:"6px 12px",display:"flex",alignItems:"center",gap:8}}>
-        <div style={{fontSize:18}}>🤖</div>
-        <div style={{color:"#94a3b8",fontSize:12,flex:1}}>{robotSolved?(lang==="zh"?"✓ 解出！":"✓ Solved!"):(lang==="zh"?"正在思考...":"Thinking...")}</div>
-        {cancelledOp&&<div style={{color:"#f59e0b",fontSize:11,fontWeight:700}}>✂️ {cancelledOp} {lang==="zh"?"已取消":"off"}</div>}
-        {!robotSolved&&<div style={{display:"flex",gap:3}}>{[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#ef4444",animation:`pulse 1.2s ease ${i*0.3}s infinite`}}/>)}</div>}
+        {/* Robot avatar + status */}
+        <div style={{
+          background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.15)",
+          borderRadius:14,padding:"10px 14px",
+          display:"flex",alignItems:"center",gap:12,
+          animation:doubleDmg&&robotDoubleDmg?"doubleDmgPulse 0.8s infinite":"none",
+        }}>
+          {/* Animated robot avatar */}
+          <div style={{
+            fontSize:36,flexShrink:0,
+            animation:
+              robotState==="thinking"?"robotThink 2s ease infinite":
+              robotState==="solved"?"robotBounce 0.6s ease":
+              robotState==="hit"?"robotShake 0.5s ease":
+              robotState==="explode"?"robotExplode 0.6s ease":
+              robotState==="hack"?"robotHack 0.3s ease infinite":
+              "none",
+            filter:
+              robotState==="solved"?"brightness(1.5) drop-shadow(0 0 8px "+rs.color+")":
+              robotState==="hack"?"hue-rotate(120deg) brightness(1.3)":
+              robotState==="hit"?"brightness(2) saturate(0)":
+              "none",
+            transition:"filter 0.3s",
+          }}>🤖</div>
+
+          {/* Status text */}
+          <div style={{flex:1}}>
+            <div style={{color:
+              robotState==="solved"?"#34d399":
+              robotState==="hack"?"#00ff41":
+              robotState==="hit"?"#ef4444":
+              "#94a3b8",
+              fontSize:12,fontWeight:robotState!=="thinking"?700:400,
+              transition:"color 0.3s",
+            }}>
+              {robotSolved?(lang==="zh"?"✓ 解出了！":"✓ Solved!"):
+               robotState==="hack"?(lang==="zh"?"系统错误...":"SYSTEM ERROR..."):
+               (lang==="zh"?"正在思考...":"Thinking...")}
+            </div>
+            {cancelledOp&&<div style={{color:"#f59e0b",fontSize:10,fontWeight:700,marginTop:2}}>✂️ {cancelledOp} {lang==="zh"?"已取消":"cancelled"}</div>}
+          </div>
+
+          {/* Thinking dots */}
+          {!robotSolved&&robotState!=="hack"&&(
+            <div style={{display:"flex",gap:3,alignItems:"center"}}>
+              {[0,1,2].map(i=>(
+                <div key={i} style={{
+                  width:5,height:5,borderRadius:"50%",
+                  background:rs.color,
+                  animation:`pulse 1.2s ease ${i*0.3}s infinite`,
+                  boxShadow:`0 0 6px ${rs.color}`,
+                }}/>
+              ))}
+            </div>
+          )}
+
+          {/* Double damage warning */}
+          {robotDoubleDmg&&(
+            <div style={{background:"rgba(239,68,68,0.2)",border:"1px solid #ef4444",borderRadius:8,padding:"3px 8px",fontSize:11,color:"#fca5a5",fontWeight:800,flexShrink:0}}>
+              💥 x2
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Hint */}
       {hintText&&<div style={{width:"100%",maxWidth:420,marginBottom:8,background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",borderRadius:12,padding:"7px 14px",textAlign:"center",animation:"popIn 0.3s ease"}}><div style={{color:"#c4b5fd",fontSize:11,fontWeight:700,marginBottom:2}}>💡 {lang==="zh"?"提示 — 下一步：":"Hint — next step:"}</div><div style={{color:"#e9d5ff",fontSize:14,fontWeight:800}}>{hintText}</div></div>}
 
-      {/* Cards */}
+      {/* Cards with 3D flip */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12,width:"fit-content"}}>
-        {cards.map((card,i)=>{const inPool=numbers.some(n=>n.sourceId===card.id);return <PlayingCard key={card.id} card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>;  })}
+        {cards.map((card,i)=>{
+          const inPool=numbers.some(n=>n.sourceId===card.id);
+          return (
+            <div key={card.id} style={{animation:cardFlip?`cardFlipIn 0.5s ease ${i*0.08}s both`:"none"}}>
+              <PlayingCard card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>
+            </div>
+          );
+        })}
       </div>
 
       {/* Numbers */}

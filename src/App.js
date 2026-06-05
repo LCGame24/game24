@@ -435,6 +435,7 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
   const [showLB,setShowLB]=useState(false);
   const [showBadges,setShowBadges]=useState(false);
   const [showModeSelect, setShowModeSelect] = useState(!skipInstructions);
+  const [showBattleTeaser, setShowBattleTeaser] = useState(false);
   const [names,setNames]=useState(["Player 1","Player 2","Player 3","Player 4"]);
   const [diff,setDiff]=useState(autoSelectHard?"Hard":preSelectDiff||"Easy");
   const [soloTimer,setSoloTimer]=useState(true); // solo timer on by default
@@ -458,6 +459,7 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
       <style>{`
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
       `}</style>
 
       {/* Title */}
@@ -478,12 +480,12 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
         }}>{t.language}</button>
       </div>
 
-      {/* Two large mode buttons */}
+      {/* Three mode buttons */}
       <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:16,animation:"fadeIn 0.5s ease"}}>
 
-        {/* Practice Mode */}
+        {/* Classic Mode */}
         <button onClick={()=>setShowModeSelect(false)} style={{
-          width:"100%",padding:"24px 20px",borderRadius:20,border:"none",
+          width:"100%",padding:"24px 20px",borderRadius:20,
           background:"linear-gradient(135deg,#1e3a5f,#0f2744)",
           cursor:"pointer",textAlign:"left",
           boxShadow:"0 8px 32px rgba(96,165,250,0.2)",
@@ -494,7 +496,7 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
             <div style={{fontSize:44}}>🎮</div>
             <div>
               <div style={{color:"white",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"练习模式":"Practice Mode"}
+                {lang==="zh"?"经典模式":"Classic Mode"}
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
                 {lang==="zh"?"简单 → 中等 → 困难":"Easy → Medium → Hard"}
@@ -505,7 +507,7 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
 
         {/* Junior Mode */}
         <button onClick={()=>onJunior()} style={{
-          width:"100%",padding:"24px 20px",borderRadius:20,border:"none",
+          width:"100%",padding:"24px 20px",borderRadius:20,
           background:"linear-gradient(135deg,#0a3d2b,#052e1c)",
           cursor:"pointer",textAlign:"left",
           boxShadow:"0 8px 32px rgba(52,211,153,0.2)",
@@ -525,7 +527,102 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
           </div>
         </button>
 
+        {/* Battle Mode — Coming Soon */}
+        <button onClick={()=>setShowBattleTeaser(true)} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,
+          background:"linear-gradient(135deg,#3d0a0a,#2a0a0a)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(239,68,68,0.15)",
+          border:"1px solid rgba(239,68,68,0.3)",
+          transition:"all 0.2s",
+          position:"relative",overflow:"hidden",
+        }}>
+          {/* Coming Soon badge */}
+          <div style={{
+            position:"absolute",top:12,right:12,
+            background:"rgba(239,68,68,0.2)",border:"1px solid #ef4444",
+            borderRadius:8,padding:"2px 8px",
+            color:"#ef4444",fontSize:10,fontWeight:700,letterSpacing:1,
+          }}>🔒 {lang==="zh"?"即将推出":"COMING SOON"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>⚔️</div>
+            <div>
+              <div style={{color:"#ef4444",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"对战模式":"Battle Mode"} 🔥
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"你的大脑就是你的武器":"Your brain is your weapon"}
+              </div>
+            </div>
+          </div>
+        </button>
+
       </div>
+
+      {/* Battle Mode Teaser Popup */}
+      {showBattleTeaser&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+          display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+          <div style={{
+            background:"linear-gradient(135deg,#1a0a0a,#2d0f0f)",
+            border:"2px solid #ef4444",borderRadius:24,padding:28,
+            maxWidth:360,width:"100%",animation:"modalIn 0.3s ease",
+            boxShadow:"0 8px 40px rgba(239,68,68,0.3)",
+          }}>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
+              <h2 style={{color:"#ef4444",fontSize:24,fontWeight:900,margin:"0 0 8px"}}>
+                {lang==="zh"?"对战模式":"Battle Mode"}
+              </h2>
+              <div style={{
+                color:"#f6d365",fontSize:16,fontWeight:700,marginBottom:16,
+                fontStyle:"italic",
+              }}>
+                {lang==="zh"?"「你的大脑就是你的武器」":"\"Your brain is your weapon\""}
+              </div>
+            </div>
+
+            {/* Feature teasers */}
+            {[
+              { icon:"🧩", en:"Same puzzle, two players — race to solve first!", zh:"相同题目，两人竞速，谁先算出谁获胜！" },
+              { icon:"⚡", en:"Solve faster → earn energy → launch attacks!", zh:"速度越快 → 能量越多 → 攻击越猛！" },
+              { icon:"❤️", en:"Drain your opponent's lives to win!", zh:"消耗对手的生命值，率先获胜！" },
+              { icon:"🤖", en:"Challenge the Robot or a friend!", zh:"挑战机器人或与朋友对战！" },
+            ].map((f,i)=>(
+              <div key={i} style={{
+                display:"flex",gap:12,alignItems:"flex-start",
+                marginBottom:12,padding:"8px 12px",
+                background:"rgba(239,68,68,0.08)",borderRadius:10,
+              }}>
+                <div style={{fontSize:20,flexShrink:0}}>{f.icon}</div>
+                <div style={{color:"#cbd5e1",fontSize:13,lineHeight:1.5}}>
+                  {lang==="zh"?f.zh:f.en}
+                </div>
+              </div>
+            ))}
+
+            <div style={{
+              textAlign:"center",marginTop:16,marginBottom:20,
+              color:"#64748b",fontSize:13,
+            }}>
+              🔨 {lang==="zh"?"正在建设中，敬请期待！":"Under construction — stay tuned!"}
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setShowBattleTeaser(false)} style={{
+                flex:1,padding:"12px",borderRadius:12,
+                border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
+                color:"#94a3b8",fontSize:14,fontWeight:700,cursor:"pointer",
+              }}>{lang==="zh"?"关闭":"Close"}</button>
+              <button onClick={()=>{setShowBattleTeaser(false);setShowModeSelect(false);}} style={{
+                flex:1,padding:"12px",borderRadius:12,border:"none",
+                background:"linear-gradient(135deg,#f6d365,#fda085)",
+                color:"#1a1a2e",fontSize:14,fontWeight:700,cursor:"pointer",
+              }}>{lang==="zh"?"先玩经典模式":"Play Classic Mode"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

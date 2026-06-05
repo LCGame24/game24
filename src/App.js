@@ -691,7 +691,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
     }}>
       <style>{`
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}} @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
       `}</style>
 
@@ -820,7 +820,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
     }}>
       <style>{`
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}} @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
         input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;
           color:white;padding:8px 12px;font-size:14px;width:100%;box-sizing:border-box;outline:none;}
@@ -1374,7 +1374,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
       fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
       <style>{`@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}} @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:white;padding:8px 12px;font-size:14px;width:100%;box-sizing:border-box;outline:none;}
         input:focus{border-color:#34d399;}`}</style>
 
@@ -1549,10 +1549,12 @@ function JuniorScreen({lang, setLang, onBack}) {
   if (screen==="game") return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0d2137,#0a3d2b,#0d2137)",
       display:"flex",flexDirection:"column",alignItems:"center",
-      fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",overflowY:"auto"}}>
+      fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",overflowY:"auto",
+      animation:"fadeInScreen 0.3s ease"}}>
       <style>{`
         @keyframes cardDeal{from{opacity:0;transform:translateY(-30px) scale(0.85)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+        @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
         @keyframes badgeSlide{0%{transform:translateX(120%);opacity:0}15%{transform:translateX(0);opacity:1}85%{transform:translateX(0);opacity:1}100%{transform:translateX(120%);opacity:0}}
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
@@ -2555,7 +2557,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   // ── SETUP ──
   if(phase==="setup") return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
-      <style>{`@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <style>{`@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}} @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
         <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h1>
@@ -2644,9 +2646,10 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   // ── PLAYING ──
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:"10px 12px",overflowY:"auto",position:"relative",animation:screenShake?"screenShakeAnim 0.4s ease":"none"}}>
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a0505,#2d0a0a,#1a0505)",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',sans-serif",padding:"10px 12px",overflowY:"auto",position:"relative",animation:screenShake?"screenShakeAnim 0.4s ease":"fadeInScreen 0.3s ease"}}>
       <style>{`
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
         @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes abilityFlash{0%{transform:translate(-50%,-50%) scale(0.7);opacity:0}15%{transform:translate(-50%,-50%) scale(1.1);opacity:1}75%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(0.9);opacity:0}}
@@ -2689,12 +2692,10 @@ function BattleScreen({ lang, setLang, onBack }) {
 
       {/* Header */}
       <div style={{width:"100%",maxWidth:420,marginBottom:8,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
-          <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
-          <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
-        </div>
-        <div style={{display:"flex",justifyContent:"center"}}>
+        <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",textAlign:"center"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
+        <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
         </div>
       </div>
 
@@ -3259,7 +3260,8 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",overflowY:"auto"}}>
+      fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",overflowY:"auto",
+      animation:"fadeInScreen 0.3s ease"}}>
       <style>{`@keyframes cardDeal{from{opacity:0;transform:translateY(-30px) scale(0.85)}to{opacity:1;transform:translateY(0) scale(1)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Header */}
@@ -3871,11 +3873,14 @@ export default function App() {
       display:"flex",flexDirection:"column",alignItems:"center",
       fontFamily:"'Trebuchet MS',sans-serif",padding:"16px 12px",
       overflowY:"auto",
+      animation:"fadeInScreen 0.3s ease",
     }}>
       <style>{`
         @keyframes cardDeal{from{opacity:0;transform:translateY(-30px) scale(0.85)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
         @keyframes extFlash{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
         @keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}

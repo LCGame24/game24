@@ -997,9 +997,10 @@ function JuniorScreen({lang, setLang, onBack}) {
   const [startTime, setStartTime] = useState(null);
   const [solvedRounds, setSolvedRounds] = useState(0);
   const [showJrLeaveConfirm, setShowJrLeaveConfirm] = useState(false);
-  const [jrTutStep, setJrTutStep] = useState(-1); // -1 = not in tutorial
+  const [jrTutStep, setJrTutStep] = useState(-1);
   const jrShareCardRef = useRef(null);
   const [jrSharing, setJrSharing] = useState(false);
+  const [jrHint, setJrHint] = useState(null); // hint string or null
 
   const jl = JUNIOR_LEVELS[level];
 
@@ -1031,6 +1032,7 @@ function JuniorScreen({lang, setLang, onBack}) {
     setMessage({text:"",type:""});
     setTurnOver(false);
     setStartTime(Date.now());
+    setJrHint(null);
   }
 
   function startJuniorGame() {
@@ -1161,6 +1163,18 @@ function JuniorScreen({lang, setLang, onBack}) {
     setOperator(null);
     setSteps([]);
     setMessage({text:"",type:""});
+    setJrHint(null);
+  }
+
+  function handleJrHint() {
+    // Find a solution using current working numbers
+    const hintSteps = getHintSteps(numbers);
+    if (hintSteps && hintSteps.length>0) {
+      const fullSolution = hintSteps.map(s=>s.expr).join(" → ");
+      setJrHint(fullSolution);
+    } else {
+      setJrHint(lang==="zh"?"先重置一下试试！":"Try resetting first!");
+    }
   }
 
   function handleNext() {
@@ -1654,6 +1668,23 @@ function JuniorScreen({lang, setLang, onBack}) {
         </div>
       )}
 
+      {/* Hint display */}
+      {jrHint&&(
+        <div style={{
+          background:"rgba(167,139,250,0.12)",border:"2px solid #a78bfa",
+          borderRadius:14,padding:"12px 18px",marginBottom:12,
+          textAlign:"center",maxWidth:320,width:"100%",
+          animation:"popIn 0.3s ease",
+        }}>
+          <div style={{color:"#c4b5fd",fontWeight:700,fontSize:12,marginBottom:6}}>
+            💡 {lang==="zh"?"答案提示：":"Here's how:"}
+          </div>
+          <div style={{color:"white",fontWeight:800,fontSize:14,lineHeight:1.6}}>
+            {jrHint}
+          </div>
+        </div>
+      )}
+
       {/* Buttons */}
       {!turnOver?(
         <div style={{display:"flex",gap:8,justifyContent:"center"}}>
@@ -1662,6 +1693,11 @@ function JuniorScreen({lang, setLang, onBack}) {
             borderRadius:10,padding:"8px 18px",color:"#64748b",
             fontSize:13,fontWeight:700,cursor:"pointer",
           }}>↺ {lang==="zh"?"重置":"Reset"}</button>
+          <button onClick={handleJrHint} style={{
+            background:"rgba(167,139,250,0.1)",border:"2px solid #a78bfa",
+            borderRadius:10,padding:"8px 18px",color:"#a78bfa",
+            fontSize:13,fontWeight:700,cursor:"pointer",
+          }}>💡 {lang==="zh"?"帮帮我！":"Help!"}</button>
         </div>
       ):(
         <button onClick={handleNext} style={{

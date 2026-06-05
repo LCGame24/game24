@@ -212,9 +212,9 @@ const BATTLE_BADGES = [
 ];
 
 const ROBOT_SPEED = {
-  Easy:   { solveChance: 0.03, label:"Easy",   labelZh:"简单", color:"#34d399", desc:"Slow thinker",     descZh:"反应迟缓" },
-  Medium: { solveChance: 0.06, label:"Medium", labelZh:"中等", color:"#f59e0b", desc:"Quick mind",       descZh:"反应一般" },
-  Hard:   { solveChance: 0.12, label:"Hard",   labelZh:"困难", color:"#ef4444", desc:"Lightning fast",   descZh:"反应超快" },
+  Easy:   { minThinkTime: 35, solveChance: 0.08, label:"Easy",   labelZh:"简单", color:"#34d399", desc:"Slow thinker (~47s avg)",   descZh:"反应迟缓（约47秒）" },
+  Medium: { minThinkTime: 25, solveChance: 0.10, label:"Medium", labelZh:"中等", color:"#f59e0b", desc:"Quick mind (~35s avg)",      descZh:"反应一般（约35秒）" },
+  Hard:   { minThinkTime: 15, solveChance: 0.15, label:"Hard",   labelZh:"困难", color:"#ef4444", desc:"Sharp focus (~21s avg)",    descZh:"反应敏锐（约21秒）" },
 };
 
 function loadBattleBadges() {
@@ -599,7 +599,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{"Game 24 | 24点"}</h1>
+        }}>{"Game24™ | 24点™"}</h1>
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
           {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
         </p>
@@ -777,7 +777,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
           background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",
-        }}>{"Game 24 | 24点"}</h1>
+        }}>{"Game24™ | 24点™"}</h1>
         <p style={{
           color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
         }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
@@ -1815,7 +1815,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
           await navigator.share({
             title: lang==="zh"?"看看我的成绩！":"Look what I did!",
-            text: lang==="zh"?`我在24点儿童模式得了${score}分！`:`I scored ${score} pts in Game 24 Junior Mode!`,
+            text: lang==="zh"?`我在24点儿童模式得了${score}分！`:`I scored ${score} pts in Game24™ Junior Mode!`,
             url: 'https://game24-taupe.vercel.app',
             files: [file],
           });
@@ -1884,7 +1884,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:40,marginBottom:6}}>🌟</div>
           <div style={{fontSize:28,fontWeight:900,color:"#34d399",letterSpacing:-1}}>
-            Game 24 | 24点
+            Game24™ | 24点™
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
             {lang==="zh"?"儿童模式":"Junior Mode"} · {level}
@@ -2250,13 +2250,16 @@ function BattleScreen({ lang, setLang, onBack }) {
     return ()=>clearTimeout(t);
   }, [phase, countdown]);
 
-  // Robot AI — % chance per second
+  // Robot AI — waits minThinkTime seconds, then % chance per second
   useEffect(() => {
     if (phase !== "playing" || roundEndRef.current) return;
-    const chance = ROBOT_SPEED[robotDiff].solveChance;
+    const { minThinkTime, solveChance } = ROBOT_SPEED[robotDiff];
+    let elapsed = 0;
     robotRef.current = setInterval(()=>{
       if (roundEndRef.current) { clearInterval(robotRef.current); return; }
-      if (Math.random() < chance) {
+      elapsed += 1;
+      if (elapsed < minThinkTime) return; // still in thinking phase
+      if (Math.random() < solveChance) {
         clearInterval(robotRef.current);
         handleRobotSolves();
       }
@@ -2992,10 +2995,10 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         const totalTime = result ? result.totalTime : elapsed + hintPenalty;
         if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
           await navigator.share({
-            title: lang==="zh"?"我完成了今天的24点日挑战！":"I solved today's Game 24 Daily Challenge!",
+            title: lang==="zh"?"我完成了今天的24点日挑战！":"I solved today's Game24™ Daily Challenge!",
             text: lang==="zh"
               ? `我用 ${fmtTime(totalTime)} 完成了今天的24点！${hintsUsed>0?`（使用了${hintsUsed}次提示）`:""}来挑战我吧！`
-              : `I solved today's Game 24 in ${fmtTime(totalTime)}!${hintsUsed>0?` (${hintsUsed} hint${hintsUsed>1?"s":""})`:""} Can you beat me?`,
+              : `I solved today's Game24™ in ${fmtTime(totalTime)}!${hintsUsed>0?` (${hintsUsed} hint${hintsUsed>1?"s":""})`:""} Can you beat me?`,
             url: 'https://game24-taupe.vercel.app',
             files: [file],
           });
@@ -3123,7 +3126,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           fontFamily:"'Trebuchet MS',sans-serif",border:"2px solid rgba(246,211,101,0.5)"}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:36,marginBottom:4}}>📅</div>
-            <div style={{fontSize:26,fontWeight:900,color:"#f6d365"}}>Game 24 | 24点</div>
+            <div style={{fontSize:26,fontWeight:900,color:"#f6d365"}}>Game24™ | 24点™</div>
             <div style={{color:"#64748b",fontSize:12}}>{lang==="zh"?"每日挑战":"Daily Challenge"} · {displayDate}</div>
           </div>
           <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(246,211,101,0.5),transparent)",marginBottom:16}}/>
@@ -3174,7 +3177,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
       <h1 style={{fontSize:30,fontWeight:900,margin:"0 0 2px",letterSpacing:-1,
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-        animation:"shimmer 3s linear infinite"}}>{"Game 24 | 24点"}</h1>
+        animation:"shimmer 3s linear infinite"}}>{"Game24™ | 24点™"}</h1>
 
       <div style={{display:"flex",gap:8,marginBottom:12,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{t.language}</button>
@@ -3850,7 +3853,7 @@ export default function App() {
         background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)",backgroundSize:"200%",
         WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
         animation:"shimmer 3s linear infinite",
-      }}>{"Game 24 | 24点"}</h1>
+      }}>{"Game24™ | 24点™"}</h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
         <button onClick={()=>setLang(l=>l==="en"?"zh":"en")} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
@@ -4495,8 +4498,8 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         const file = new File([blob], 'game24-score.png', {type:'image/png'});
         if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
           await navigator.share({
-            title: lang==="zh"?"我的24点成绩！":"My Game 24 Score!",
-            text: lang==="zh"?`我在24点游戏中得了${winner.score}分！来挑战我吧！`:`I scored ${winner.score} pts in Game 24! Can you beat me?`,
+            title: lang==="zh"?"我的24点™成绩！":"My Game24™ Score!",
+            text: lang==="zh"?`我在24点游戏中得了${winner.score}分！来挑战我吧！`:`I scored ${winner.score} pts in Game24™! Can you beat me?`,
             url: 'https://game24-taupe.vercel.app',
             files: [file],
           });
@@ -4580,7 +4583,7 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:40,marginBottom:6}}>🃏</div>
           <div style={{fontSize:30,fontWeight:900,color:"#f6d365",letterSpacing:-1}}>
-            Game 24 | 24点
+            Game24™ | 24点™
           </div>
           <div style={{color:"#64748b",fontSize:12,marginTop:2}}>
             {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}

@@ -15,6 +15,9 @@
       gtag('config', 'G-2S1P245L4L');
     </script>
 
+    <!-- Service Worker Registration (PWA offline support) -->
+    <script src="%PUBLIC_URL%/sw-register.js"></script>
+
     <!-- Page description -->
     <meta name="description" content="Free bilingual math card game for kids and families! Use 4 cards to make 24 using +, -, ×, ÷. Fun mental arithmetic practice for ages 6 and up. 双语24点数学游戏！"/>
 
@@ -36,6 +39,9 @@
     <meta name="twitter:image" content="https://game24-taupe.vercel.app/logo512.png" />
 
     <!-- Apple home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Game 24" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 

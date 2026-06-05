@@ -998,6 +998,8 @@ function JuniorScreen({lang, setLang, onBack}) {
   const [solvedRounds, setSolvedRounds] = useState(0);
   const [showJrLeaveConfirm, setShowJrLeaveConfirm] = useState(false);
   const [jrTutStep, setJrTutStep] = useState(-1); // -1 = not in tutorial
+  const jrShareCardRef = useRef(null);
+  const [jrSharing, setJrSharing] = useState(false);
 
   const jl = JUNIOR_LEVELS[level];
 
@@ -1678,8 +1680,6 @@ function JuniorScreen({lang, setLang, onBack}) {
   );
 
   // End screen
-  const jrShareCardRef = useRef(null);
-  const [jrSharing, setJrSharing] = useState(false);
   const earnedJrBadges = JUNIOR_BADGES.filter(b=>juniorBadges.includes(b.id));
 
   async function handleJrShare() {

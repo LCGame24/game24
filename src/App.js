@@ -707,7 +707,9 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
           {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
         </p>
-        <LangSwitcher lang={lang} setLang={setLang}/>
+        <div style={{display:"flex",justifyContent:"center"}}>
+          <LangSwitcher lang={lang} setLang={setLang}/>
+        </div>
       </div>
 
       {/* Three mode buttons */}
@@ -726,10 +728,10 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             <div style={{fontSize:44}}>🎮</div>
             <div>
               <div style={{color:"white",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"经典模式":"Classic Mode"}
+                {lang==="zh"?"经典模式":lang==="fr"?"Mode Classique":"Classic Mode"}
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"简单 → 中等 → 困难":"Easy → Medium → Hard"}
+                {lang==="zh"?"简单 → 中等 → 困难":lang==="fr"?"Facile → Moyen → Difficile":"Easy → Medium → Hard"}
               </div>
             </div>
           </div>
@@ -748,10 +750,10 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             <div style={{fontSize:44}}>🌟</div>
             <div>
               <div style={{color:"#34d399",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"儿童模式":"Junior Mode"}
+                {lang==="zh"?"儿童模式":lang==="fr"?"Mode Junior":"Junior Mode"}
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"适合 5-12 岁":"Ages 5–12 · Fun & Easy!"}
+                {lang==="zh"?"适合 5-12 岁":lang==="fr"?"5–12 ans · Amusant et facile !":"Ages 5–12 · Fun & Easy!"}
               </div>
             </div>
           </div>
@@ -773,10 +775,10 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             <div style={{fontSize:44}}>📅</div>
             <div>
               <div style={{color:"#93c5fd",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"每日挑战":"Daily Challenge"}
+                {lang==="zh"?"每日挑战":lang==="fr"?"Defi du Jour":"Daily Challenge"}
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"每天同一道题，全球一起挑战！":"Same puzzle, every player, every day"}
+                {lang==="zh"?"每天同一道题，全球一起挑战！":lang==="fr"?"Le meme puzzle chaque jour pour tous !":"Same puzzle, every player, every day"}
               </div>
             </div>
           </div>
@@ -797,10 +799,10 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, lang, setLang, unloc
             <div style={{fontSize:44}}>⚔️</div>
             <div>
               <div style={{color:"#ef4444",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"对战模式":"Battle Mode"} 🔥
+                {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"} 🔥
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"你的大脑就是你的武器":"Your brain is your weapon"}
+                {lang==="zh"?"你的大脑就是你的武器":lang==="fr"?"Ton cerveau est ton arme":"Your brain is your weapon"}
               </div>
             </div>
           </div>
@@ -1142,6 +1144,8 @@ function JuniorScreen({lang, setLang, onBack}) {
   const [startTime, setStartTime] = useState(null);
   const [solvedRounds, setSolvedRounds] = useState(0);
   const [showJrLeaveConfirm, setShowJrLeaveConfirm] = useState(false);
+  const [jrPaused, setJrPaused] = useState(false);
+  const [showJrHelp, setShowJrHelp] = useState(false);
   const [jrTutStep, setJrTutStep] = useState(-1);
   const jrShareCardRef = useRef(null);
   const [jrSharing, setJrSharing] = useState(false);
@@ -1597,15 +1601,52 @@ function JuniorScreen({lang, setLang, onBack}) {
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",maxWidth:360,marginBottom:4}}>
         <h1 style={{fontSize:22,fontWeight:900,margin:0,color:"#34d399"}}>
-          🌟 {lang==="zh"?"儿童模式":"Junior Mode"}
+          🌟 {lang==="zh"?"儿童模式":lang==="fr"?"Mode Junior":"Junior Mode"}
         </h1>
-        <button onClick={()=>setShowJrLeaveConfirm(true)} style={{
-          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
-          borderRadius:16,padding:"4px 12px",color:"#64748b",fontSize:13,cursor:"pointer",
-        }}>🏠</button>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>setShowJrHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:12,cursor:"pointer"}}>❓</button>
+          <button onClick={()=>setJrPaused(p=>!p)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:12,cursor:"pointer"}}>{jrPaused?"▶":"⏸"}</button>
+          <button onClick={()=>setShowJrLeaveConfirm(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:13,cursor:"pointer"}}>🏠</button>
+        </div>
       </div>
 
       {/* Leave confirmation */}
+      {/* Pause overlay */}
+      {jrPaused&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:600}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:52,marginBottom:12}}>⏸</div>
+            <h2 style={{color:"white",fontSize:24,fontWeight:900,marginBottom:8}}>{lang==="zh"?"游戏暂停":lang==="fr"?"Pause":"Paused"}</h2>
+            <button onClick={()=>setJrPaused(false)} style={{background:"linear-gradient(135deg,#34d399,#059669)",border:"none",borderRadius:12,padding:"14px 28px",color:"white",fontSize:16,fontWeight:800,cursor:"pointer"}}>
+              ▶ {lang==="zh"?"继续":lang==="fr"?"Continuer":"Resume"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Help overlay */}
+      {showJrHelp&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:600,padding:20}}>
+          <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid rgba(52,211,153,0.3)",borderRadius:20,padding:24,maxWidth:340,width:"100%",textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:8}}>🌟</div>
+            <h3 style={{color:"#34d399",fontSize:18,fontWeight:900,margin:"0 0 16px"}}>{lang==="zh"?"儿童模式说明":lang==="fr"?"Comment jouer":"How to play"}</h3>
+            {[
+              {zh:"用四张牌上的数字凑成目标数字！",fr:"Utilise les 4 cartes pour atteindre le nombre cible !",en:"Use the 4 cards to make the target number!"},
+              {zh:"点击数字 → 选运算符 → 点击另一个数字",fr:"Appuie un nombre → un operateur → un autre nombre",en:"Tap number → operator → another number"},
+              {zh:"卡住了？点击提示！",fr:"Bloque ? Utilise l'indice !",en:"Stuck? Tap the hint button!"},
+            ].map((line,i)=>(
+              <div key={i} style={{background:"rgba(52,211,153,0.08)",borderRadius:10,padding:"8px 12px",marginBottom:8,color:"#94a3b8",fontSize:13,textAlign:"left"}}>
+                {lang==="zh"?line.zh:lang==="fr"?line.fr:line.en}
+              </div>
+            ))}
+            <button onClick={()=>setShowJrHelp(false)} style={{background:"linear-gradient(135deg,#34d399,#059669)",border:"none",borderRadius:12,padding:"12px 28px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",marginTop:8}}>
+              {lang==="zh"?"明白了！":lang==="fr"?"Compris !":"Got it!"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {showJrLeaveConfirm&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
           display:"flex",alignItems:"center",justifyContent:"center",zIndex:600,padding:20}}>

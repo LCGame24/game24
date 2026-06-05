@@ -828,21 +828,6 @@ function SetupScreen({onStart, onJunior, lang, setLang, unlocked, leaderboard, s
           }}>🎖️ {lang==="zh"?"成就":"Badges"} {badges.length>0?`(${badges.length})`:""}</button>
         </div>
 
-        {/* Junior Mode button */}
-        <button onClick={()=>onJunior()} style={{
-          width:"100%",padding:"12px",borderRadius:12,marginTop:8,
-          border:"2px solid #34d399",
-          background:"rgba(52,211,153,0.08)",
-          color:"#34d399",fontSize:14,fontWeight:800,cursor:"pointer",
-          transition:"all 0.2s",
-        }}>🌟 {lang==="zh"?"儿童模式 (5-12岁)":"Junior Mode (Ages 5–12)"}</button>
-
-        <button onClick={()=>setShowModeSelect(true)} style={{
-          width:"100%",padding:"8px",borderRadius:10,marginTop:4,
-          border:"none",background:"transparent",
-          color:"#334155",fontSize:12,cursor:"pointer",
-        }}>← {lang==="zh"?"返回模式选择":"Back to mode select"}</button>
-
         {/* Badges Modal */}
         {showBadges&&(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",

@@ -1167,13 +1167,39 @@ function JuniorScreen({lang, setLang, onBack}) {
   }
 
   function handleJrHint() {
-    // Find a solution using current working numbers
-    const hintSteps = getHintSteps(numbers);
-    if (hintSteps && hintSteps.length>0) {
-      const fullSolution = hintSteps.map(s=>s.expr).join(" → ");
-      setJrHint(fullSolution);
+    // Junior-specific hint finder — works with 3 numbers and target 12 or 24
+    const target = jl.target;
+    const ops = jl.ops;
+
+    function findJrSolution(nums, labs) {
+      if (nums.length===1) return Math.abs(nums[0]-target)<1e-9 ? [] : null;
+      for (let i=0;i<nums.length;i++) for (let j=0;j<nums.length;j++) {
+        if (i===j) continue;
+        const rN=nums.filter((_,k)=>k!==i&&k!==j);
+        const rL=labs.filter((_,k)=>k!==i&&k!==j);
+        const [a,b,la,lb]=[nums[i],nums[j],labs[i],labs[j]];
+        const tries=[];
+        if (ops.includes("+")) tries.push([a+b,"+"]);
+        if (ops.includes("−")) tries.push([a-b,"−"]);
+        if (ops.includes("×")) tries.push([a*b,"×"]);
+        if (ops.includes("÷")&&Math.abs(b)>1e-9&&Math.abs((a/b)-Math.round(a/b))<1e-9) tries.push([a/b,"÷"]);
+        for (const [r,op] of tries) {
+          const expr=`${la} ${op} ${lb} = ${r}`;
+          const rest=findJrSolution([...rN,r],[...rL,String(r)]);
+          if (rest!==null) return [expr,...rest];
+        }
+      }
+      return null;
+    }
+
+    const nums=numbers.map(n=>n.value);
+    const labs=numbers.map(n=>n.label);
+    const solution=findJrSolution(nums,labs);
+    if (solution&&solution.length>0) {
+      setJrHint(solution.join(" → "));
     } else {
-      setJrHint(lang==="zh"?"先重置一下试试！":"Try resetting first!");
+      // No solution from current state — suggest reset
+      setJrHint(lang==="zh"?"点击重置再试试！":"Tap Reset and try again!");
     }
   }
 

@@ -672,44 +672,32 @@ function saveIntroDone() {
 }
 
 function IntroDemoModal({ lang, onDone }) {
-  // Demo: 3 × 8 = 24  (step 1: pick 3, step 2: pick ×, step 3: pick 8, step 4: tap result 24 → solved!)
+  // Demo: 1 × 2 × 3 × 4 = 24 — all 4 cards used
+  // Board state per step:
+  // Steps 0:      cards=[1,2,3,4]  result=null
+  // Step  1:      arrow on card 1 (select first number)
+  // Step  2:      arrow on ×      (select operator)
+  // Step  3:      arrow on card 2 (select second number)
+  // Step  4:      cards=[2,3,4]   result=2  arrow on result 2 (tap to confirm)
+  // Step  5:      cards=[3,4]     arrow on × (select operator again)
+  // Step  6:      arrow on card 3 (select third number)
+  // Step  7:      cards=[4]       result=6  arrow on result 6 (tap to confirm)
+  // Step  8:      cards=[4]       arrow on × (one more time)
+  // Step  9:      arrow on card 4 (last card!)
+  // Step 10:      🎉 = 24!
+
   const STEPS = [
-    {
-      en: "Use + − × ÷ on 4 cards to make 24!",
-      zh: "用 + − × ÷ 把4张牌凑成24！",
-      fr: "Fais + − × ÷ avec 4 cartes pour obtenir 24 !",
-      highlight: null, arrow: null,
-    },
-    {
-      en: "Tap a number to select it",
-      zh: "点击一个数字选中它",
-      fr: "Appuie sur un nombre pour le sélectionner",
-      highlight: "num_3", arrow: "down",
-    },
-    {
-      en: "Now tap an operator",
-      zh: "再点击一个运算符",
-      fr: "Maintenant appuie sur un opérateur",
-      highlight: "op_×", arrow: "down",
-    },
-    {
-      en: "Tap the second number",
-      zh: "点击第二个数字",
-      fr: "Appuie sur le deuxième nombre",
-      highlight: "num_8", arrow: "down",
-    },
-    {
-      en: "Tap the result to confirm!",
-      zh: "点击结果确认！",
-      fr: "Appuie sur le résultat pour confirmer !",
-      highlight: "result_24", arrow: "down",
-    },
-    {
-      en: "🎉 24! That's it — you win the round!",
-      zh: "🎉 24！就是这样——你赢了！",
-      fr: "🎉 24 ! C'est ça — tu gagnes la manche !",
-      highlight: null, arrow: null, celebrate: true,
-    },
+    { en:"Use + − × ÷ to make 24 with all 4 cards!",  zh:"用 + − × ÷ 把全部4张牌凑成24！",          fr:"Utilise + − × ÷ avec les 4 cartes pour faire 24 !" },
+    { en:"Tap a number to select it",                   zh:"点击一个数字选中它",                       fr:"Appuie sur un nombre pour le sélectionner" },
+    { en:"Now tap an operator",                         zh:"点击一个运算符",                           fr:"Appuie sur un opérateur" },
+    { en:"Tap the second number",                       zh:"点击第二个数字",                           fr:"Appuie sur le deuxième nombre" },
+    { en:"Tap the result to confirm — 1×2=2 ✓",        zh:"点击结果确认 — 1×2=2 ✓",                  fr:"Appuie sur le résultat — 1×2=2 ✓" },
+    { en:"Keep going — tap × again",                    zh:"继续——再次点击 ×",                         fr:"Continue — appuie encore sur ×" },
+    { en:"Now tap 3",                                   zh:"点击 3",                                   fr:"Appuie sur 3" },
+    { en:"Tap the result — 2×3=6 ✓",                   zh:"点击结果 — 2×3=6 ✓",                      fr:"Appuie sur le résultat — 2×3=6 ✓" },
+    { en:"Almost there — tap × one last time",          zh:"快了！最后一次点击 ×",                     fr:"Presque fini — appuie sur × une dernière fois" },
+    { en:"Tap 4 — the last card!",                      zh:"点击 4 — 最后一张牌！",                   fr:"Appuie sur 4 — la dernière carte !" },
+    { en:"🎉 6×4 = 24! All 4 cards used — you win!",   zh:"🎉 6×4=24！4张牌全用上了——你赢了！",      fr:"🎉 6×4 = 24 ! Les 4 cartes utilisées — gagné !", celebrate:true },
   ];
 
   const [step, setStep] = useState(0);
@@ -717,220 +705,259 @@ function IntroDemoModal({ lang, onDone }) {
 
   useEffect(() => {
     if (step >= STEPS.length - 1) return;
-    // Auto-advance every 2s except on last step
-    const t = setTimeout(() => {
-      setStep(s => s + 1);
-      setAnimKey(k => k + 1);
-    }, step === 0 ? 2200 : 1800);
+    const delay = step === 0 ? 2200 : 1700;
+    const t = setTimeout(() => { setStep(s=>s+1); setAnimKey(k=>k+1); }, delay);
     return () => clearTimeout(t);
   }, [step]);
 
   function skip() { saveIntroDone(); onDone(); }
   function play() { saveIntroDone(); onDone(); }
 
-  const current = STEPS[step];
-  const txt = lang === "zh" ? current.zh : lang === "fr" ? current.fr : current.en;
+  const txt = lang==="zh" ? STEPS[step].zh : lang==="fr" ? STEPS[step].fr : STEPS[step].en;
+  const solved = step >= 10;
 
-  // Which cards/ops are "tapped" based on step
-  const num3Active  = step >= 1;
-  const opActive    = step >= 2;
-  const num8Active  = step >= 3;
-  const resultActive= step >= 4;
-  const solved      = step >= 5;
+  // Board state: which original cards are still visible, and intermediate result
+  // After step 4+ card 1 consumed, result=2 shown
+  // After step 7+ card 2 consumed (result 2 used), result=6 shown
+  // After step 10 card 4 consumed, show celebration
+  const showCard1 = step < 4;
+  const showCard2 = step < 4;
+  const showCard3 = step < 7;
+  const showCard4 = step < 10;
+  const showResult2 = step >= 4 && step < 7;
+  const showResult6 = step >= 7 && step < 10;
 
-  const cardStyle = (active, highlight, color="#f6d365") => ({
-    width: 64, height: 80, borderRadius: 12,
-    background: active ? `linear-gradient(135deg,${color}22,${color}44)` : "linear-gradient(135deg,#1e293b,#0f172a)",
-    border: `2px solid ${active ? color : "rgba(255,255,255,0.15)"}`,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 26, fontWeight: 900,
-    color: active ? color : "#94a3b8",
-    boxShadow: active ? `0 0 18px ${color}66` : "none",
-    transition: "all 0.3s",
-    position: "relative",
+  // Arrow targets
+  const arrowCard1  = step === 1;
+  const arrowOp1    = step === 2;
+  const arrowCard2  = step === 3;
+  const arrowRes2   = step === 4;
+  const arrowOp2    = step === 5;
+  const arrowCard3  = step === 6;
+  const arrowRes6   = step === 7;
+  const arrowOp3    = step === 8;
+  const arrowCard4  = step === 9;
+
+  // Highlighted (selected/active) states
+  const card1Sel    = step >= 1 && step <= 3;
+  const opSel       = step === 2 || step === 5 || step === 8;
+  const card2Sel    = step === 3;
+  const res2Sel     = step === 4;
+  const card3Sel    = step === 6;
+  const res6Sel     = step === 7;
+  const card4Sel    = step === 9;
+
+  const Arrow = ({color="#f6d365"}) => (
+    <div style={{
+      position:"absolute", top:-44, left:"50%", transform:"translateX(-50%)",
+      fontSize:32, animation:"introArrow 0.7s ease infinite",
+      color, filter:`drop-shadow(0 0 8px ${color})`,
+      pointerEvents:"none",
+    }}>⬇️</div>
+  );
+
+  const cardSt = (selected, color="#f6d365", used=false) => ({
+    width:58, height:74, borderRadius:10,
+    background: used ? "rgba(255,255,255,0.03)" :
+      selected ? `linear-gradient(135deg,${color}22,${color}44)` : "linear-gradient(135deg,#1e293b,#0f172a)",
+    border:`2px solid ${used ? "rgba(255,255,255,0.06)" : selected ? color : "rgba(255,255,255,0.15)"}`,
+    display:"flex", alignItems:"center", justifyContent:"center",
+    fontSize:24, fontWeight:900,
+    color: used ? "rgba(255,255,255,0.15)" : selected ? color : "#94a3b8",
+    boxShadow: selected ? `0 0 16px ${color}66` : "none",
+    transition:"all 0.35s", position:"relative",
   });
 
-  const opBtnStyle = (active) => ({
-    width: 44, height: 44, borderRadius: 10,
+  const opSt = (active) => ({
+    width:42, height:42, borderRadius:9,
     background: active ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(255,255,255,0.07)",
-    border: `2px solid ${active ? "#f59e0b" : "rgba(255,255,255,0.15)"}`,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 20, fontWeight: 900, color: active ? "#1a1a2e" : "#64748b",
+    border:`2px solid ${active ? "#f59e0b" : "rgba(255,255,255,0.15)"}`,
+    display:"flex", alignItems:"center", justifyContent:"center",
+    fontSize:18, fontWeight:900, color: active ? "#1a1a2e" : "#64748b",
     boxShadow: active ? "0 0 14px rgba(245,158,11,0.5)" : "none",
-    transition: "all 0.3s",
+    transition:"all 0.3s",
   });
+
+  const resSt = (selected, val) => ({
+    width:64, height:64, borderRadius:12,
+    background: selected ? "linear-gradient(135deg,#34d39922,#34d39944)" : "linear-gradient(135deg,#1e3a2b,#0f2a1c)",
+    border:`2px solid ${selected ? "#34d399" : "rgba(52,211,153,0.3)"}`,
+    display:"flex", alignItems:"center", justifyContent:"center",
+    fontSize:20, fontWeight:900,
+    color: selected ? "#34d399" : "#4ade80",
+    boxShadow: selected ? "0 0 16px rgba(52,211,153,0.5)" : "none",
+    transition:"all 0.35s", position:"relative",
+  });
+
+  // Running expression label
+  const exprLabel = () => {
+    if (step < 2) return "";
+    if (step === 2) return "1 ×";
+    if (step === 3) return "1 × 2";
+    if (step <= 4) return "1 × 2 = 2 ✓";
+    if (step === 5) return "2 ×";
+    if (step === 6) return "2 × 3";
+    if (step <= 7) return "2 × 3 = 6 ✓";
+    if (step === 8) return "6 ×";
+    if (step === 9) return "6 × 4";
+    return "6 × 4 = 24 🎉";
+  };
 
   return (
     <div style={{
-      position: "fixed", inset: 0, zIndex: 2000,
-      background: "rgba(0,0,0,0.92)",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      fontFamily: "'Trebuchet MS',sans-serif",
-      padding: 24,
+      position:"fixed", inset:0, zIndex:2000,
+      background:"rgba(0,0,0,0.93)",
+      display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center",
+      fontFamily:"'Trebuchet MS',sans-serif", padding:20,
     }}>
       <style>{`
         @keyframes introBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        @keyframes introArrow{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(6px) scale(1.15)}}
-        @keyframes introFadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes introPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-        @keyframes introSolve{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+        @keyframes introArrow{0%,100%{transform:translateX(-50%) translateY(0) scale(1)}50%{transform:translateX(-50%) translateY(7px) scale(1.18)}}
+        @keyframes introFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes introPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+        @keyframes introSolve{0%{transform:scale(1)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
         @keyframes introShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-        @keyframes starBurst{0%{transform:scale(0) rotate(0deg);opacity:1}100%{transform:scale(2.5) rotate(180deg);opacity:0}}
       `}</style>
 
-      {/* Skip button — always visible top right */}
+      {/* Skip button */}
       <button onClick={skip} style={{
-        position: "absolute", top: 20, right: 20,
-        background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)",
-        borderRadius: 20, padding: "8px 18px",
-        color: "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer",
-      }}>
-        {lang === "zh" ? "跳过" : lang === "fr" ? "Passer" : "Skip"} ✕
-      </button>
+        position:"absolute", top:20, right:20,
+        background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.2)",
+        borderRadius:20, padding:"8px 18px",
+        color:"#94a3b8", fontSize:14, fontWeight:700, cursor:"pointer",
+      }}>{lang==="zh"?"跳过":lang==="fr"?"Passer":"Skip"} ✕</button>
 
       {/* Title */}
-      <div style={{textAlign: "center", marginBottom: 28}}>
-        <div style={{fontSize: 36, marginBottom: 6, animation: "introBounce 2s ease infinite"}}>🃏</div>
+      <div style={{textAlign:"center", marginBottom:20}}>
+        <div style={{fontSize:32, marginBottom:4, animation:"introBounce 2s ease infinite"}}>🃏</div>
         <div style={{
-          fontSize: 22, fontWeight: 900,
-          background: "linear-gradient(90deg,#f6d365,#fda085,#f6d365)", backgroundSize: "200%",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          animation: "introShimmer 2s linear infinite",
-        }}>
-          {lang === "zh" ? "怎么玩？" : lang === "fr" ? "Comment jouer ?" : "How to play?"}
-        </div>
+          fontSize:20, fontWeight:900,
+          background:"linear-gradient(90deg,#f6d365,#fda085,#f6d365)", backgroundSize:"200%",
+          WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
+          animation:"introShimmer 2s linear infinite",
+        }}>{lang==="zh"?"怎么玩？":lang==="fr"?"Comment jouer ?":"How to play?"}</div>
       </div>
 
-      {/* Step instruction text */}
+      {/* Instruction text */}
       <div key={animKey} style={{
-        minHeight: 52, display: "flex", alignItems: "center", justifyContent: "center",
-        marginBottom: 28, animation: "introFadeIn 0.4s ease",
+        minHeight:48, display:"flex", alignItems:"center", justifyContent:"center",
+        marginBottom:20, animation:"introFadeIn 0.4s ease", padding:"0 12px",
       }}>
         <div style={{
           color: solved ? "#f6d365" : "white",
-          fontSize: solved ? 20 : 17,
-          fontWeight: 800, textAlign: "center", lineHeight: 1.4,
-          animation: solved ? "introPulse 0.6s ease" : "none",
+          fontSize: solved ? 18 : 16,
+          fontWeight:800, textAlign:"center", lineHeight:1.4,
+          animation: solved ? "introPulse 0.8s ease" : "none",
         }}>{txt}</div>
       </div>
 
-      {/* The demo game board */}
+      {/* Game board */}
       <div style={{
-        background: "linear-gradient(135deg,#1e293b,#0f172a)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 24, padding: "24px 20px",
-        width: "100%", maxWidth: 340,
-        boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+        background:"linear-gradient(135deg,#1e293b,#0f172a)",
+        border:"1px solid rgba(255,255,255,0.1)",
+        borderRadius:24, padding:"22px 18px",
+        width:"100%", maxWidth:340,
+        boxShadow:"0 8px 40px rgba(0,0,0,0.5)",
       }}>
 
-        {/* Cards row */}
-        <div style={{display: "flex", justifyContent: "center", gap: 10, marginBottom: 16}}>
-          {/* Card: 3 */}
-          <div style={{position: "relative"}}>
-            <div style={cardStyle(num3Active && !solved, "num_3")}>3</div>
-            {step === 1 && (
-              <div style={{
-                position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
-                fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#f6d365",
-                filter: "drop-shadow(0 0 8px #f6d365)",
-              }}>⬇️</div>
-            )}
+        {/* Cards row — 2×2 grid like Classic mode */}
+        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, maxWidth:140, margin:"0 auto 14px"}}>
+          {/* Card 1 */}
+          <div style={{position:"relative", display:"flex", justifyContent:"center"}}>
+            {showCard1 && <div style={cardSt(card1Sel)}>1</div>}
+            {!showCard1 && <div style={cardSt(false,"#f6d365",true)}>1</div>}
+            {arrowCard1 && <Arrow color="#f6d365"/>}
           </div>
-
-          {/* Card: 8 */}
-          <div style={{position: "relative"}}>
-            <div style={cardStyle(num8Active && !solved, "num_8")}>8</div>
-            {step === 3 && (
-              <div style={{
-                position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
-                fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#f6d365",
-                filter: "drop-shadow(0 0 8px #f6d365)",
-              }}>⬇️</div>
-            )}
+          {/* Card 2 */}
+          <div style={{position:"relative", display:"flex", justifyContent:"center"}}>
+            {showCard2 && <div style={cardSt(card2Sel)}>2</div>}
+            {!showCard2 && <div style={cardSt(false,"#f6d365",true)}>2</div>}
+            {arrowCard2 && <Arrow color="#f6d365"/>}
           </div>
-
-          {/* Card: 2 */}
-          <div style={cardStyle(false, null)}>2</div>
-
-          {/* Card: 4 */}
-          <div style={cardStyle(false, null)}>4</div>
+          {/* Card 3 */}
+          <div style={{position:"relative", display:"flex", justifyContent:"center"}}>
+            {showCard3 && <div style={cardSt(card3Sel)}>3</div>}
+            {!showCard3 && <div style={cardSt(false,"#f6d365",true)}>3</div>}
+            {arrowCard3 && <Arrow color="#f6d365"/>}
+          </div>
+          {/* Card 4 */}
+          <div style={{position:"relative", display:"flex", justifyContent:"center"}}>
+            {showCard4 && <div style={cardSt(card4Sel)}>4</div>}
+            {!showCard4 && <div style={cardSt(false,"#f6d365",true)}>4</div>}
+            {arrowCard4 && <Arrow color="#f6d365"/>}
+          </div>
         </div>
 
         {/* Operators row */}
-        <div style={{display: "flex", justifyContent: "center", gap: 8, marginBottom: 16}}>
-          {["+","−","×","÷"].map(op => (
-            <div key={op} style={{position: "relative"}}>
-              <div style={opBtnStyle(op === "×" && opActive && !solved)}>{op}</div>
-              {op === "×" && step === 2 && (
-                <div style={{
-                  position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
-                  fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#f59e0b",
-                  filter: "drop-shadow(0 0 8px #f59e0b)",
-                }}>⬇️</div>
-              )}
+        <div style={{display:"flex", justifyContent:"center", gap:8, marginBottom:14}}>
+          {["+","−","×","÷"].map(op=>(
+            <div key={op} style={{position:"relative"}}>
+              <div style={opSt(op==="×" && opSel)}>{op}</div>
+              {op==="×" && (arrowOp1||arrowOp2||arrowOp3) && <Arrow color="#f59e0b"/>}
             </div>
           ))}
         </div>
 
-        {/* Result area */}
-        {(step >= 3) && (
-          <div style={{
-            display: "flex", justifyContent: "center",
-            animation: "introFadeIn 0.4s ease",
-            position: "relative",
-          }}>
-            <div style={{position: "relative"}}>
+        {/* Intermediate results */}
+        {(showResult2 || showResult6 || solved) && (
+          <div style={{display:"flex", justifyContent:"center", gap:12, animation:"introFadeIn 0.4s ease"}}>
+            {showResult2 && (
+              <div style={{position:"relative"}}>
+                <div style={resSt(res2Sel, 2)}>2</div>
+                {arrowRes2 && <Arrow color="#34d399"/>}
+              </div>
+            )}
+            {showResult6 && (
+              <div style={{position:"relative"}}>
+                <div style={resSt(res6Sel, 6)}>6</div>
+                {arrowRes6 && <Arrow color="#34d399"/>}
+              </div>
+            )}
+            {solved && (
               <div style={{
-                ...cardStyle(resultActive, "result_24", "#34d399"),
-                width: 80, height: 80, fontSize: 28,
-                animation: solved ? "introSolve 0.5s ease" : "none",
-              }}>{solved ? "🎉" : "24"}</div>
-              {step === 4 && (
-                <div style={{
-                  position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
-                  fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#34d399",
-                  filter: "drop-shadow(0 0 8px #34d399)",
-                }}>⬇️</div>
-              )}
-            </div>
+                width:72, height:72, borderRadius:14,
+                background:"linear-gradient(135deg,#f6d36522,#fda08544)",
+                border:"2px solid #f6d365",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:32, animation:"introSolve 0.6s ease",
+                boxShadow:"0 0 24px rgba(246,211,101,0.5)",
+              }}>🎉</div>
+            )}
           </div>
         )}
 
-        {/* Step expression shown as steps complete */}
+        {/* Running expression */}
         {step >= 2 && (
-          <div style={{
-            textAlign: "center", marginTop: 12,
-            color: "#64748b", fontSize: 13, fontWeight: 600,
-            animation: "introFadeIn 0.4s ease",
-          }}>
-            {step >= 2 ? "3 ×" : ""}{step >= 3 ? " 8 =" : ""}{step >= 4 ? " 24 ✓" : ""}
-          </div>
+          <div key={step} style={{
+            textAlign:"center", marginTop:10,
+            color: solved ? "#f6d365" : "#64748b",
+            fontSize:13, fontWeight:700,
+            animation:"introFadeIn 0.3s ease",
+          }}>{exprLabel()}</div>
         )}
       </div>
 
       {/* Progress dots */}
-      <div style={{display: "flex", gap: 8, marginTop: 24, marginBottom: 20}}>
-        {STEPS.map((_, i) => (
+      <div style={{display:"flex", gap:6, marginTop:20, marginBottom:16}}>
+        {STEPS.map((_,i)=>(
           <div key={i} style={{
-            width: i === step ? 20 : 8, height: 8, borderRadius: 4,
-            background: i <= step ? "#f6d365" : "rgba(255,255,255,0.15)",
-            transition: "all 0.3s",
+            width: i===step ? 18 : 7, height:7, borderRadius:4,
+            background: i<=step ? "#f6d365" : "rgba(255,255,255,0.15)",
+            transition:"all 0.3s",
           }}/>
         ))}
       </div>
 
-      {/* CTA — only on last step */}
+      {/* CTA on last step */}
       {solved && (
         <button onClick={play} style={{
-          background: "linear-gradient(135deg,#f6d365,#fda085)",
-          border: "none", borderRadius: 16, padding: "16px 48px",
-          color: "#1a1a2e", fontSize: 18, fontWeight: 900, cursor: "pointer",
-          boxShadow: "0 4px 24px rgba(246,211,101,0.5)",
-          animation: "introPulse 1s ease infinite",
-        }}>
-          {lang === "zh" ? "开始游戏！▶" : lang === "fr" ? "Jouer ! ▶" : "Let's Play! ▶"}
-        </button>
+          background:"linear-gradient(135deg,#f6d365,#fda085)",
+          border:"none", borderRadius:16, padding:"15px 44px",
+          color:"#1a1a2e", fontSize:17, fontWeight:900, cursor:"pointer",
+          boxShadow:"0 4px 24px rgba(246,211,101,0.5)",
+          animation:"introPulse 1s ease infinite",
+        }}>{lang==="zh"?"开始游戏！▶":lang==="fr"?"Jouer ! ▶":"Let's Play! ▶"}</button>
       )}
     </div>
   );

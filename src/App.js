@@ -1,74 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
-// ── Sound System ───────────────────────────────────────────────────────────
-let audioCtx = null;
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
-}
-
-function loadSoundEnabled() {
-  try { return localStorage.getItem("game24_sound") === "1"; } catch { return false; }
-}
-function saveSoundEnabled(v) {
-  try { localStorage.setItem("game24_sound", v ? "1" : "0"); } catch {}
-}
-
-function playTone(freq, duration, type="sine", gain=0.3, delay=0) {
-  if (!loadSoundEnabled()) return;
-  try {
-    const ctx = getAudioCtx();
-    const osc = ctx.createOscillator();
-    const gn  = ctx.createGain();
-    osc.connect(gn); gn.connect(ctx.destination);
-    osc.type = type; osc.frequency.value = freq;
-    const t = ctx.currentTime + delay;
-    gn.gain.setValueAtTime(gain, t);
-    gn.gain.exponentialRampToValueAtTime(0.001, t + duration);
-    osc.start(t); osc.stop(t + duration);
-  } catch {}
-}
-
-function playChord(notes, duration=0.15, type="sine", gain=0.25) {
-  notes.forEach(([freq, delay]) => playTone(freq, duration, type, gain, delay));
-}
-
-const SFX = {
-  tap:       () => playTone(600, 0.06, "sine", 0.2),
-  opTap:     () => playTone(800, 0.06, "sine", 0.2),
-  step:      () => playTone(880, 0.08, "sine", 0.25),
-  wrong:     () => playChord([[150,0],[140,0.04],[130,0.08]], 0.12, "sawtooth", 0.2),
-  solve:     () => playChord([[523,0],[659,0.1],[784,0.2],[1047,0.3]], 0.3, "sine", 0.3),
-  cardDeal:  () => playTone(400, 0.05, "sine", 0.15),
-  badge:     () => playChord([[784,0],[988,0.1],[1175,0.2],[1568,0.35]], 0.25, "sine", 0.25),
-  lifeSteal: () => playChord([[200,0],[150,0.06],[100,0.12]], 0.2, "sawtooth", 0.3),
-  robotSolve:() => playChord([[300,0],[400,0.05],[300,0.1],[500,0.15]], 0.08, "square", 0.15),
-  tick:      () => playTone(1000, 0.04, "square", 0.1),
-  hack:      () => { for(let i=0;i<6;i++) playTone(100+Math.random()*400, 0.06, "sawtooth", 0.15, i*0.07); },
-  ability:   () => playChord([[440,0],[550,0.08],[660,0.16]], 0.15, "sine", 0.2),
-  shield:    () => playTone(700, 0.3, "sine", 0.2),
-};
-
-function SoundToggle({ style }) {
-  const [on, setOn] = useState(()=>loadSoundEnabled());
-  function toggle() {
-    const next = !on;
-    setOn(next);
-    saveSoundEnabled(next);
-    if (next) SFX.tap();
-  }
-  return (
-    <button onClick={toggle} title={on?"Mute":"Sound on"} style={{
-      background: on ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.06)",
-      border: `1px solid ${on ? "rgba(96,165,250,0.4)" : "rgba(255,255,255,0.12)"}`,
-      borderRadius:16, padding:"3px 10px", fontSize:14,
-      cursor:"pointer", transition:"all 0.2s",
-      ...style,
-    }}>{on ? "🔊" : "🔇"}</button>
-  );
-}
 
 
 // ── constants ──────────────────────────────────────────────────────────────
@@ -782,7 +714,6 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
           <button onClick={()=>onStats()} title="My Stats" style={{background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:16,padding:"3px 10px",color:"#a78bfa",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             <span>📊</span>
           </button>
-          <SoundToggle/>
         </div>
       </div>
 
@@ -2457,7 +2388,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   }
 
   function useAbility(ab) {
-    SFX.ability();
+
     setAbilities(prev=>prev.filter(a=>a.id!==ab.id));
     if (ab.id==="hint") {
       const steps = getHintSteps(numbers);
@@ -2469,7 +2400,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     } else if (ab.id==="hack") {
       hackPenaltyRef.current += 4;
       setHackActive(true);
-      SFX.hack(); setRobotState("hack");
+      setRobotState("hack");
       setTimeout(()=>{setHackActive(false);setRobotState("thinking");}, 4000);
       flashAbility("👾", lang==="zh"?"黑客攻击！":lang==="fr"?"Piratage du robot !":"Hacking robot!");
     } else if (ab.id==="cancel") {
@@ -2483,7 +2414,7 @@ function BattleScreen({ lang, setLang, onBack }) {
       hackPenaltyRef.current += 4; robotElapsedRef.current = 0;
       flashAbility("🔄", lang==="zh"?"机器人进度已重置！":lang==="fr"?"Robot reinitialise !":"Robot reset!");
     } else if (ab.id==="shield") {
-      SFX.shield(); setShield(true);
+      setShield(true);
       flashAbility("🛡️", lang==="zh"?"护盾已激活！":lang==="fr"?"Bouclier actif !":"Shield up!");
     }
   }
@@ -2558,7 +2489,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     const robotDmg=robotDoubleDmg&&winner==="robot"?2:1;
     // Trigger hit animations
     if(winner==="player"){
-      SFX.lifeSteal(); setRobotHit(true); setTimeout(()=>{setRobotHit(false);setRobotState(pl<=1?"explode":"hit");setTimeout(()=>setRobotState("idle"),600);},100);
+      setRobotHit(true); setTimeout(()=>{setRobotHit(false);setRobotState(pl<=1?"explode":"hit");setTimeout(()=>setRobotState("idle"),600);},100);
       setScreenShake(true); setTimeout(()=>setScreenShake(false),400);
     }
     if(winner==="robot"||winner==="timeout"){
@@ -2590,7 +2521,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   function doRobotSolve() {
     const orig=cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
-    SFX.robotSolve(); setRobotSolution(getHintSteps(orig)); setRobotSolved(true);
+    setRobotSolution(getHintSteps(orig)); setRobotSolved(true);
     setRobotState("solved");
     endRound("robot");
   }
@@ -2614,7 +2545,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
     setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
     if(nn.length===1){if(Math.abs(r-24)<1e-9){endRound("player");}else setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}
-    else SFX.step();
+    else
     setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
@@ -2626,7 +2557,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
     setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
     if(nn.length===1){if(Math.abs(r-24)<1e-9)endRound("player");else setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}
-    else SFX.step();
+    else
     setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
@@ -2773,7 +2704,6 @@ function BattleScreen({ lang, setLang, onBack }) {
         <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",textAlign:"center"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
         <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
-          <SoundToggle/>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
         </div>
       </div>
@@ -3219,7 +3149,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
   function handleNumberClick(idx) {
     if (phase !== "playing") return;
-    SFX.tap();
+
     if (selectedIdx === null) {
       setSelectedIdx(idx); setOperator(null); setMessage({text:"",type:""});
     } else if (selectedIdx === idx) {
@@ -3259,7 +3189,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     setSelectedIdx(null); setOperator(null);
     if (newNums.length===1) {
       if (Math.abs(result-24)<1e-9) handleSolve(newNums);
-      else SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
     } else {
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
@@ -3274,8 +3204,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     const newNums=numbers.filter((_,i)=>i!==idx);
     newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
     setNumbers(newNums); setSelectedIdx(null); setOperator(null);
-    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
-    else SFX.step();
+    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
     setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
@@ -3288,8 +3217,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     const newNums=numbers.filter((_,i)=>i!==idx);
     newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
     setNumbers(newNums); setSelectedIdx(null); setOperator(null);
-    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
-    else SFX.step();
+    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
     setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
@@ -3901,7 +3829,7 @@ export default function App() {
       if (Math.abs(result-24)<1e-9) {
         handleSolve();
       } else {
-        SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+        setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
       }
     } else {
       setMessage({text:`✓ ${expr}`,type:"step"});
@@ -4006,7 +3934,7 @@ export default function App() {
     setSelectedIdx(null); setOperator(null);
     if (newNums.length===1) {
       if (Math.abs(result-24)<1e-9) handleSolve();
-      else SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
     } else {
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
@@ -4217,7 +4145,6 @@ export default function App() {
       }}>Game24<sup style={{fontSize:"0.48em",WebkitTextFillColor:"#fda085",color:"#fda085",position:"relative",top:"-0.5em",marginLeft:2}}>&trade;</sup></h1>
       <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center"}}>
         <LangSwitcher lang={lang} setLang={setLang}/>
-        <SoundToggle/>
         <button onClick={()=>setShowHelp(true)} style={{
           background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",
           borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer",

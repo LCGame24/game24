@@ -1,9 +1,278 @@
 import { useState, useEffect, useRef } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
+// ── Firebase Global Leaderboard ────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDEwWTZGTKUtqP6x7eeUIEJ26Ersxf1F2E",
+  authDomain: "game24-e6977.firebaseapp.com",
+  projectId: "game24-e6977",
+};
+
+let db = null;
+
+async function getFirestore() {
+  if (db) return db;
+  try {
+    const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getFirestore: _getFirestore } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
+    db = _getFirestore(app);
+    return db;
+  } catch(e) {
+    console.warn("Firebase unavailable:", e);
+    return null;
+  }
+}
+
+async function submitDailyScore({ dateKey, name, totalTime, hintsUsed }) {
+  try {
+    const firestore = await getFirestore();
+    if (!firestore) return null;
+    const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    // Detect country via browser language as proxy
+    const country = navigator.language?.split("-")[1] || "??";
+    const docRef = await addDoc(collection(firestore, "daily_scores"), {
+      dateKey, name, totalTime, hintsUsed, country,
+      timestamp: serverTimestamp(),
+    });
+    return docRef.id;
+  } catch(e) {
+    console.warn("Score submit failed:", e);
+    return null;
+  }
+}
+
+async function fetchDailyLeaderboard(dateKey) {
+  try {
+    const firestore = await getFirestore();
+    if (!firestore) return null;
+    const { collection, query, where, orderBy, limit, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const q = query(
+      collection(firestore, "daily_scores"),
+      where("dateKey", "==", dateKey),
+      orderBy("totalTime", "asc"),
+      limit(10)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d, i) => ({ rank: i + 1, id: d.id, ...d.data() }));
+  } catch(e) {
+    console.warn("Leaderboard fetch failed:", e);
+    return null;
+  }
+}
+
+async function fetchPlayerRank(dateKey, totalTime) {
+  try {
+    const firestore = await getFirestore();
+    if (!firestore) return null;
+    const { collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const q = query(
+      collection(firestore, "daily_scores"),
+      where("dateKey", "==", dateKey),
+      orderBy("totalTime", "asc"),
+    );
+    const snap = await getDocs(q);
+    const rank = snap.docs.findIndex(d => d.data().totalTime >= totalTime) + 1;
+    return rank || snap.docs.length + 1;
+  } catch(e) {
+    return null;
+  }
+}
+
+function loadLBName() { try { return localStorage.getItem("game24_lb_name")||""; } catch { return ""; } }
+function saveLBName(n) { try { localStorage.setItem("game24_lb_name", n); } catch {} }
+function loadLBSubmitted(dateKey) { try { return localStorage.getItem(`game24_lb_submitted_${dateKey}`)==="1"; } catch { return false; } }
+function saveLBSubmitted(dateKey) { try { localStorage.setItem(`game24_lb_submitted_${dateKey}`, "1"); } catch {} }
+
+function fmtTime(s) {
+  if(s==null) return "--";
+  const m=Math.floor(s/60), sec=s%60;
+  return `${m}:${String(sec).padStart(2,"0")}`;
+}
+
+function GlobalLeaderboard({ dateKey, totalTime, lang }) {
+  const [name, setName] = useState(()=>loadLBName());
+  const [anon, setAnon] = useState(false);
+  const [submitted, setSubmitted] = useState(()=>loadLBSubmitted(dateKey));
+  const [submitting, setSubmitting] = useState(false);
+  const [board, setBoard] = useState(null);
+  const [playerRank, setPlayerRank] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Auto-load leaderboard if already submitted
+  useEffect(() => {
+    if (submitted) loadBoard();
+  }, [submitted]);
+
+  async function loadBoard() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [entries, rank] = await Promise.all([
+        fetchDailyLeaderboard(dateKey),
+        fetchPlayerRank(dateKey, totalTime),
+      ]);
+      if (entries === null) { setError("offline"); return; }
+      setBoard(entries);
+      setPlayerRank(rank);
+    } catch(e) {
+      setError("offline");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmit() {
+    const displayName = anon ? (lang==="zh"?"匿名玩家":lang==="fr"?"Anonyme":"Anonymous 🕵️") : (name.trim() || (lang==="zh"?"玩家":lang==="fr"?"Joueur":"Player"));
+    setSubmitting(true);
+    saveLBName(name.trim());
+    const id = await submitDailyScore({ dateKey, name: displayName, totalTime, hintsUsed: 0 });
+    saveLBSubmitted(dateKey);
+    setSubmitted(true);
+    setSubmitting(false);
+    if (id) loadBoard();
+    else setError("offline");
+  }
+
+  const flagMap = { SG:"🇸🇬", CN:"🇨🇳", FR:"🇫🇷", US:"🇺🇸", GB:"🇬🇧", AU:"🇦🇺", CA:"🇨🇦", MY:"🇲🇾", IN:"🇮🇳", JP:"🇯🇵", KR:"🇰🇷", DE:"🇩🇪" };
+  const flag = (c) => flagMap[c?.toUpperCase()] || "🌍";
+
+  const rankMedal = (r) => r===1?"🥇":r===2?"🥈":r===3?"🥉":`#${r}`;
+
+  return (
+    <div style={{width:"100%",maxWidth:340,marginBottom:20}}>
+      <div style={{
+        background:"rgba(96,165,250,0.06)",
+        border:"1px solid rgba(96,165,250,0.25)",
+        borderRadius:16,padding:16,
+      }}>
+        <div style={{textAlign:"center",marginBottom:12}}>
+          <div style={{fontSize:18,fontWeight:900,color:"#93c5fd"}}>
+            🌍 {lang==="zh"?"全球排行榜":lang==="fr"?"Classement mondial":"Global Leaderboard"}
+          </div>
+          <div style={{color:"#475569",fontSize:11,marginTop:2}}>
+            {lang==="zh"?"今日最快解题":lang==="fr"?"Les plus rapides aujourd'hui":"Today's fastest solvers"}
+          </div>
+        </div>
+
+        {/* Submit form */}
+        {!submitted && (
+          <div style={{marginBottom:12}}>
+            <div style={{color:"#94a3b8",fontSize:12,marginBottom:6,textAlign:"center"}}>
+              {lang==="zh"?"提交你的成绩到全球排行榜！":lang==="fr"?"Soumets ton score au classement mondial !":"Submit your score to the global leaderboard!"}
+            </div>
+            {!anon && (
+              <input
+                value={name}
+                onChange={e=>setName(e.target.value)}
+                maxLength={20}
+                placeholder={lang==="zh"?"你的名字（最多20字）":lang==="fr"?"Ton prénom (20 car. max)":"Your name (20 chars max)"}
+                style={{
+                  width:"100%",padding:"10px 12px",borderRadius:10,
+                  background:"rgba(255,255,255,0.06)",
+                  border:"1px solid rgba(255,255,255,0.15)",
+                  color:"white",fontSize:14,marginBottom:8,
+                  outline:"none",boxSizing:"border-box",
+                }}
+              />
+            )}
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <input type="checkbox" id="anon" checked={anon} onChange={e=>setAnon(e.target.checked)}
+                style={{width:16,height:16,cursor:"pointer"}}/>
+              <label htmlFor="anon" style={{color:"#64748b",fontSize:12,cursor:"pointer"}}>
+                🕵️ {lang==="zh"?"匿名提交":lang==="fr"?"Soumettre anonymement":"Submit anonymously"}
+              </label>
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || (!anon && !name.trim())}
+              style={{
+                width:"100%",padding:"11px",borderRadius:10,
+                background: (submitting||(!anon&&!name.trim())) ? "rgba(96,165,250,0.2)" : "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+                border:"none",color:"white",fontSize:14,fontWeight:800,
+                cursor:(submitting||(!anon&&!name.trim()))?"not-allowed":"pointer",
+                opacity:(submitting||(!anon&&!name.trim()))?0.6:1,
+                transition:"all 0.2s",
+              }}>
+              {submitting
+                ? (lang==="zh"?"提交中...":lang==="fr"?"Envoi...":"Submitting...")
+                : (lang==="zh"?"🚀 提交成绩":lang==="fr"?"🚀 Soumettre":"🚀 Submit Score")}
+            </button>
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div style={{textAlign:"center",padding:"20px 0",color:"#60a5fa",fontSize:13}}>
+            ⏳ {lang==="zh"?"加载排行榜...":lang==="fr"?"Chargement...":"Loading leaderboard..."}
+          </div>
+        )}
+
+        {/* Offline error */}
+        {error==="offline" && (
+          <div style={{textAlign:"center",padding:"12px",color:"#f59e0b",fontSize:12,background:"rgba(245,158,11,0.08)",borderRadius:10}}>
+            📡 {lang==="zh"?"无法连接，请稍后再试":lang==="fr"?"Pas de connexion, réessaie plus tard":"Can't connect — try again later"}
+            <button onClick={loadBoard} style={{display:"block",margin:"8px auto 0",background:"rgba(245,158,11,0.2)",border:"1px solid #f59e0b",borderRadius:8,padding:"4px 12px",color:"#f59e0b",fontSize:12,cursor:"pointer"}}>
+              🔄 {lang==="zh"?"重试":lang==="fr"?"Réessayer":"Retry"}
+            </button>
+          </div>
+        )}
+
+        {/* Leaderboard table */}
+        {board && !loading && (
+          <div>
+            {board.length === 0 ? (
+              <div style={{textAlign:"center",color:"#475569",fontSize:13,padding:"12px 0"}}>
+                🏆 {lang==="zh"?"你是第一个！":lang==="fr"?"Tu es le premier !":"You're the first one today!"}
+              </div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                {board.map((entry, i) => (
+                  <div key={entry.id} style={{
+                    display:"flex",alignItems:"center",gap:8,
+                    padding:"8px 10px",borderRadius:10,
+                    background: i===0 ? "rgba(246,211,101,0.1)" : i===1 ? "rgba(203,213,225,0.06)" : i===2 ? "rgba(205,127,50,0.08)" : "rgba(255,255,255,0.03)",
+                    border: i===0 ? "1px solid rgba(246,211,101,0.25)" : "1px solid rgba(255,255,255,0.05)",
+                  }}>
+                    <div style={{fontSize:16,width:28,textAlign:"center",flexShrink:0}}>{rankMedal(entry.rank)}</div>
+                    <div style={{fontSize:14}}>{flag(entry.country)}</div>
+                    <div style={{flex:1,color:i===0?"#f6d365":"#e2e8f0",fontSize:13,fontWeight:i<3?700:400,
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {entry.name}
+                    </div>
+                    <div style={{color:i===0?"#f6d365":"#94a3b8",fontSize:13,fontWeight:700,flexShrink:0}}>
+                      ⏱ {fmtTime(entry.totalTime)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Player's own rank if outside top 10 */}
+            {playerRank && playerRank > 10 && (
+              <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,
+                background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",
+                display:"flex",alignItems:"center",gap:8}}>
+                <div style={{fontSize:13,color:"#a78bfa",fontWeight:700,width:28,textAlign:"center"}}>#{playerRank}</div>
+                <div style={{flex:1,color:"#a78bfa",fontSize:13}}>
+                  {lang==="zh"?"你的排名":lang==="fr"?"Ton classement":"Your rank"}
+                </div>
+                <div style={{color:"#a78bfa",fontSize:13,fontWeight:700}}>⏱ {fmtTime(totalTime)}</div>
+              </div>
+            )}
+
+            <div style={{textAlign:"center",marginTop:8,color:"#334155",fontSize:11}}>
+              {lang==="zh"?"明天再来争第一！":lang==="fr"?"Reviens demain pour la première place !":"Come back tomorrow for #1!"}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 
-// ── constants ──────────────────────────────────────────────────────────────
 const SUITS = ["♠","♥","♦","♣"];
 const VALUES = [1,2,3,4,5,6,7,8,9,10,11,12,13];
 const LABELS = {1:"1",2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"11",12:"12",13:"13"};
@@ -3758,6 +4027,9 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
             </div>
           )}
         </div>
+
+        {/* Global Leaderboard */}
+        <GlobalLeaderboard dateKey={todayKey} totalTime={totalTime} lang={lang} />
 
         {/* Come back tomorrow — enhanced streak nudge */}
         <div style={{background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.25)",borderRadius:14,padding:"14px 20px",marginBottom:20,textAlign:"center",maxWidth:320,width:"100%"}}>

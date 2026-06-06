@@ -309,7 +309,7 @@ function saveJrTutorialDone(level) {
 const T = {
   en: {
     title: "24",
-    subtitle: "THE MATH CARD GAME",
+    subtitle: "Build number sense, logic & problem-solving — one puzzle at a time",
     difficulty: "DIFFICULTY",
     easy: "Easy", medium: "Medium", hard: "Hard",
     timerSolo: "TIMER (SOLO)",
@@ -364,7 +364,7 @@ const T = {
   },
   zh: {
     title: "24",
-    subtitle: "数学扑克牌游戏",
+    subtitle: "培养数感、逻辑力与解题能力——一题一进步",
     difficulty: "难度",
     easy: "简单", medium: "中等", hard: "困难",
     timerSolo: "计时器（单人）",
@@ -419,7 +419,7 @@ const T = {
   },
   fr: {
     title: "24",
-    subtitle: "LE JEU DE CARTES MATHEMATIQUES",
+    subtitle: "Développez le calcul mental, la logique et la résolution de problèmes",
     difficulty: "DIFFICULTE",
     easy: "Facile", medium: "Moyen", hard: "Difficile",
     timerSolo: "MINUTERIE (SOLO)",
@@ -1006,8 +1006,8 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
           WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
           animation:"shimmer 3s linear infinite",overflow:"visible",paddingTop:6,
         }}>Game24<sup style={{fontSize:"0.48em",WebkitTextFillColor:"#fda085",color:"#fda085",position:"relative",top:"-0.5em",marginLeft:2}}>&trade;</sup></h1>
-        <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px"}}>
-          {lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}
+        <p style={{color:"#94a3b8",fontSize:12,margin:"0 0 8px",maxWidth:280,lineHeight:1.4,textAlign:"center"}}>
+          {lang==="zh"?"培养数感、逻辑力与解题能力——一题一进步":lang==="fr"?"Développez le calcul mental, la logique et la résolution de problèmes":"Build number sense, logic & problem-solving — one puzzle at a time"}
         </p>
         <div style={{display:"flex",justifyContent:"center",gap:8,alignItems:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
@@ -1206,8 +1206,8 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
           animation:"shimmer 3s linear infinite",overflow:"visible",paddingTop:6,
         }}>Game24<sup style={{fontSize:"0.48em",WebkitTextFillColor:"#fda085",color:"#fda085",position:"relative",top:"-0.5em",marginLeft:2}}>&trade;</sup></h1>
         <p style={{
-          color:"#94a3b8",fontSize:13,margin:"0 0 4px",fontWeight:500,
-        }}>{lang==="zh"?"数学扑克牌游戏":"The Math Card Game"}</p>
+          color:"#94a3b8",fontSize:12,margin:"0 0 4px",fontWeight:500,maxWidth:280,lineHeight:1.4,textAlign:"center",
+        }}>{lang==="zh"?"培养数感、逻辑力与解题能力——一题一进步":lang==="fr"?"Développez le calcul mental, la logique et la résolution de problèmes":"Build number sense, logic & problem-solving — one puzzle at a time"}</p>
       </div>
       <div style={{marginBottom:20}}><LangSwitcher lang={lang} setLang={setLang}/></div>
 

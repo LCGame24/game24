@@ -940,7 +940,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
               width:"100%",padding:"10px",borderRadius:12,
               border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
               color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-            }}>🏠</button>
+            }}>🏠 {lang==="zh"?"主菜单":lang==="fr"?"Menu principal":"Main Menu"}</button>
           </div>
         </div>
       )}
@@ -1090,7 +1090,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
           border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
           color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-        }}>🏠</button>
+        }}>🏠 {lang==="zh"?"主菜单":lang==="fr"?"Menu principal":"Main Menu"}</button>
 
         {/* Badges Modal */}
         {showBadges&&(
@@ -1533,7 +1533,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
           border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
           color:"#64748b",fontSize:13,cursor:"pointer",
-        }}>🏠</button>
+        }}>🏠 {lang==="zh"?"主菜单":lang==="fr"?"Menu principal":"Main Menu"}</button>
       </div>
 
       {/* Leaderboard Modal */}

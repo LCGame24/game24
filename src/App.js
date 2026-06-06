@@ -663,6 +663,279 @@ function OpBtn({op,active,onClick,disabled}) {
   );
 }
 
+// ── Intro Demo Modal ──────────────────────────────────────────────────────
+function loadIntroDone() {
+  try { return localStorage.getItem("game24_intro_done") === "1"; } catch { return false; }
+}
+function saveIntroDone() {
+  try { localStorage.setItem("game24_intro_done", "1"); } catch {}
+}
+
+function IntroDemoModal({ lang, onDone }) {
+  // Demo: 3 × 8 = 24  (step 1: pick 3, step 2: pick ×, step 3: pick 8, step 4: tap result 24 → solved!)
+  const STEPS = [
+    {
+      en: "Use + − × ÷ on 4 cards to make 24!",
+      zh: "用 + − × ÷ 把4张牌凑成24！",
+      fr: "Fais + − × ÷ avec 4 cartes pour obtenir 24 !",
+      highlight: null, arrow: null,
+    },
+    {
+      en: "Tap a number to select it",
+      zh: "点击一个数字选中它",
+      fr: "Appuie sur un nombre pour le sélectionner",
+      highlight: "num_3", arrow: "down",
+    },
+    {
+      en: "Now tap an operator",
+      zh: "再点击一个运算符",
+      fr: "Maintenant appuie sur un opérateur",
+      highlight: "op_×", arrow: "down",
+    },
+    {
+      en: "Tap the second number",
+      zh: "点击第二个数字",
+      fr: "Appuie sur le deuxième nombre",
+      highlight: "num_8", arrow: "down",
+    },
+    {
+      en: "Tap the result to confirm!",
+      zh: "点击结果确认！",
+      fr: "Appuie sur le résultat pour confirmer !",
+      highlight: "result_24", arrow: "down",
+    },
+    {
+      en: "🎉 24! That's it — you win the round!",
+      zh: "🎉 24！就是这样——你赢了！",
+      fr: "🎉 24 ! C'est ça — tu gagnes la manche !",
+      highlight: null, arrow: null, celebrate: true,
+    },
+  ];
+
+  const [step, setStep] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+
+  useEffect(() => {
+    if (step >= STEPS.length - 1) return;
+    // Auto-advance every 2s except on last step
+    const t = setTimeout(() => {
+      setStep(s => s + 1);
+      setAnimKey(k => k + 1);
+    }, step === 0 ? 2200 : 1800);
+    return () => clearTimeout(t);
+  }, [step]);
+
+  function skip() { saveIntroDone(); onDone(); }
+  function play() { saveIntroDone(); onDone(); }
+
+  const current = STEPS[step];
+  const txt = lang === "zh" ? current.zh : lang === "fr" ? current.fr : current.en;
+
+  // Which cards/ops are "tapped" based on step
+  const num3Active  = step >= 1;
+  const opActive    = step >= 2;
+  const num8Active  = step >= 3;
+  const resultActive= step >= 4;
+  const solved      = step >= 5;
+
+  const cardStyle = (active, highlight, color="#f6d365") => ({
+    width: 64, height: 80, borderRadius: 12,
+    background: active ? `linear-gradient(135deg,${color}22,${color}44)` : "linear-gradient(135deg,#1e293b,#0f172a)",
+    border: `2px solid ${active ? color : "rgba(255,255,255,0.15)"}`,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 26, fontWeight: 900,
+    color: active ? color : "#94a3b8",
+    boxShadow: active ? `0 0 18px ${color}66` : "none",
+    transition: "all 0.3s",
+    position: "relative",
+  });
+
+  const opBtnStyle = (active) => ({
+    width: 44, height: 44, borderRadius: 10,
+    background: active ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(255,255,255,0.07)",
+    border: `2px solid ${active ? "#f59e0b" : "rgba(255,255,255,0.15)"}`,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 20, fontWeight: 900, color: active ? "#1a1a2e" : "#64748b",
+    boxShadow: active ? "0 0 14px rgba(245,158,11,0.5)" : "none",
+    transition: "all 0.3s",
+  });
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 2000,
+      background: "rgba(0,0,0,0.92)",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      fontFamily: "'Trebuchet MS',sans-serif",
+      padding: 24,
+    }}>
+      <style>{`
+        @keyframes introBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes introArrow{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(6px) scale(1.15)}}
+        @keyframes introFadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes introPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        @keyframes introSolve{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+        @keyframes introShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+        @keyframes starBurst{0%{transform:scale(0) rotate(0deg);opacity:1}100%{transform:scale(2.5) rotate(180deg);opacity:0}}
+      `}</style>
+
+      {/* Skip button — always visible top right */}
+      <button onClick={skip} style={{
+        position: "absolute", top: 20, right: 20,
+        background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)",
+        borderRadius: 20, padding: "8px 18px",
+        color: "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer",
+      }}>
+        {lang === "zh" ? "跳过" : lang === "fr" ? "Passer" : "Skip"} ✕
+      </button>
+
+      {/* Title */}
+      <div style={{textAlign: "center", marginBottom: 28}}>
+        <div style={{fontSize: 36, marginBottom: 6, animation: "introBounce 2s ease infinite"}}>🃏</div>
+        <div style={{
+          fontSize: 22, fontWeight: 900,
+          background: "linear-gradient(90deg,#f6d365,#fda085,#f6d365)", backgroundSize: "200%",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          animation: "introShimmer 2s linear infinite",
+        }}>
+          {lang === "zh" ? "怎么玩？" : lang === "fr" ? "Comment jouer ?" : "How to play?"}
+        </div>
+      </div>
+
+      {/* Step instruction text */}
+      <div key={animKey} style={{
+        minHeight: 52, display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 28, animation: "introFadeIn 0.4s ease",
+      }}>
+        <div style={{
+          color: solved ? "#f6d365" : "white",
+          fontSize: solved ? 20 : 17,
+          fontWeight: 800, textAlign: "center", lineHeight: 1.4,
+          animation: solved ? "introPulse 0.6s ease" : "none",
+        }}>{txt}</div>
+      </div>
+
+      {/* The demo game board */}
+      <div style={{
+        background: "linear-gradient(135deg,#1e293b,#0f172a)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 24, padding: "24px 20px",
+        width: "100%", maxWidth: 340,
+        boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+      }}>
+
+        {/* Cards row */}
+        <div style={{display: "flex", justifyContent: "center", gap: 10, marginBottom: 16}}>
+          {/* Card: 3 */}
+          <div style={{position: "relative"}}>
+            <div style={cardStyle(num3Active && !solved, "num_3")}>3</div>
+            {step === 1 && (
+              <div style={{
+                position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
+                fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#f6d365",
+                filter: "drop-shadow(0 0 8px #f6d365)",
+              }}>⬇️</div>
+            )}
+          </div>
+
+          {/* Card: 8 */}
+          <div style={{position: "relative"}}>
+            <div style={cardStyle(num8Active && !solved, "num_8")}>8</div>
+            {step === 3 && (
+              <div style={{
+                position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
+                fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#f6d365",
+                filter: "drop-shadow(0 0 8px #f6d365)",
+              }}>⬇️</div>
+            )}
+          </div>
+
+          {/* Card: 2 */}
+          <div style={cardStyle(false, null)}>2</div>
+
+          {/* Card: 4 */}
+          <div style={cardStyle(false, null)}>4</div>
+        </div>
+
+        {/* Operators row */}
+        <div style={{display: "flex", justifyContent: "center", gap: 8, marginBottom: 16}}>
+          {["+","−","×","÷"].map(op => (
+            <div key={op} style={{position: "relative"}}>
+              <div style={opBtnStyle(op === "×" && opActive && !solved)}>{op}</div>
+              {op === "×" && step === 2 && (
+                <div style={{
+                  position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
+                  fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#f59e0b",
+                  filter: "drop-shadow(0 0 8px #f59e0b)",
+                }}>⬇️</div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Result area */}
+        {(step >= 3) && (
+          <div style={{
+            display: "flex", justifyContent: "center",
+            animation: "introFadeIn 0.4s ease",
+            position: "relative",
+          }}>
+            <div style={{position: "relative"}}>
+              <div style={{
+                ...cardStyle(resultActive, "result_24", "#34d399"),
+                width: 80, height: 80, fontSize: 28,
+                animation: solved ? "introSolve 0.5s ease" : "none",
+              }}>{solved ? "🎉" : "24"}</div>
+              {step === 4 && (
+                <div style={{
+                  position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)",
+                  fontSize: 32, animation: "introArrow 0.7s ease infinite", color: "#34d399",
+                  filter: "drop-shadow(0 0 8px #34d399)",
+                }}>⬇️</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step expression shown as steps complete */}
+        {step >= 2 && (
+          <div style={{
+            textAlign: "center", marginTop: 12,
+            color: "#64748b", fontSize: 13, fontWeight: 600,
+            animation: "introFadeIn 0.4s ease",
+          }}>
+            {step >= 2 ? "3 ×" : ""}{step >= 3 ? " 8 =" : ""}{step >= 4 ? " 24 ✓" : ""}
+          </div>
+        )}
+      </div>
+
+      {/* Progress dots */}
+      <div style={{display: "flex", gap: 8, marginTop: 24, marginBottom: 20}}>
+        {STEPS.map((_, i) => (
+          <div key={i} style={{
+            width: i === step ? 20 : 8, height: 8, borderRadius: 4,
+            background: i <= step ? "#f6d365" : "rgba(255,255,255,0.15)",
+            transition: "all 0.3s",
+          }}/>
+        ))}
+      </div>
+
+      {/* CTA — only on last step */}
+      {solved && (
+        <button onClick={play} style={{
+          background: "linear-gradient(135deg,#f6d365,#fda085)",
+          border: "none", borderRadius: 16, padding: "16px 48px",
+          color: "#1a1a2e", fontSize: 18, fontWeight: 900, cursor: "pointer",
+          boxShadow: "0 4px 24px rgba(246,211,101,0.5)",
+          animation: "introPulse 1s ease infinite",
+        }}>
+          {lang === "zh" ? "开始游戏！▶" : lang === "fr" ? "Jouer ! ▶" : "Let's Play! ▶"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Setup screen ───────────────────────────────────────────────────────────
 function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
@@ -720,6 +993,30 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
       {/* Four mode buttons */}
       <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:16,animation:"fadeIn 0.5s ease"}}>
 
+        {/* Daily Challenge — FIRST: low friction hook for new visitors */}
+        <button onClick={()=>onDaily()} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,
+          background:"linear-gradient(135deg,#1e2a4a,#0f1f3d)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(96,165,250,0.2)",
+          border:"1px solid rgba(96,165,250,0.45)",
+          transition:"all 0.2s",
+          position:"relative",overflow:"hidden",
+        }}>
+          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":lang==="fr"?"QUOTIDIEN":"DAILY"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>📅</div>
+            <div>
+              <div style={{color:"#93c5fd",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"每日挑战":lang==="fr"?"Défi du Jour":"Daily Challenge"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"每天同一道题，全球一起挑战！":lang==="fr"?"Le même puzzle chaque jour pour tous !":"Same puzzle, every player, every day"}
+              </div>
+            </div>
+          </div>
+        </button>
+
         {/* Classic Mode */}
         <button onClick={()=>setShowModeSelect(false)} style={{
           width:"100%",padding:"24px 20px",borderRadius:20,
@@ -764,7 +1061,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
           </div>
         </button>
 
-        {/* Battle Mode — LIVE */}
+        {/* Battle Mode */}
         <button onClick={()=>onBattle()} style={{
           width:"100%",padding:"24px 20px",borderRadius:20,
           background:"linear-gradient(135deg,#3d0a0a,#2a0a0a)",
@@ -787,32 +1084,6 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
             </div>
           </div>
         </button>
-
-        {/* Daily Challenge */}
-        <button onClick={()=>onDaily()} style={{
-          width:"100%",padding:"24px 20px",borderRadius:20,
-          background:"linear-gradient(135deg,#1e2a4a,#0f1f3d)",
-          cursor:"pointer",textAlign:"left",
-          boxShadow:"0 8px 32px rgba(96,165,250,0.15)",
-          border:"1px solid rgba(96,165,250,0.35)",
-          transition:"all 0.2s",
-          position:"relative",overflow:"hidden",
-        }}>
-          {/* DAILY badge */}
-          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":lang==="fr"?"QUOTIDIEN":"DAILY"}</div>
-          <div style={{display:"flex",alignItems:"center",gap:16}}>
-            <div style={{fontSize:44}}>📅</div>
-            <div>
-              <div style={{color:"#93c5fd",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"每日挑战":lang==="fr"?"Defi du Jour":"Daily Challenge"}
-              </div>
-              <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"每天同一道题，全球一起挑战！":lang==="fr"?"Le meme puzzle chaque jour pour tous !":"Same puzzle, every player, every day"}
-              </div>
-            </div>
-          </div>
-        </button>
-
 
       </div>
     </div>
@@ -3603,6 +3874,7 @@ export default function App() {
   const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior | daily | battle | stats
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
+  const [showIntro,setShowIntro]=useState(()=>!loadIntroDone());
   const [showHelp,setShowHelp]=useState(false);
   const [unlocked,setUnlocked]=useState(()=>({Easy:true,Medium:true,Hard:loadUnlocked().Hard||false}));
   const [justUnlockedHard,setJustUnlockedHard]=useState(false);
@@ -4040,6 +4312,8 @@ export default function App() {
   const cp=players[currentPlayer]||{name:"",score:0,streak:0};
   const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
+
+  if (showIntro) return <IntroDemoModal lang={lang} onDone={()=>setShowIntro(false)}/>;
 
   if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} onBattle={()=>setScreen("battle")} onStats={()=>setScreen("stats")} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}

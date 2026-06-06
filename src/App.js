@@ -121,8 +121,24 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
 
   const flagMap = { SG:"🇸🇬", CN:"🇨🇳", FR:"🇫🇷", US:"🇺🇸", GB:"🇬🇧", AU:"🇦🇺", CA:"🇨🇦", MY:"🇲🇾", IN:"🇮🇳", JP:"🇯🇵", KR:"🇰🇷", DE:"🇩🇪", HK:"🇭🇰", TW:"🇹🇼", OTHER:"🌍" };
   const flag = (c) => flagMap[c?.toUpperCase()] || "🌍";
+  const [expanded, setExpanded] = useState(false);
+
+  // Fix tied ranks — entries with same totalTime get same rank
+  function assignRanks(entries) {
+    let rank = 1;
+    return entries.map((e, i) => {
+      if (i > 0 && e.totalTime === entries[i-1].totalTime) {
+        return { ...e, rank: entries[i-1].rank };
+      }
+      const r = rank;
+      rank = i + 2;
+      return { ...e, rank: r };
+    });
+  }
 
   const rankMedal = (r) => r===1?"🥇":r===2?"🥈":r===3?"🥉":`#${r}`;
+  const rankedBoard = board ? assignRanks(board) : [];
+  const visibleBoard = expanded ? rankedBoard : rankedBoard.slice(0, 3);
 
   return (
     <div style={{width:"100%",maxWidth:340,marginBottom:20}}>
@@ -232,33 +248,40 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
         )}
 
         {/* Leaderboard table */}
-        {board && !loading && (
+        {rankedBoard.length > 0 && !loading && (
           <div>
-            {board.length === 0 ? (
-              <div style={{textAlign:"center",color:"#475569",fontSize:13,padding:"12px 0"}}>
-                🏆 {lang==="zh"?"你是第一个！":lang==="fr"?"Tu es le premier !":"You're the first one today!"}
-              </div>
-            ) : (
-              <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                {board.map((entry, i) => (
-                  <div key={entry.id} style={{
-                    display:"flex",alignItems:"center",gap:8,
-                    padding:"8px 10px",borderRadius:10,
-                    background: i===0 ? "rgba(246,211,101,0.1)" : i===1 ? "rgba(203,213,225,0.06)" : i===2 ? "rgba(205,127,50,0.08)" : "rgba(255,255,255,0.03)",
-                    border: i===0 ? "1px solid rgba(246,211,101,0.25)" : "1px solid rgba(255,255,255,0.05)",
-                  }}>
-                    <div style={{fontSize:16,width:28,textAlign:"center",flexShrink:0}}>{rankMedal(entry.rank)}</div>
-                    <div style={{fontSize:14}}>{flag(entry.country)}</div>
-                    <div style={{flex:1,color:i===0?"#f6d365":"#e2e8f0",fontSize:13,fontWeight:i<3?700:400,
-                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                      {entry.name}
-                    </div>
-                    <div style={{color:i===0?"#f6d365":"#94a3b8",fontSize:13,fontWeight:700,flexShrink:0}}>
-                      ⏱ {fmtTime(entry.totalTime)}
-                    </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              {visibleBoard.map((entry, i) => (
+                <div key={entry.id} style={{
+                  display:"flex",alignItems:"center",gap:8,
+                  padding:"8px 10px",borderRadius:10,
+                  background: entry.rank===1 ? "rgba(246,211,101,0.1)" : entry.rank===2 ? "rgba(203,213,225,0.06)" : entry.rank===3 ? "rgba(205,127,50,0.08)" : "rgba(255,255,255,0.03)",
+                  border: entry.rank===1 ? "1px solid rgba(246,211,101,0.25)" : "1px solid rgba(255,255,255,0.05)",
+                }}>
+                  <div style={{fontSize:16,width:28,textAlign:"center",flexShrink:0}}>{rankMedal(entry.rank)}</div>
+                  <div style={{fontSize:14}}>{flag(entry.country)}</div>
+                  <div style={{flex:1,color:entry.rank===1?"#f6d365":"#e2e8f0",fontSize:13,fontWeight:entry.rank<=3?700:400,
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {entry.name}
                   </div>
-                ))}
-              </div>
+                  <div style={{color:entry.rank===1?"#f6d365":"#94a3b8",fontSize:13,fontWeight:700,flexShrink:0}}>
+                    ⏱ {fmtTime(entry.totalTime)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Expand / collapse button */}
+            {rankedBoard.length > 3 && (
+              <button onClick={()=>setExpanded(e=>!e)} style={{
+                width:"100%",marginTop:8,padding:"7px",borderRadius:8,
+                background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",
+                color:"#64748b",fontSize:12,cursor:"pointer",
+              }}>
+                {expanded
+                  ? (lang==="zh"?"▲ 收起":lang==="fr"?"▲ Réduire":"▲ Show less")
+                  : (lang==="zh"?`▼ 查看全部 ${rankedBoard.length} 名`:lang==="fr"?`▼ Voir les ${rankedBoard.length}`:`▼ See all ${rankedBoard.length}`)}
+              </button>
             )}
 
             {/* Player's own rank if outside top 10 */}
@@ -277,6 +300,13 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
             <div style={{textAlign:"center",marginTop:8,color:"#334155",fontSize:11}}>
               {lang==="zh"?"明天再来争第一！":lang==="fr"?"Reviens demain pour la première place !":"Come back tomorrow for #1!"}
             </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {rankedBoard.length === 0 && !loading && submitted && (
+          <div style={{textAlign:"center",color:"#475569",fontSize:13,padding:"12px 0"}}>
+            🏆 {lang==="zh"?"你是第一个！":lang==="fr"?"Tu es le premier !":"You're the first one today!"}
           </div>
         )}
       </div>

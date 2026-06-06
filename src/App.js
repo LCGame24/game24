@@ -2675,6 +2675,8 @@ function BattleScreen({ lang, setLang, onBack }) {
   const [robotDoubleDmg, setRobotDoubleDmg] = useState(false);
   const hackPenaltyRef = useRef(0);
   const robotElapsedRef = useRef(0);
+  const [robotElapsed, setRobotElapsed] = useState(0); // for progress bar display
+  const [shieldBlocked, setShieldBlocked] = useState(false); // flash when shield blocks
 
   // 3D effect states
   const [robotState, setRobotState] = useState("idle");
@@ -2751,6 +2753,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   function startRound() {
     roundEndRef.current=false; hackPenaltyRef.current=0; robotElapsedRef.current=0;
+    setRobotElapsed(0); setShieldBlocked(false);
     const nc=dealCards();
     setCards(nc); setNumbers(nc.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
     setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""});
@@ -2781,9 +2784,11 @@ function BattleScreen({ lang, setLang, onBack }) {
     if(phase!=="playing"||roundEndRef.current) return;
     const {minThinkTime,solveChance}=ROBOT_SPEED[robotDiff];
     robotElapsedRef.current=0;
+    setRobotElapsed(0);
     robotRef.current=setInterval(()=>{
       if(roundEndRef.current){clearInterval(robotRef.current);return;}
       robotElapsedRef.current+=1;
+      setRobotElapsed(robotElapsedRef.current);
       if(robotElapsedRef.current<minThinkTime+hackPenaltyRef.current) return;
       if(Math.random()<solveChance){clearInterval(robotRef.current);doRobotSolve();}
     },1000);
@@ -2820,8 +2825,16 @@ function BattleScreen({ lang, setLang, onBack }) {
       setRobotState("solved");
     }
     if(winner==="robot"||winner==="timeout") {
-      if(shield){setShield(false);}
-      else{pl=Math.max(0,playerLives-robotDmg);pll=playerLivesLost+robotDmg;setPlayerLives(pl);setPlayerLivesLost(pll);}
+      if(shield){
+        setShield(false);
+        setShieldBlocked(true);
+        setTimeout(()=>setShieldBlocked(false), 1500);
+      } else {
+        pl=Math.max(0,playerLives-robotDmg);
+        pll=playerLivesLost+robotDmg;
+        setPlayerLives(pl);
+        setPlayerLivesLost(pll);
+      }
     }
     if(winner==="player"){rl=Math.max(0,robotLives-dmg);setRobotLives(rl);if(doubleDmg)setDoubleDmg(false);}
     if(winner==="timeout"){rl=Math.max(0,robotLives-1);setRobotLives(rl);}
@@ -3134,7 +3147,45 @@ function BattleScreen({ lang, setLang, onBack }) {
                robotState==="hack"?(lang==="zh"?"系统错误...":lang==="fr"?"ERREUR SYSTEME...":"SYSTEM ERROR..."):
                (lang==="zh"?"正在思考...":lang==="fr"?"Reflechit...":"Thinking...")}
             </div>
-            {cancelledOp&&<div style={{color:"#f59e0b",fontSize:10,fontWeight:700,marginTop:2}}>✂️ {cancelledOp} {lang==="zh"?"已取消":lang==="fr"?"annule":"cancelled"}</div>}
+            {/* Robot progress bar */}
+          {!robotSolved&&phase==="playing"&&(
+            <div style={{marginTop:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                <div style={{color:"#475569",fontSize:10}}>
+                  {lang==="zh"?"机器人进度":lang==="fr"?"Progression":"Robot progress"}
+                </div>
+                <div style={{color:"#475569",fontSize:10}}>
+                  {robotElapsed < rs.minThinkTime
+                    ? (lang==="zh"?"准备中...":lang==="fr"?"Preparation...":"Warming up...")
+                    : (lang==="zh"?"随时可解！":lang==="fr"?"Pret a resoudre !":"Ready to solve!")}
+                </div>
+              </div>
+              <div style={{height:6,borderRadius:3,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
+                <div style={{
+                  height:"100%",borderRadius:3,
+                  width:`${Math.min(100, (robotElapsed / (rs.minThinkTime + 10)) * 100)}%`,
+                  background: robotElapsed >= rs.minThinkTime
+                    ? "linear-gradient(90deg,#f59e0b,#ef4444)"
+                    : `linear-gradient(90deg,${rs.color}88,${rs.color})`,
+                  transition:"width 1s linear, background 0.5s",
+                  boxShadow: robotElapsed >= rs.minThinkTime ? "0 0 8px rgba(239,68,68,0.6)" : "none",
+                }}/>
+              </div>
+            </div>
+          )}
+
+          {/* Shield blocked flash */}
+          {shieldBlocked&&(
+            <div style={{
+              marginTop:8,textAlign:"center",
+              background:"rgba(96,165,250,0.15)",border:"1px solid #60a5fa",
+              borderRadius:8,padding:"4px 10px",
+              color:"#60a5fa",fontSize:12,fontWeight:800,
+              animation:"popIn 0.3s ease",
+            }}>
+              🛡️ {lang==="zh"?"护盾格挡了攻击！":lang==="fr"?"Bouclier actif — attaque bloquée !":"Shield blocked the attack!"}
+            </div>
+          )}
           </div>
 
           {/* Thinking dots */}

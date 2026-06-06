@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore";
 
 // ── Firebase Global Leaderboard ────────────────────────────────────────────
 const FIREBASE_CONFIG = {
@@ -8,30 +10,13 @@ const FIREBASE_CONFIG = {
   projectId: "game24-e6977",
 };
 
-let db = null;
-
-async function getFirestore() {
-  if (db) return db;
-  try {
-    const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const { getFirestore: _getFirestore } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
-    db = _getFirestore(app);
-    return db;
-  } catch(e) {
-    console.warn("Firebase unavailable:", e);
-    return null;
-  }
-}
+const firebaseApp = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
+const db = getFirestore(firebaseApp);
 
 async function submitDailyScore({ dateKey, name, totalTime, hintsUsed }) {
   try {
-    const firestore = await getFirestore();
-    if (!firestore) return null;
-    const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    // Detect country via browser language as proxy
     const country = navigator.language?.split("-")[1] || "??";
-    const docRef = await addDoc(collection(firestore, "daily_scores"), {
+    const docRef = await addDoc(collection(db, "daily_scores"), {
       dateKey, name, totalTime, hintsUsed, country,
       timestamp: serverTimestamp(),
     });
@@ -44,11 +29,8 @@ async function submitDailyScore({ dateKey, name, totalTime, hintsUsed }) {
 
 async function fetchDailyLeaderboard(dateKey) {
   try {
-    const firestore = await getFirestore();
-    if (!firestore) return null;
-    const { collection, query, where, orderBy, limit, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const q = query(
-      collection(firestore, "daily_scores"),
+      collection(db, "daily_scores"),
       where("dateKey", "==", dateKey),
       orderBy("totalTime", "asc"),
       limit(10)
@@ -63,11 +45,8 @@ async function fetchDailyLeaderboard(dateKey) {
 
 async function fetchPlayerRank(dateKey, totalTime) {
   try {
-    const firestore = await getFirestore();
-    if (!firestore) return null;
-    const { collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const q = query(
-      collection(firestore, "daily_scores"),
+      collection(db, "daily_scores"),
       where("dateKey", "==", dateKey),
       orderBy("totalTime", "asc"),
     );

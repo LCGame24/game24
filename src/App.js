@@ -833,31 +833,6 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
           </div>
         </button>
 
-        {/* Daily Challenge */}
-        <button onClick={()=>onDaily()} style={{
-          width:"100%",padding:"24px 20px",borderRadius:20,
-          background:"linear-gradient(135deg,#1e2a4a,#0f1f3d)",
-          cursor:"pointer",textAlign:"left",
-          boxShadow:"0 8px 32px rgba(96,165,250,0.15)",
-          border:"1px solid rgba(96,165,250,0.35)",
-          transition:"all 0.2s",
-          position:"relative",overflow:"hidden",
-        }}>
-          {/* NEW badge */}
-          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":lang==="fr"?"QUOTIDIEN":"DAILY"}</div>
-          <div style={{display:"flex",alignItems:"center",gap:16}}>
-            <div style={{fontSize:44}}>📅</div>
-            <div>
-              <div style={{color:"#93c5fd",fontWeight:900,fontSize:22,marginBottom:4}}>
-                {lang==="zh"?"每日挑战":lang==="fr"?"Defi du Jour":"Daily Challenge"}
-              </div>
-              <div style={{color:"#64748b",fontSize:13}}>
-                {lang==="zh"?"每天同一道题，全球一起挑战！":lang==="fr"?"Le meme puzzle chaque jour pour tous !":"Same puzzle, every player, every day"}
-              </div>
-            </div>
-          </div>
-        </button>
-
         {/* Battle Mode — LIVE */}
         <button onClick={()=>onBattle()} style={{
           width:"100%",padding:"24px 20px",borderRadius:20,
@@ -877,6 +852,31 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
                 {lang==="zh"?"你的大脑就是你的武器":lang==="fr"?"Ton cerveau est ton arme":"Your brain is your weapon"}
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* Daily Challenge */}
+        <button onClick={()=>onDaily()} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,
+          background:"linear-gradient(135deg,#1e2a4a,#0f1f3d)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(96,165,250,0.15)",
+          border:"1px solid rgba(96,165,250,0.35)",
+          transition:"all 0.2s",
+          position:"relative",overflow:"hidden",
+        }}>
+          {/* DAILY badge */}
+          <div style={{position:"absolute",top:12,right:12,background:"rgba(96,165,250,0.2)",border:"1px solid #60a5fa",borderRadius:8,padding:"2px 8px",color:"#60a5fa",fontSize:10,fontWeight:700,letterSpacing:1}}>📅 {lang==="zh"?"每日更新":lang==="fr"?"QUOTIDIEN":"DAILY"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>📅</div>
+            <div>
+              <div style={{color:"#93c5fd",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"每日挑战":lang==="fr"?"Defi du Jour":"Daily Challenge"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"每天同一道题，全球一起挑战！":lang==="fr"?"Le meme puzzle chaque jour pour tous !":"Same puzzle, every player, every day"}
               </div>
             </div>
           </div>
@@ -940,7 +940,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
               width:"100%",padding:"10px",borderRadius:12,
               border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
               color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-            }}>← {lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Back to Main Menu"}</button>
+            }}>🏠</button>
           </div>
         </div>
       )}
@@ -1090,7 +1090,7 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
           border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.04)",
           color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",
-        }}>← {lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Back to Main Menu"}</button>
+        }}>🏠</button>
 
         {/* Badges Modal */}
         {showBadges&&(
@@ -1533,7 +1533,7 @@ function JuniorScreen({lang, setLang, onBack}) {
           width:"100%",padding:"10px",borderRadius:12,marginTop:8,
           border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
           color:"#64748b",fontSize:13,cursor:"pointer",
-        }}>← {lang==="zh"?"返回主菜单":lang==="fr"?"Menu principal":"Back to Main Menu"}</button>
+        }}>🏠</button>
       </div>
 
       {/* Leaderboard Modal */}

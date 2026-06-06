@@ -964,7 +964,7 @@ function IntroDemoModal({ lang, onDone }) {
 }
 
 // ── Setup screen ───────────────────────────────────────────────────────────
-function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
+function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
   const [showInstructions,setShowInstructions]=useState(!skipInstructions);
@@ -1039,6 +1039,30 @@ function SetupScreen({onStart, onJunior, onDaily, onBattle, onStats, lang, setLa
               </div>
               <div style={{color:"#64748b",fontSize:13}}>
                 {lang==="zh"?"每天同一道题，全球一起挑战！":lang==="fr"?"Le même puzzle chaque jour pour tous !":"Same puzzle, every player, every day"}
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* Quick Play — instant game, no setup */}
+        <button onClick={()=>onQuickPlay()} style={{
+          width:"100%",padding:"24px 20px",borderRadius:20,
+          background:"linear-gradient(135deg,#1a3a1a,#0f280f)",
+          cursor:"pointer",textAlign:"left",
+          boxShadow:"0 8px 32px rgba(246,211,101,0.15)",
+          border:"1px solid rgba(246,211,101,0.35)",
+          transition:"all 0.2s",
+          position:"relative",overflow:"hidden",
+        }}>
+          <div style={{position:"absolute",top:12,right:12,background:"rgba(246,211,101,0.15)",border:"1px solid #f6d365",borderRadius:8,padding:"2px 8px",color:"#f6d365",fontSize:10,fontWeight:700,letterSpacing:1}}>⚡ {lang==="zh"?"立即开始":lang==="fr"?"RAPIDE":"INSTANT"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            <div style={{fontSize:44}}>⚡</div>
+            <div>
+              <div style={{color:"#f6d365",fontWeight:900,fontSize:22,marginBottom:4}}>
+                {lang==="zh"?"快速游戏":lang==="fr"?"Partie Rapide":"Quick Play"}
+              </div>
+              <div style={{color:"#64748b",fontSize:13}}>
+                {lang==="zh"?"一键开始，3局简单模式":lang==="fr"?"3 manches faciles — aucun réglage !":"3 rounds, Easy mode — jump straight in!"}
               </div>
             </div>
           </div>
@@ -3684,10 +3708,25 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           )}
         </div>
 
-        {/* Come back tomorrow */}
-        <div style={{background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:14,padding:"10px 20px",marginBottom:20,textAlign:"center",maxWidth:320,width:"100%"}}>
-          <div style={{color:"#60a5fa",fontSize:13,fontWeight:700}}>
-            {lang==="zh"?"🌅 明天再来！每天都有新题目。":lang==="fr"?"🌅 Revenez demain pour un nouveau puzzle !":"🌅 Come back tomorrow for a new puzzle!"}
+        {/* Come back tomorrow — enhanced streak nudge */}
+        <div style={{background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.25)",borderRadius:14,padding:"14px 20px",marginBottom:20,textAlign:"center",maxWidth:320,width:"100%"}}>
+          {streak.count > 0 && (
+            <div style={{marginBottom:8}}>
+              <span style={{
+                fontSize:28,fontWeight:900,
+                background:"linear-gradient(90deg,#f472b6,#f97316)",
+                WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              }}>🔥 {streak.count} {lang==="zh"?"天连续":lang==="fr"?"jour"+(streak.count>1?"s":"")+" de suite":"day streak"}</span>
+              <div style={{color:"#94a3b8",fontSize:12,marginTop:2}}>
+                {lang==="zh"?"继续保持——明天别忘了来！":lang==="fr"?"Continue comme ça — reviens demain !":"Keep it going — don't break it!"}
+              </div>
+            </div>
+          )}
+          <div style={{color:"#60a5fa",fontSize:13,fontWeight:700,marginBottom:4}}>
+            🌅 {lang==="zh"?"明天的新题目等着你！":lang==="fr"?"Un nouveau puzzle demain !":"New puzzle drops tomorrow!"}
+          </div>
+          <div style={{color:"#475569",fontSize:11}}>
+            {lang==="zh"?"每天午夜更新":lang==="fr"?"Renouvellement à minuit":"Resets at midnight"}
           </div>
         </div>
 
@@ -3699,6 +3738,19 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           <button onClick={handleShare} disabled={sharing} style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",border:"none",borderRadius:12,padding:"12px 20px",color:"white",fontSize:14,fontWeight:800,cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,boxShadow:"0 4px 20px rgba(59,130,246,0.35)"}}>
             {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"📤 分享成绩":lang==="fr"?"📤 Partager":"📤 Share")}
           </button>
+        </div>
+
+        {/* Want more nudge */}
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{color:"#475569",fontSize:12,marginBottom:8}}>
+            {lang==="zh"?"还想继续玩？":lang==="fr"?"Envie de jouer encore ?":"Want more puzzles?"}
+          </div>
+          <button onClick={onBack} style={{
+            background:"linear-gradient(135deg,#f6d36522,#fda08522)",
+            border:"1px solid rgba(246,211,101,0.35)",
+            borderRadius:12,padding:"10px 24px",
+            color:"#f6d365",fontSize:13,fontWeight:800,cursor:"pointer",
+          }}>⚡ {lang==="zh"?"快速游戏":lang==="fr"?"Partie Rapide":"Quick Play"}</button>
         </div>
 
         {/* Hidden share card */}
@@ -4340,9 +4392,20 @@ export default function App() {
   const t=T[lang];
   const msgColor={win:"#34d399",bad:"#ef4444",step:"#f6d365","":"#94a3b8"}[message.type]||"#94a3b8";
 
+  function startQuickPlay() {
+    startGame({
+      difficulty: "Easy",
+      numPlayers: 1,
+      names: ["Player"],
+      rounds: 3,
+      soloTimer: true,
+      isQuickPlay: true,
+    });
+  }
+
   if (showIntro) return <IntroDemoModal lang={lang} onDone={()=>setShowIntro(false)}/>;
 
-  if (screen==="setup") return <SetupScreen onStart={startGame} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} onBattle={()=>setScreen("battle")} onStats={()=>setScreen("stats")} lang={lang} setLang={setLang}
+  if (screen==="setup") return <SetupScreen onStart={startGame} onQuickPlay={startQuickPlay} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} onBattle={()=>setScreen("battle")} onStats={()=>setScreen("stats")} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}
     autoSelectHard={justUnlockedHard} setJustUnlockedHard={setJustUnlockedHard}
     badges={badges} personalBest={personalBest}

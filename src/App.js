@@ -4330,6 +4330,7 @@ export default function App() {
   const [badges,setBadges]=useState(()=>loadBadges());
   const [newBadges,setNewBadges]=useState([]);
   const [personalBest,setPersonalBest]=useState(()=>loadPersonalBest());
+  const [newPersonalBest,setNewPersonalBest]=useState(null); // {diff, oldScore, newScore}
   const [showConfetti,setShowConfetti]=useState(false);
   const [totalSolves,setTotalSolves]=useState(0);
   const [skipUsed,setSkipUsed]=useState(false);
@@ -4583,6 +4584,9 @@ export default function App() {
       const newPB={...personalBest,[pbKey]:newScore};
       setPersonalBest(newPB);
       savePersonalBest(newPB);
+      setNewPersonalBest({diff:difficulty, oldScore:currentPB, newScore});
+    } else {
+      setNewPersonalBest(null);
     }
 
     // Check badges
@@ -4787,6 +4791,7 @@ export default function App() {
   if (screen==="gameEnd") return (
     <GameEnd players={players} onRestart={()=>{setSkipInstructions(false);setPreSelectDiff(null);setScreen("setup");}} onPlayAgain={()=>{ setSkipInstructions(true); setPreSelectDiff(difficulty); setScreen("setup"); }} difficulty={difficulty} lang={lang} setLang={setLang}
       leaderboard={leaderboard} setLeaderboard={setLeaderboard} badges={badges}
+      newPersonalBest={newPersonalBest}
       onKeepPlaying={()=>{ dealCards(deck, difficulty); setRound(1); setCurrentPlayer(0); setScreen("game"); setPlayers(ps=>ps.map(p=>({...p,score:0,streak:0,hintsUsed:0}))); }}/>
   );
 
@@ -5469,7 +5474,7 @@ export default function App() {
 }
 
 // ── Game End screen ────────────────────────────────────────────────────────
-function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,setLang,leaderboard,setLeaderboard,badges}) {
+function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,setLang,leaderboard,setLeaderboard,badges,newPersonalBest}) {
   const t=T[lang];
   const sorted=[...players].sort((a,b)=>b.score-a.score);
   const winner=sorted[0];
@@ -5584,6 +5589,43 @@ function GameEnd({players,onRestart,onPlayAgain,onKeepPlaying,difficulty,lang,se
             </div>
           );
         })}
+
+        {/* Personal Best banner */}
+        {newPersonalBest && (
+          <div style={{
+            marginTop:4,
+            background:"linear-gradient(135deg,rgba(246,211,101,0.15),rgba(253,160,133,0.15))",
+            border:"1px solid rgba(246,211,101,0.5)",
+            borderRadius:14,padding:"12px 16px",
+            display:"flex",alignItems:"center",gap:12,
+            animation:"fadeIn 0.5s ease 0.3s both",
+          }}>
+            <div style={{fontSize:28}}>🎉</div>
+            <div style={{flex:1}}>
+              <div style={{
+                fontWeight:900,fontSize:14,
+                background:"linear-gradient(90deg,#f6d365,#fda085)",
+                WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              }}>
+                {lang==="zh"?"新个人最高分！":lang==="fr"?"Nouveau record personnel !":"New Personal Best!"}
+              </div>
+              <div style={{color:"#94a3b8",fontSize:12,marginTop:2}}>
+                {newPersonalBest.oldScore > 0
+                  ? (lang==="zh"
+                      ? `${newPersonalBest.newScore} 分 — 超越了之前的 ${newPersonalBest.oldScore} 分！`
+                      : lang==="fr"
+                      ? `${newPersonalBest.newScore} pts — en hausse par rapport à ${newPersonalBest.oldScore} !`
+                      : `${newPersonalBest.newScore} pts — up from ${newPersonalBest.oldScore}!`)
+                  : (lang==="zh"
+                      ? `首次得分：${newPersonalBest.newScore} 分！`
+                      : lang==="fr"
+                      ? `Premier score : ${newPersonalBest.newScore} pts !`
+                      : `First score on record: ${newPersonalBest.newScore} pts!`)}
+              </div>
+            </div>
+            <div style={{fontSize:22}}>⭐</div>
+          </div>
+        )}
       </div>
 
       {/* Shareable card — hidden off-screen, captured by html2canvas */}

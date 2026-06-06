@@ -1,8 +1,20 @@
-// Game 24 | 24点 — Service Worker Registration
+// Service worker REMOVAL script
+// Unregisters any existing service workers so users never get blank pages
+// from stale cached bundles after a new deployment.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(reg => console.log('Game 24: SW registered', reg.scope))
-      .catch(err => console.log('Game 24: SW registration failed', err));
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    registrations.forEach(function(registration) {
+      registration.unregister();
+      console.log('[SW] Unregistered:', registration.scope);
+    });
   });
+  // Also clear all caches to ensure fresh assets load
+  if ('caches' in window) {
+    caches.keys().then(function(cacheNames) {
+      cacheNames.forEach(function(cacheName) {
+        caches.delete(cacheName);
+        console.log('[SW] Cleared cache:', cacheName);
+      });
+    });
+  }
 }

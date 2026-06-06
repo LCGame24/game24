@@ -13,11 +13,11 @@ const FIREBASE_CONFIG = {
 const firebaseApp = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(firebaseApp);
 
-async function submitDailyScore({ dateKey, name, totalTime, hintsUsed }) {
+async function submitDailyScore({ dateKey, name, totalTime, hintsUsed, country }) {
   try {
-    const country = navigator.language?.split("-")[1] || "??";
     const docRef = await addDoc(collection(db, "daily_scores"), {
-      dateKey, name, totalTime, hintsUsed, country,
+      dateKey, name, totalTime, hintsUsed,
+      country: country || "??",
       timestamp: serverTimestamp(),
     });
     return docRef.id;
@@ -60,6 +60,8 @@ async function fetchPlayerRank(dateKey, totalTime) {
 
 function loadLBName() { try { return localStorage.getItem("game24_lb_name")||""; } catch { return ""; } }
 function saveLBName(n) { try { localStorage.setItem("game24_lb_name", n); } catch {} }
+function loadLBCountry() { try { return localStorage.getItem("game24_lb_country")||"SG"; } catch { return "SG"; } }
+function saveLBCountry(c) { try { localStorage.setItem("game24_lb_country", c); } catch {} }
 function loadLBSubmitted(dateKey) { try { return localStorage.getItem(`game24_lb_submitted_${dateKey}`)==="1"; } catch { return false; } }
 function saveLBSubmitted(dateKey) { try { localStorage.setItem(`game24_lb_submitted_${dateKey}`, "1"); } catch {} }
 
@@ -71,6 +73,7 @@ function fmtTime(s) {
 
 function GlobalLeaderboard({ dateKey, totalTime, lang }) {
   const [name, setName] = useState(()=>loadLBName());
+  const [country, setCountry] = useState(()=>loadLBCountry());
   const [anon, setAnon] = useState(false);
   const [submitted, setSubmitted] = useState(()=>loadLBSubmitted(dateKey));
   const [submitting, setSubmitting] = useState(false);
@@ -104,9 +107,11 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
 
   async function handleSubmit() {
     const displayName = anon ? (lang==="zh"?"匿名玩家":lang==="fr"?"Anonyme":"Anonymous 🕵️") : (name.trim() || (lang==="zh"?"玩家":lang==="fr"?"Joueur":"Player"));
+    const displayCountry = anon ? "??" : country;
     setSubmitting(true);
     saveLBName(name.trim());
-    const id = await submitDailyScore({ dateKey, name: displayName, totalTime, hintsUsed: 0 });
+    saveLBCountry(country);
+    const id = await submitDailyScore({ dateKey, name: displayName, totalTime, hintsUsed: 0, country: displayCountry });
     saveLBSubmitted(dateKey);
     setSubmitted(true);
     setSubmitting(false);
@@ -114,7 +119,7 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
     else setError("offline");
   }
 
-  const flagMap = { SG:"🇸🇬", CN:"🇨🇳", FR:"🇫🇷", US:"🇺🇸", GB:"🇬🇧", AU:"🇦🇺", CA:"🇨🇦", MY:"🇲🇾", IN:"🇮🇳", JP:"🇯🇵", KR:"🇰🇷", DE:"🇩🇪" };
+  const flagMap = { SG:"🇸🇬", CN:"🇨🇳", FR:"🇫🇷", US:"🇺🇸", GB:"🇬🇧", AU:"🇦🇺", CA:"🇨🇦", MY:"🇲🇾", IN:"🇮🇳", JP:"🇯🇵", KR:"🇰🇷", DE:"🇩🇪", HK:"🇭🇰", TW:"🇹🇼", OTHER:"🌍" };
   const flag = (c) => flagMap[c?.toUpperCase()] || "🌍";
 
   const rankMedal = (r) => r===1?"🥇":r===2?"🥈":r===3?"🥉":`#${r}`;
@@ -142,6 +147,7 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
               {lang==="zh"?"提交你的成绩到全球排行榜！":lang==="fr"?"Soumets ton score au classement mondial !":"Submit your score to the global leaderboard!"}
             </div>
             {!anon && (
+              <>
               <input
                 value={name}
                 onChange={e=>setName(e.target.value)}
@@ -155,6 +161,33 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
                   outline:"none",boxSizing:"border-box",
                 }}
               />
+              <select
+                value={country}
+                onChange={e=>setCountry(e.target.value)}
+                style={{
+                  width:"100%",padding:"10px 12px",borderRadius:10,
+                  background:"#1e293b",
+                  border:"1px solid rgba(255,255,255,0.15)",
+                  color:"white",fontSize:14,marginBottom:8,
+                  outline:"none",boxSizing:"border-box",cursor:"pointer",
+                }}>
+                <option value="SG">🇸🇬 Singapore</option>
+                <option value="MY">🇲🇾 Malaysia</option>
+                <option value="CN">🇨🇳 China</option>
+                <option value="HK">🇭🇰 Hong Kong</option>
+                <option value="TW">🇹🇼 Taiwan</option>
+                <option value="JP">🇯🇵 Japan</option>
+                <option value="KR">🇰🇷 Korea</option>
+                <option value="IN">🇮🇳 India</option>
+                <option value="AU">🇦🇺 Australia</option>
+                <option value="GB">🇬🇧 United Kingdom</option>
+                <option value="FR">🇫🇷 France</option>
+                <option value="CA">🇨🇦 Canada</option>
+                <option value="US">🇺🇸 United States</option>
+                <option value="DE">🇩🇪 Germany</option>
+                <option value="OTHER">🌍 Other</option>
+              </select>
+              </>
             )}
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <input type="checkbox" id="anon" checked={anon} onChange={e=>setAnon(e.target.checked)}

@@ -1838,6 +1838,7 @@ function JuniorScreen({lang, setLang, onBack}) {
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [operator, setOperator] = useState(null);
   const [steps, setSteps] = useState([]);
+  const [undoStack, setUndoStack] = useState([]);
   const [message, setMessage] = useState({text:"",type:""});
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -1948,6 +1949,7 @@ function JuniorScreen({lang, setLang, onBack}) {
   }
 
   function applyJuniorOp(iA, op, iB) {
+    setUndoStack(s=>[...s, {numbers:[...numbers], steps:[...steps]}]);
     const a=numbers[iA].value, b=numbers[iB].value;
     const la=numbers[iA].label, lb=numbers[iB].label;
     let result;
@@ -2021,8 +2023,20 @@ function JuniorScreen({lang, setLang, onBack}) {
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
+    setUndoStack([]);
     setMessage({text:"",type:""});
     setJrHint(null);
+  }
+
+  function handleUndo() {
+    if (undoStack.length === 0) return;
+    const prev = undoStack[undoStack.length - 1];
+    setNumbers(prev.numbers);
+    setSteps(prev.steps);
+    setUndoStack(s=>s.slice(0,-1));
+    setSelectedIdx(null);
+    setOperator(null);
+    setMessage({text:"",type:""});
   }
 
   function handleJrHint() {
@@ -2611,15 +2625,23 @@ function JuniorScreen({lang, setLang, onBack}) {
 
       {/* Buttons */}
       {!turnOver?(
-        <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+          <button onClick={handleUndo} disabled={undoStack.length===0} style={{
+            background:"transparent",border:"2px solid #60a5fa",
+            borderRadius:10,padding:"8px 16px",
+            color:undoStack.length===0?"#334155":"#60a5fa",
+            borderColor:undoStack.length===0?"#334155":"#60a5fa",
+            fontSize:13,fontWeight:700,cursor:undoStack.length===0?"not-allowed":"pointer",
+            opacity:undoStack.length===0?0.4:1,
+          }}>↩ {lang==="zh"?"撤销":lang==="fr"?"Annuler":"Undo"}</button>
           <button onClick={handleReset} style={{
             background:"transparent",border:"2px solid #64748b",
-            borderRadius:10,padding:"8px 18px",color:"#64748b",
+            borderRadius:10,padding:"8px 16px",color:"#64748b",
             fontSize:13,fontWeight:700,cursor:"pointer",
           }}>↺ {lang==="zh"?"重置":lang==="fr"?"Reinitialiser":"Reset"}</button>
           <button onClick={handleJrHint} style={{
             background:"rgba(167,139,250,0.1)",border:"2px solid #a78bfa",
-            borderRadius:10,padding:"8px 18px",color:"#a78bfa",
+            borderRadius:10,padding:"8px 16px",color:"#a78bfa",
             fontSize:13,fontWeight:700,cursor:"pointer",
           }}>💡 {lang==="zh"?"帮帮我！":lang==="fr"?"Aide !":"Help!"}</button>
         </div>
@@ -3868,6 +3890,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [operator, setOperator] = useState(null);
   const [steps, setSteps] = useState([]);
+  const [undoStack, setUndoStack] = useState([]);
   const [message, setMessage] = useState({text:"",type:""});
   const [elapsed, setElapsed] = useState(0); // stopwatch
   const [hintsUsed, setHintsUsed] = useState(0);
@@ -3954,6 +3977,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   }
 
   function applySqrt(idx) {
+    setUndoStack(s=>[...s,{numbers:[...numbers],steps:[...steps]}]);
     const a=numbers[idx].value;
     if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":"Can't take sqrt of a negative number!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
     const result=Math.sqrt(a);
@@ -4002,7 +4026,16 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
   function handleReset() {
     setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
-    setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""}); setShowHintSteps(null);
+    setSelectedIdx(null); setOperator(null); setSteps([]); setUndoStack([]); setMessage({text:"",type:""}); setShowHintSteps(null);
+  }
+
+  function handleUndo() {
+    if (undoStack.length === 0) return;
+    const prev = undoStack[undoStack.length - 1];
+    setNumbers(prev.numbers);
+    setSteps(prev.steps);
+    setUndoStack(s=>s.slice(0,-1));
+    setSelectedIdx(null); setOperator(null); setMessage({text:"",type:""});
   }
 
   function handleHint() {
@@ -4372,6 +4405,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
       {/* Action buttons */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>
+        <button onClick={handleUndo} disabled={undoStack.length===0} style={{background:"transparent",border:`2px solid ${undoStack.length===0?"#1e3a5f":"#60a5fa"}`,borderRadius:10,padding:"7px 16px",color:undoStack.length===0?"#1e3a5f":"#60a5fa",fontSize:13,fontWeight:700,cursor:undoStack.length===0?"not-allowed":"pointer",opacity:undoStack.length===0?0.4:1}}>↩ {lang==="zh"?"撤销":lang==="fr"?"Annuler":"Undo"}</button>
         <button onClick={handleReset} style={{background:"transparent",border:"2px solid #64748b",borderRadius:10,padding:"7px 16px",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{t.reset}</button>
         <button onClick={handleHint} style={{background:"transparent",border:"2px solid #a78bfa",borderRadius:10,padding:"7px 16px",color:"#a78bfa",fontSize:13,fontWeight:700,cursor:"pointer"}}>
           {showHintSteps && showHintSteps.revealed < showHintSteps.steps.length
@@ -4437,6 +4471,7 @@ export default function App() {
   const [selectedIdx,setSelectedIdx]=useState(null); // index in numbers[]
   const [operator,setOperator]=useState(null);
   const [steps,setSteps]=useState([]); // [{expr, result}]
+  const [undoStack,setUndoStack]=useState([]);
   const [timeLeft,setTimeLeft]=useState(60);
   const [extensions,setExtensions]=useState(2);
   const [extFlash,setExtFlash]=useState(false);
@@ -4506,6 +4541,7 @@ export default function App() {
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
+    setUndoStack([]);
     setMessage({text:"",type:""});
     setShowHint(null); // reset step-by-step hint
     setTimeLeft(DIFFICULTY[diff].timeLimit);
@@ -4587,6 +4623,7 @@ export default function App() {
   }
 
   function applyOp(iA, op, iB) {
+    setUndoStack(s=>[...s,{numbers:[...numbers],steps:[...steps]}]);
     const a=numbers[iA].value, b=numbers[iB].value;
     const la=numbers[iA].label, lb=numbers[iB].label;
     let result;
@@ -4775,10 +4812,20 @@ export default function App() {
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
+    setUndoStack([]);
     setMessage({text:"",type:""});
     setShowHint(null);
     setAutoHint(null);
     if (autoHintRef.current) clearTimeout(autoHintRef.current);
+  }
+
+  function handleUndo() {
+    if (undoStack.length === 0) return;
+    const prev = undoStack[undoStack.length - 1];
+    setNumbers(prev.numbers);
+    setSteps(prev.steps);
+    setUndoStack(s=>s.slice(0,-1));
+    setSelectedIdx(null); setOperator(null); setMessage({text:"",type:""});
   }
 
   function handleHint() {
@@ -5439,6 +5486,13 @@ export default function App() {
       {/* Action buttons */}
       {!turnOver?(
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>
+          <button onClick={handleUndo} disabled={undoStack.length===0} style={{
+            background:"transparent",border:`2px solid ${undoStack.length===0?"#1e3a5f":"#60a5fa"}`,
+            borderRadius:10,padding:"7px 16px",
+            color:undoStack.length===0?"#1e3a5f":"#60a5fa",
+            fontSize:13,fontWeight:700,cursor:undoStack.length===0?"not-allowed":"pointer",
+            opacity:undoStack.length===0?0.4:1,
+          }}>↩ {lang==="zh"?"撤销":lang==="fr"?"Annuler":"Undo"}</button>
           {[
             {label:t.reset, action:handleReset, color:"#64748b", disabled:false},
             {

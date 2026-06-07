@@ -159,9 +159,19 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
         {/* Submit form */}
         {!submitted && (
           <div style={{marginBottom:12}}>
-            <div style={{color:"#94a3b8",fontSize:12,marginBottom:6,textAlign:"center"}}>
-              {lang==="zh"?"提交你的成绩到全球排行榜！":lang==="fr"?"Soumets ton score au classement mondial !":"Submit your score to the global leaderboard!"}
-            </div>
+            {/* Welcome back message if name is remembered */}
+            {name.trim() ? (
+              <div style={{
+                textAlign:"center",marginBottom:8,
+                color:"#34d399",fontSize:12,fontWeight:700,
+              }}>
+                👋 {lang==="zh"?`欢迎回来，${name}！`:lang==="fr"?`Bon retour, ${name} !`:`Welcome back, ${name}!`}
+              </div>
+            ) : (
+              <div style={{color:"#94a3b8",fontSize:12,marginBottom:6,textAlign:"center"}}>
+                {lang==="zh"?"提交你的成绩到全球排行榜！":lang==="fr"?"Soumets ton score au classement mondial !":"Submit your score to the global leaderboard!"}
+              </div>
+            )}
             {!anon && (
               <>
               <input
@@ -314,6 +324,66 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
   );
 }
 
+// ── Sound System v2 ────────────────────────────────────────────────────────
+// Uses real MP3 files from /public/sounds/ — reliable on all mobile browsers
+
+function loadSoundEnabled() { try { return localStorage.getItem("game24_sound") !== "0"; } catch { return true; } }
+function saveSoundEnabled(v) { try { localStorage.setItem("game24_sound", v ? "1" : "0"); } catch {} }
+
+const audioCache = {};
+function playSound(name) {
+  if (!loadSoundEnabled()) return;
+  try {
+    if (!audioCache[name]) {
+      audioCache[name] = new Audio(`/sounds/${name}.mp3`);
+      audioCache[name].preload = "auto";
+    }
+    const audio = audioCache[name];
+    audio.currentTime = 0;
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch(e) {}
+}
+
+function preloadSounds() {
+  ["card","operator","step","wrong","solve","hit","shield","robot","win"].forEach(name => {
+    if (!audioCache[name]) {
+      audioCache[name] = new Audio(`/sounds/${name}.mp3`);
+      audioCache[name].preload = "auto";
+    }
+  });
+}
+
+const SFX = {
+  card:     () => playSound("card"),
+  operator: () => playSound("operator"),
+  step:     () => playSound("step"),
+  wrong:    () => playSound("wrong"),
+  solve:    () => playSound("solve"),
+  hit:      () => playSound("hit"),
+  shield:   () => playSound("shield"),
+  robot:    () => playSound("robot"),
+  win:      () => playSound("win"),
+};
+
+function SoundToggle({ style }) {
+  const [on, setOn] = useState(() => loadSoundEnabled());
+  function toggle() {
+    const next = !on;
+    setOn(next);
+    saveSoundEnabled(next);
+    if (next) { preloadSounds(); playSound("card"); }
+  }
+  return (
+    <button onClick={toggle} title={on ? "Mute" : "Sound on"} style={{
+      background: on ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.06)",
+      border: `1px solid ${on ? "rgba(96,165,250,0.4)" : "rgba(255,255,255,0.12)"}`,
+      borderRadius: 16, padding: "3px 10px", fontSize: 14,
+      cursor: "pointer", transition: "all 0.2s",
+      ...style,
+    }}>{on ? "🔊" : "🔇"}</button>
+  );
+}
 
 const SUITS = ["♠","♥","♦","♣"];
 const VALUES = [1,2,3,4,5,6,7,8,9,10,11,12,13];
@@ -1325,6 +1395,7 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
           <button onClick={()=>onStats()} title="My Stats" style={{background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:16,padding:"3px 10px",color:"#a78bfa",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             <span>📊</span>
           </button>
+          <SoundToggle/>
         </div>
       </div>
 
@@ -1872,6 +1943,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       setSelectedIdx(idx);
       setOperator(null);
       setMessage({text:"",type:""});
+      SFX.card();
     } else if (selectedIdx===idx) {
       setSelectedIdx(null);
       setOperator(null);
@@ -1890,6 +1962,7 @@ function JuniorScreen({lang, setLang, onBack}) {
     else if (op==="÷") {
       if (Math.abs(b)<1e-9||Math.abs((a/b)-Math.round(a/b))>1e-9) {
         setMessage({text:lang==="zh"?"不能整除哦！":lang==="fr"?"La division n'est pas entiere !":"That doesn't divide evenly!",type:"bad"});
+        SFX.wrong();
         return;
       }
       result=a/b;
@@ -1903,11 +1976,14 @@ function JuniorScreen({lang, setLang, onBack}) {
     setOperator(null);
     if (newNums.length===1) {
       if (Math.abs(result-jl.target)<1e-9) {
+        SFX.solve();
         handleJuniorSolve();
       } else {
+        SFX.wrong();
         setMessage({text:lang==="zh"?`结果是${result}，不是${jl.target}，再试试！`:`${lang==="fr"?`Resultat ${result}, pas ${jl.target} — reessayez !`:`Got ${result}, not ${jl.target} — try resetting!`}`,type:"bad"});
       }
     } else {
+      SFX.step();
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
   }
@@ -3137,10 +3213,12 @@ function BattleScreen({ lang, setLang, onBack }) {
     }
     if(winner==="robot"||winner==="timeout") {
       if(shield){
+        SFX.shield();
         setShield(false);
         setShieldBlocked(true);
         setTimeout(()=>setShieldBlocked(false), 1500);
       } else {
+        SFX.hit();
         pl=Math.max(0,playerLives-robotDmg);
         pll=playerLivesLost+robotDmg;
         setPlayerLives(pl);
@@ -3152,6 +3230,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     if(pl<=0||rl<=0){
       const mw=pl<=0?"robot":"player"; setMatchWinner(mw);
       if(mw==="player"){
+        SFX.win();
         setShowConfetti(true); setTimeout(()=>setShowConfetti(false),3000);
         const tw=loadBattleWins()+1; saveBattleWins(tw);
         const earned=checkBattleBadges(battleBadges,{won:true,playerLivesLost:pll,robotDifficulty:robotDiff,totalWins:tw});
@@ -3169,12 +3248,13 @@ function BattleScreen({ lang, setLang, onBack }) {
     const orig=cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
     setRobotSolution(getHintSteps(orig)); setRobotSolved(true);
     setRobotState("solved");
+    SFX.robot();
     endRound("robot");
   }
 
   function handleNumberClick(idx) {
     if(phase!=="playing"||roundEndRef.current) return;
-    if(selectedIdx===null){setSelectedIdx(idx);setOperator(null);setMessage({text:"",type:""});}
+    if(selectedIdx===null){SFX.card();setSelectedIdx(idx);setOperator(null);setMessage({text:"",type:""});}
     else if(selectedIdx===idx){setSelectedIdx(null);setOperator(null);}
     else if(operator==="√"){doSqrt(selectedIdx);}
     else if(operator!==null){doOp(selectedIdx,operator,idx);}
@@ -3184,27 +3264,25 @@ function BattleScreen({ lang, setLang, onBack }) {
     const a=numbers[iA].value,b=numbers[iB].value,la=numbers[iA].label,lb=numbers[iB].label;
     let r;
     if(op==="+")r=a+b; else if(op==="−")r=a-b; else if(op==="×")r=a*b;
-    else if(op==="÷"){if(Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}r=a/b;}
+    else if(op==="÷"){if(Math.abs(b)<1e-9){SFX.wrong();setMessage({text:t.cantDivideZero,type:"bad"});return;}r=a/b;}
     else if(op==="^")r=Math.pow(a,b);
     const expr=`${la} ${op} ${lb} = ${fmt(r)}`;
     const nn=numbers.filter((_,i)=>i!==iA&&i!==iB);
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
     setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
-    if(nn.length===1){if(Math.abs(r-24)<1e-9){endRound("player");}else setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}
-    else
-    setMessage({text:`✓ ${expr}`,type:"step"});
+    if(nn.length===1){if(Math.abs(r-24)<1e-9){SFX.solve();endRound("player");}else{SFX.wrong();setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}}
+    else{SFX.step();setMessage({text:`✓ ${expr}`,type:"step"});}
   }
 
   function doSqrt(idx) {
     const a=numbers[idx].value;
-    if(a<0){setMessage({text:lang==="zh"?"不能对负数开方！":lang==="fr"?"Impossible avec un negatif !":"Can't sqrt negative!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
+    if(a<0){SFX.wrong();setMessage({text:lang==="zh"?"不能对负数开方！":lang==="fr"?"Impossible avec un negatif !":"Can't sqrt negative!",type:"bad"});setSelectedIdx(null);setOperator(null);return;}
     const r=Math.sqrt(a),expr=`√${fmt(a)} = ${fmt(r)}`;
     const nn=numbers.filter((_,i)=>i!==idx);
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
     setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
-    if(nn.length===1){if(Math.abs(r-24)<1e-9)endRound("player");else setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}
-    else
-    setMessage({text:`✓ ${expr}`,type:"step"});
+    if(nn.length===1){if(Math.abs(r-24)<1e-9){SFX.solve();endRound("player");}else{SFX.wrong();setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}}
+    else{SFX.step();setMessage({text:`✓ ${expr}`,type:"step"});}
   }
 
   function doReset(){setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));setSelectedIdx(null);setOperator(null);setSteps([]);setMessage({text:"",type:""});}
@@ -3833,8 +3911,8 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
   function handleNumberClick(idx) {
     if (phase !== "playing") return;
-
     if (selectedIdx === null) {
+      SFX.card();
       setSelectedIdx(idx); setOperator(null); setMessage({text:"",type:""});
     } else if (selectedIdx === idx) {
       setSelectedIdx(null); setOperator(null);
@@ -3855,13 +3933,13 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     else if (op==="−") result=a-b;
     else if (op==="×") result=a*b;
     else if (op==="÷") {
-      if (Math.abs(b)<1e-9){setMessage({text:t.cantDivideZero,type:"bad"});return;}
+      if (Math.abs(b)<1e-9){SFX.wrong();setMessage({text:t.cantDivideZero,type:"bad"});return;}
       result=a/b;
     } else if (op==="^") result=Math.pow(a,b);
     else if (op==="ʸ√") {
-      if (Math.abs(b)<1e-9){setMessage({text:lang==="zh"?"根指数不能为零！":"Root degree can't be zero!",type:"bad"});return;}
+      if (Math.abs(b)<1e-9){SFX.wrong();setMessage({text:lang==="zh"?"根指数不能为零！":"Root degree can't be zero!",type:"bad"});return;}
       if (a<0){
-        if(!Number.isInteger(b)||b%2===0){setMessage({text:lang==="zh"?"负数只能开奇数次方根！":"Odd integer root only for negative base!",type:"bad"});return;}
+        if(!Number.isInteger(b)||b%2===0){SFX.wrong();setMessage({text:lang==="zh"?"负数只能开奇数次方根！":"Odd integer root only for negative base!",type:"bad"});return;}
         result=-(Math.pow(-a,1/b));
       } else result=Math.pow(a,1/b);
     }
@@ -3872,9 +3950,10 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     setNumbers(newNums);
     setSelectedIdx(null); setOperator(null);
     if (newNums.length===1) {
-      if (Math.abs(result-24)<1e-9) handleSolve(newNums);
-      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+      if (Math.abs(result-24)<1e-9) { SFX.solve(); handleSolve(newNums); }
+      else { SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"}); }
     } else {
+      SFX.step();
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
   }
@@ -4256,7 +4335,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           <OpBtn key={op} op={op} active={operator===op} onClick={()=>{
             if(op==="!"&&selectedIdx!==null){applyFactorial(selectedIdx);}
             else if(op==="√"&&selectedIdx!==null){applySqrt(selectedIdx);}
-            else if(selectedIdx!==null){setOperator(o=>o===op?null:op);}
+            else if(selectedIdx!==null){SFX.operator();setOperator(o=>o===op?null:op);}
           }} disabled={false}/>
         ))}
       </div>
@@ -4319,6 +4398,14 @@ export default function App() {
   const [config,setConfig]=useState(null);
   const [lang,setLang]=useState("en");
   const [showIntro,setShowIntro]=useState(()=>!loadIntroDone());
+
+  // Preload sounds on first user interaction
+  useEffect(()=>{
+    const handler = ()=>{ preloadSounds(); document.removeEventListener("touchstart", handler); document.removeEventListener("mousedown", handler); };
+    document.addEventListener("touchstart", handler, {once:true});
+    document.addEventListener("mousedown", handler, {once:true});
+    return ()=>{ document.removeEventListener("touchstart", handler); document.removeEventListener("mousedown", handler); };
+  },[]);
   const [showHelp,setShowHelp]=useState(false);
   const [unlocked,setUnlocked]=useState(()=>({Easy:true,Medium:true,Hard:loadUnlocked().Hard||false}));
   const [justUnlockedHard,setJustUnlockedHard]=useState(false);
@@ -4574,6 +4661,7 @@ export default function App() {
     });
 
     // Confetti!
+    SFX.solve();
     setShowConfetti(true);
     setTimeout(()=>setShowConfetti(false),2500);
 
@@ -4746,6 +4834,7 @@ export default function App() {
     const totalTurns=config.numPlayers*ROUNDS_PER_PLAYER;
     const currentTurn=(round-1)*config.numPlayers+currentPlayer;
     if (currentTurn+1>=totalTurns) {
+      SFX.win();
       setScreen("gameEnd");
       return;
     }
@@ -5230,6 +5319,7 @@ export default function App() {
                   } else if (op==="√" && selectedIdx!==null) {
                     applySqrt(selectedIdx);
                   } else if (selectedIdx!==null) {
+                    SFX.operator();
                     setOperator(o=>o===op?null:op);
                   }
                 }} disabled={!allowed}/>

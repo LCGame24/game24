@@ -346,7 +346,7 @@ function playSound(name) {
 }
 
 function preloadSounds() {
-  ["card","operator","wrong","solve","hit","shield","robot","win"].forEach(name => {
+  ["wrong","solve","robot","win"].forEach(name => {
     if (!audioCache[name]) {
       audioCache[name] = new Audio(`/sounds/${name}.mp3`);
       audioCache[name].preload = "auto";
@@ -355,12 +355,8 @@ function preloadSounds() {
 }
 
 const SFX = {
-  card:     () => playSound("card"),
-  operator: () => playSound("operator"),
   wrong:    () => playSound("wrong"),
   solve:    () => playSound("solve"),
-  hit:      () => playSound("hit"),
-  shield:   () => playSound("shield"),
   robot:    () => playSound("robot"),
   win:      () => playSound("win"),
 };
@@ -371,7 +367,7 @@ function SoundToggle({ style }) {
     const next = !on;
     setOn(next);
     saveSoundEnabled(next);
-    if (next) { preloadSounds(); playSound("card"); }
+    if (next) { preloadSounds(); playSound("solve"); }
   }
   return (
     <button onClick={toggle} title={on ? "Mute" : "Sound on"} style={{
@@ -1942,7 +1938,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       setSelectedIdx(idx);
       setOperator(null);
       setMessage({text:"",type:""});
-      SFX.card();
+      
     } else if (selectedIdx===idx) {
       setSelectedIdx(null);
       setOperator(null);
@@ -3212,12 +3208,12 @@ function BattleScreen({ lang, setLang, onBack }) {
     }
     if(winner==="robot"||winner==="timeout") {
       if(shield){
-        SFX.shield();
+        
         setShield(false);
         setShieldBlocked(true);
         setTimeout(()=>setShieldBlocked(false), 1500);
       } else {
-        SFX.hit();
+        
         pl=Math.max(0,playerLives-robotDmg);
         pll=playerLivesLost+robotDmg;
         setPlayerLives(pl);
@@ -3253,7 +3249,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
   function handleNumberClick(idx) {
     if(phase!=="playing"||roundEndRef.current) return;
-    if(selectedIdx===null){SFX.card();setSelectedIdx(idx);setOperator(null);setMessage({text:"",type:""});}
+    if(selectedIdx===null){setSelectedIdx(idx);setOperator(null);setMessage({text:"",type:""});}
     else if(selectedIdx===idx){setSelectedIdx(null);setOperator(null);}
     else if(operator==="√"){doSqrt(selectedIdx);}
     else if(operator!==null){doOp(selectedIdx,operator,idx);}
@@ -3911,7 +3907,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   function handleNumberClick(idx) {
     if (phase !== "playing") return;
     if (selectedIdx === null) {
-      SFX.card();
+      
       setSelectedIdx(idx); setOperator(null); setMessage({text:"",type:""});
     } else if (selectedIdx === idx) {
       setSelectedIdx(null); setOperator(null);
@@ -4334,7 +4330,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           <OpBtn key={op} op={op} active={operator===op} onClick={()=>{
             if(op==="!"&&selectedIdx!==null){applyFactorial(selectedIdx);}
             else if(op==="√"&&selectedIdx!==null){applySqrt(selectedIdx);}
-            else if(selectedIdx!==null){SFX.operator();setOperator(o=>o===op?null:op);}
+            else if(selectedIdx!==null){setOperator(o=>o===op?null:op);}
           }} disabled={false}/>
         ))}
       </div>
@@ -5318,7 +5314,7 @@ export default function App() {
                   } else if (op==="√" && selectedIdx!==null) {
                     applySqrt(selectedIdx);
                   } else if (selectedIdx!==null) {
-                    SFX.operator();
+                    
                     setOperator(o=>o===op?null:op);
                   }
                 }} disabled={!allowed}/>

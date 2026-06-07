@@ -346,7 +346,7 @@ function playSound(name) {
 }
 
 function preloadSounds() {
-  ["card","operator","step","wrong","solve","hit","shield","robot","win"].forEach(name => {
+  ["card","operator","wrong","solve","hit","shield","robot","win"].forEach(name => {
     if (!audioCache[name]) {
       audioCache[name] = new Audio(`/sounds/${name}.mp3`);
       audioCache[name].preload = "auto";
@@ -357,7 +357,6 @@ function preloadSounds() {
 const SFX = {
   card:     () => playSound("card"),
   operator: () => playSound("operator"),
-  step:     () => playSound("step"),
   wrong:    () => playSound("wrong"),
   solve:    () => playSound("solve"),
   hit:      () => playSound("hit"),
@@ -1983,7 +1982,7 @@ function JuniorScreen({lang, setLang, onBack}) {
         setMessage({text:lang==="zh"?`结果是${result}，不是${jl.target}，再试试！`:`${lang==="fr"?`Resultat ${result}, pas ${jl.target} — reessayez !`:`Got ${result}, not ${jl.target} — try resetting!`}`,type:"bad"});
       }
     } else {
-      SFX.step();
+      
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
   }
@@ -3271,7 +3270,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
     setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
     if(nn.length===1){if(Math.abs(r-24)<1e-9){SFX.solve();endRound("player");}else{SFX.wrong();setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}}
-    else{SFX.step();setMessage({text:`✓ ${expr}`,type:"step"});}
+    else{setMessage({text:`✓ ${expr}`,type:"step"});}
   }
 
   function doSqrt(idx) {
@@ -3282,7 +3281,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     nn.push({value:r,label:fmt(r),sourceId:`s${steps.length+1}`});
     setSteps(s=>[...s,{expr,r}]); setNumbers(nn); setSelectedIdx(null); setOperator(null);
     if(nn.length===1){if(Math.abs(r-24)<1e-9){SFX.solve();endRound("player");}else{SFX.wrong();setMessage({text:t.notTwentyFour(fmt(r)),type:"bad"});}}
-    else{SFX.step();setMessage({text:`✓ ${expr}`,type:"step"});}
+    else{setMessage({text:`✓ ${expr}`,type:"step"});}
   }
 
   function doReset(){setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));setSelectedIdx(null);setOperator(null);setSteps([]);setMessage({text:"",type:""});}
@@ -3953,7 +3952,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
       if (Math.abs(result-24)<1e-9) { SFX.solve(); handleSolve(newNums); }
       else { SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"}); }
     } else {
-      SFX.step();
+      
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
   }

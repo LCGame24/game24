@@ -3962,20 +3962,20 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     const newNums=numbers.filter((_,i)=>i!==idx);
     newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
     setNumbers(newNums); setSelectedIdx(null); setOperator(null);
-    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
+    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else{SFX.wrong();setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}}
     setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
   function applyFactorial(idx) {
     const a=numbers[idx].value;
-    if(!Number.isInteger(a)||a<0||a>7){setMessage({text:lang==="zh"?`${fmt(a)}! 超出范围 (只能用 0-7)`:`${fmt(a)}! out of range (0–7 only)`,type:"bad"});setSelectedIdx(null);setOperator(null);return;}
+    if(!Number.isInteger(a)||a<0||a>7){SFX.wrong();setMessage({text:lang==="zh"?`${fmt(a)}! 超出范围 (只能用 0-7)`:`${fmt(a)}! out of range (0–7 only)`,type:"bad"});setSelectedIdx(null);setOperator(null);return;}
     let result=1; for(let i=2;i<=a;i++) result*=i;
     const expr=`${fmt(a)}! = ${fmt(result)}`;
     setSteps(s=>[...s,{expr,result}]);
     const newNums=numbers.filter((_,i)=>i!==idx);
     newNums.push({value:result,label:fmt(result),sourceId:`step_${steps.length+1}`});
     setNumbers(newNums); setSelectedIdx(null); setOperator(null);
-    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}
+    if(newNums.length===1){if(Math.abs(result-24)<1e-9)handleSolve(newNums);else{SFX.wrong();setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});}}
     setMessage({text:`✓ ${expr}`,type:"step"});
   }
 
@@ -4628,6 +4628,7 @@ export default function App() {
       if (Math.abs(result-24)<1e-9) {
         handleSolve();
       } else {
+        SFX.wrong();
         setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
       }
     } else {
@@ -4737,7 +4738,7 @@ export default function App() {
     setSelectedIdx(null); setOperator(null);
     if (newNums.length===1) {
       if (Math.abs(result-24)<1e-9) handleSolve();
-      else setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"});
+      else { SFX.wrong(); setMessage({text:t.notTwentyFour(fmt(result)),type:"bad"}); }
     } else {
       setMessage({text:`✓ ${expr}`,type:"step"});
     }
@@ -4745,8 +4746,8 @@ export default function App() {
 
   function applyFactorial(idx) {
     const a = numbers[idx].value;
-    // Only allow factorial on non-negative integers up to 7 (7!=5040 is already huge)
     if (!Number.isInteger(a) || a < 0 || a > 7) {
+      SFX.wrong();
       setMessage({text: lang==="zh"?`${fmt(a)}! 超出范围 (只能用 0-7)`:`${fmt(a)}! is out of range (0–7 only)`, type:"bad"});
       setSelectedIdx(null);
       setOperator(null);
@@ -4763,7 +4764,7 @@ export default function App() {
     setOperator(null);
     if (newNums.length===1) {
       if (Math.abs(result-24)<1e-9) handleSolve();
-      else setMessage({text: t.notTwentyFour(fmt(result)), type:"bad"});
+      else { SFX.wrong(); setMessage({text: t.notTwentyFour(fmt(result)), type:"bad"}); }
     } else {
       setMessage({text:`✓ ${expr}`, type:"step"});
     }

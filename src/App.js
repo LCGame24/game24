@@ -1047,7 +1047,7 @@ function saveIntroDone() {
   try { localStorage.setItem("game24_intro_done", "1"); } catch {}
 }
 
-function IntroDemoModal({ lang, onDone }) {
+function IntroDemoModal({ lang, setLang, onDone }) {
   // Demo: 1 × 2 × 3 × 4 = 24 — all 4 cards used
   // Board state per step:
   // Steps 0:      cards=[1,2,3,4]  result=null
@@ -1195,6 +1195,11 @@ function IntroDemoModal({ lang, onDone }) {
         @keyframes introSolve{0%{transform:scale(1)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
         @keyframes introShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
       `}</style>
+
+      {/* Language switcher — top left, so first-time visitors can pick before/during demo */}
+      <div style={{position:"absolute", top:20, left:20, zIndex:5}}>
+        <LangSwitcher lang={lang} setLang={setLang}/>
+      </div>
 
       {/* Skip button */}
       <button onClick={skip} style={{
@@ -4691,8 +4696,22 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 export default function App() {
   const [screen,setScreen]=useState("setup"); // setup | game | roundEnd | gameEnd | junior | daily | battle | stats
   const [config,setConfig]=useState(null);
-  const [lang,setLang]=useState("en");
+  const [lang,setLang]=useState(()=>{
+    try {
+      const saved = localStorage.getItem("game24_lang");
+      if (saved === "en" || saved === "zh" || saved === "fr") return saved;
+      const nav = (navigator.language || navigator.userLanguage || "").toLowerCase();
+      if (nav.startsWith("zh")) return "zh";
+      if (nav.startsWith("fr")) return "fr";
+    } catch {}
+    return "en";
+  });
   const [showIntro,setShowIntro]=useState(()=>!loadIntroDone());
+
+  // Persist language choice
+  useEffect(()=>{
+    try { localStorage.setItem("game24_lang", lang); } catch {}
+  },[lang]);
 
   // Preload sounds on first user interaction
   useEffect(()=>{
@@ -5170,7 +5189,7 @@ export default function App() {
     });
   }
 
-  if (showIntro) return <IntroDemoModal lang={lang} onDone={()=>setShowIntro(false)}/>;
+  if (showIntro) return <IntroDemoModal lang={lang} setLang={setLang} onDone={()=>setShowIntro(false)}/>;
 
   if (screen==="setup") return <SetupScreen onStart={startGame} onQuickPlay={startQuickPlay} onJunior={()=>setScreen("junior")} onDaily={()=>setScreen("daily")} onBattle={()=>setScreen("battle")} onStats={()=>setScreen("stats")} lang={lang} setLang={setLang}
     unlocked={unlocked} leaderboard={leaderboard} setLeaderboard={setLeaderboard}

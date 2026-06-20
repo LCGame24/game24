@@ -1371,6 +1371,8 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}} @keyframes fadeInScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+        @keyframes streakGlow{0%,100%{box-shadow:0 0 0 rgba(249,115,22,0)}50%{box-shadow:0 0 20px rgba(249,115,22,0.25)}}
+        @keyframes streakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
       `}</style>
 
       {/* Title */}
@@ -1393,6 +1395,42 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
           <SoundToggle/>
         </div>
       </div>
+
+      {/* Streak banner — prominent, glowing, shown above mode buttons when active */}
+      {(() => {
+        const ds = loadDailyStreak();
+        if (ds.count < 1) return null;
+        const today = getTodayKey();
+        const playedToday = ds.lastKey === today;
+        return (
+          <div style={{
+            width:"100%",maxWidth:360,marginBottom:14,
+            animation:"fadeIn 0.5s ease, streakGlow 2.2s ease infinite",
+            background: playedToday
+              ? "linear-gradient(135deg,rgba(244,114,182,0.12),rgba(249,115,22,0.12))"
+              : "linear-gradient(135deg,rgba(244,114,182,0.22),rgba(249,115,22,0.22))",
+            border: `1.5px solid ${playedToday ? "rgba(244,114,182,0.35)" : "rgba(249,115,22,0.6)"}`,
+            borderRadius:18,padding:"12px 18px",
+            display:"flex",alignItems:"center",gap:12,
+          }}>
+            <div style={{fontSize:32,animation: playedToday?"none":"streakPulse 1.4s ease infinite"}}>🔥</div>
+            <div style={{flex:1}}>
+              <div style={{
+                fontWeight:900,fontSize:18,
+                background:"linear-gradient(90deg,#f472b6,#f97316)",
+                WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              }}>
+                {ds.count} {lang==="zh"?"天连续挑战！":lang==="fr"?(ds.count>1?"jours de suite !":"jour de suite !"):(ds.count===1?"day streak!":"day streak!")}
+              </div>
+              <div style={{color: playedToday ? "#64748b" : "#fb923c", fontSize:12, fontWeight: playedToday?500:700}}>
+                {playedToday
+                  ? (lang==="zh"?"今天已完成 ✓ 明天继续！":lang==="fr"?"Fait aujourd'hui ✓ A demain !":"Done for today ✓ Come back tomorrow!")
+                  : (lang==="zh"?"⚠️ 今天还没玩，别断了连续记录！":lang==="fr"?"⚠️ Pas encore joue aujourd'hui !":"⚠️ Haven't played today — don't break it!")}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Four mode buttons */}
       <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:16,animation:"fadeIn 0.5s ease"}}>
@@ -4106,7 +4144,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
       <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
         display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
         fontFamily:"'Trebuchet MS',sans-serif",padding:24}}>
-        <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
+        <style>{`@keyframes trophy{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}} @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes popIn{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}} @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}} @keyframes streakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}`}</style>
 
         {/* Confetti on fresh solve */}
         {phase==="solved"&&showConfetti&&(
@@ -4213,6 +4251,29 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
             {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"📤 分享":lang==="fr"?"📤 Partager":"📤 Share")}
           </button>
         </div>
+
+        {/* Challenge a Friend — primary social hook */}
+        <button onClick={()=>{
+          const challengeText = lang==="zh"
+            ? `⚔️ 我向你发起挑战！\n今天的24点我用了 ${fmtTime(totalTime)} 解开 🎯\n你能比我快吗？\nhttps://game24-taupe.vercel.app`
+            : lang==="fr"
+            ? `⚔️ Je te lance un defi !\nJ'ai resolu le Game24 du jour en ${fmtTime(totalTime)} 🎯\nPeux-tu faire mieux ?\nhttps://game24-taupe.vercel.app`
+            : `⚔️ I challenge you!\nI solved today's Game24 in ${fmtTime(totalTime)} 🎯\nThink you can beat me?\nhttps://game24-taupe.vercel.app`;
+          if (navigator.share) {
+            navigator.share({text: challengeText}).catch(()=>{});
+          } else {
+            window.open(`https://wa.me/?text=${encodeURIComponent(challengeText)}`, "_blank");
+          }
+        }} style={{
+          width:"100%",maxWidth:320,margin:"0 auto 12px",display:"block",
+          background:"linear-gradient(135deg,#f472b6,#f97316)",
+          border:"none",borderRadius:14,padding:"14px 20px",
+          color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
+          boxShadow:"0 6px 24px rgba(244,114,182,0.4)",
+          animation:"streakPulse 2.5s ease infinite",
+        }}>
+          ⚔️ {lang==="zh"?"挑战好友":lang==="fr"?"Defier un ami":"Challenge a Friend"}
+        </button>
 
         {/* Social share buttons */}
         <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:12}}>

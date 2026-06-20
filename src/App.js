@@ -1343,7 +1343,7 @@ function IntroDemoModal({ lang, onDone }) {
 function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats, lang, setLang, unlocked, leaderboard, setLeaderboard, autoSelectHard, setJustUnlockedHard, badges, personalBest, skipInstructions, preSelectDiff}) {
   const t=T[lang];
   const [numPlayers,setNumPlayers]=useState(1);
-  const [showInstructions,setShowInstructions]=useState(!skipInstructions);
+  const [showInstructions,setShowInstructions]=useState(false);
   const [showLB,setShowLB]=useState(false);
   const [showBadges,setShowBadges]=useState(false);
   const [showModeSelect, setShowModeSelect] = useState(!skipInstructions);
@@ -1389,6 +1389,9 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
         </p>
         <div style={{display:"flex",justifyContent:"center",gap:8,alignItems:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>setShowInstructions(true)} title="How to Play" style={{background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:16,padding:"3px 10px",color:"#60a5fa",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <span>❓</span>
+          </button>
           <button onClick={()=>onStats()} title="My Stats" style={{background:"rgba(167,139,250,0.12)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:16,padding:"3px 10px",color:"#a78bfa",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             <span>📊</span>
           </button>
@@ -1552,6 +1555,43 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
         </button>
 
       </div>
+
+      {showInstructions && (
+        <div style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          zIndex:1000,padding:20,
+        }}>
+          <div style={{
+            background:"linear-gradient(135deg,#1e293b,#0f172a)",
+            border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:24,padding:28,maxWidth:380,width:"100%",
+            animation:"modalIn 0.3s ease",
+          }}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{marginBottom:12}}><LangSwitcher lang={lang} setLang={setLang}/></div>
+              <div style={{fontSize:40,marginBottom:8}}>🃏</div>
+              <h2 style={{color:"white",fontSize:22,fontWeight:900,margin:0}}>{t.howToPlayTitle}</h2>
+            </div>
+            <div style={{marginBottom:24,maxHeight:"50vh",overflowY:"auto"}}>
+              {t.howToPlayLines.map((line,i)=>(
+                <div key={i} style={{
+                  color:"#cbd5e1",fontSize:14,marginBottom:10,
+                  padding:"8px 12px",
+                  background:"rgba(255,255,255,0.04)",
+                  borderRadius:8,lineHeight:1.5,
+                }}>{line}</div>
+              ))}
+            </div>
+            <button onClick={()=>setShowInstructions(false)} style={{
+              width:"100%",padding:"14px",borderRadius:12,border:"none",
+              background:"linear-gradient(135deg,#f6d365,#fda085)",
+              color:"#1a1a2e",fontSize:15,fontWeight:800,cursor:"pointer",
+              boxShadow:"0 4px 20px rgba(246,211,101,0.4)",
+            }}>{t.gotIt}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1624,7 +1664,10 @@ function SetupScreen({onStart, onQuickPlay, onJunior, onDaily, onBattle, onStats
           color:"#94a3b8",fontSize:12,margin:"0 0 4px",fontWeight:500,maxWidth:280,lineHeight:1.4,textAlign:"center",
         }}>{lang==="zh"?"培养数感、逻辑力与解题能力":lang==="fr"?"Développez la logique et le calcul mental":"Build number sense, logic & problem-solving"}</p>
       </div>
-      <div style={{marginBottom:20}}><LangSwitcher lang={lang} setLang={setLang}/></div>
+      <div style={{marginBottom:20,display:"flex",gap:8,alignItems:"center"}}>
+        <LangSwitcher lang={lang} setLang={setLang}/>
+        <button onClick={()=>setShowInstructions(true)} style={{background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:16,padding:"3px 10px",color:"#60a5fa",fontSize:13,cursor:"pointer"}}>❓</button>
+      </div>
 
       <div style={{
         background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
@@ -2144,9 +2187,13 @@ function JuniorScreen({lang, setLang, onBack}) {
       <h1 style={{fontSize:32,fontWeight:900,margin:"0 0 4px",color:"#34d399"}}>
         {lang==="zh"?"儿童模式":lang==="fr"?"Mode Junior":"Junior Mode"}
       </h1>
-      <p style={{color:"#64748b",fontSize:13,marginBottom:20}}>
+      <p style={{color:"#64748b",fontSize:13,marginBottom:8}}>
         {lang==="zh"?"适合 5-12 岁":lang==="fr"?"5–12 ans":"Ages 5–12"}
       </p>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:20}}>
+        <LangSwitcher lang={lang} setLang={setLang}/>
+        <button onClick={()=>setShowJrHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:12,cursor:"pointer"}}>❓</button>
+      </div>
 
       <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
         borderRadius:20,padding:24,width:"100%",maxWidth:340,animation:"fadeIn 0.5s ease"}}>
@@ -2301,6 +2348,27 @@ function JuniorScreen({lang, setLang, onBack}) {
               background:"linear-gradient(135deg,#34d399,#059669)",
               color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
             }}>{lang==="zh"?"关闭":lang==="fr"?"Fermer":"Close"}</button>
+          </div>
+        </div>
+      )}
+
+      {showJrHelp&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:600,padding:20}}>
+          <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",border:"1px solid rgba(52,211,153,0.3)",borderRadius:20,padding:24,maxWidth:340,width:"100%",textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:8}}>🌟</div>
+            <h3 style={{color:"#34d399",fontSize:18,fontWeight:900,margin:"0 0 16px"}}>{lang==="zh"?"儿童模式说明":lang==="fr"?"Comment jouer":"How to play"}</h3>
+            {[
+              {zh:"用四张牌上的数字凑成目标数字！",fr:"Utilise les 4 cartes pour atteindre le nombre cible !",en:"Use the 4 cards to make the target number!"},
+              {zh:"点击数字 → 选运算符 → 点击另一个数字",fr:"Appuie un nombre → un operateur → un autre nombre",en:"Tap number → operator → another number"},
+              {zh:"卡住了？点击提示！",fr:"Bloque ? Utilise l'indice !",en:"Stuck? Tap the hint button!"},
+            ].map((line,i)=>(
+              <div key={i} style={{background:"rgba(52,211,153,0.08)",borderRadius:10,padding:"8px 12px",marginBottom:8,color:"#94a3b8",fontSize:13,textAlign:"left"}}>
+                {lang==="zh"?line.zh:lang==="fr"?line.fr:line.en}
+              </div>
+            ))}
+            <button onClick={()=>setShowJrHelp(false)} style={{background:"linear-gradient(135deg,#34d399,#059669)",border:"none",borderRadius:12,padding:"12px 28px",color:"white",fontSize:15,fontWeight:800,cursor:"pointer",marginTop:8}}>
+              {lang==="zh"?"明白了！":lang==="fr"?"Compris !":"Got it!"}
+            </button>
           </div>
         </div>
       )}
@@ -2905,15 +2973,15 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
 
   // Static demo steps showing 1×2×3×4=24
   const demoSteps = [
-    { en:"Tap  1  to select it",        zh:"点击数字  1  选中它",          numbers:["1","2","3","4"], selected:"1", op:null,  result:null },
-    { en:"Tap  ×  to choose multiply",  zh:"点击  ×  选择乘法",            numbers:["1","2","3","4"], selected:"1", op:"×",   result:null },
-    { en:"Tap  2  →  1×2 = 2",          zh:"点击  2  →  1×2 = 2",         numbers:["1","2","3","4"], selected:"1", op:"×",   result:"1×2=2" },
-    { en:"Tap  2  (the result)",         zh:"点击结果  2",                   numbers:["2","3","4"],     selected:"2", op:null,  result:null },
-    { en:"Tap  ×  again",               zh:"再次点击  ×",                   numbers:["2","3","4"],     selected:"2", op:"×",   result:null },
-    { en:"Tap  3  →  2×3 = 6",          zh:"点击  3  →  2×3 = 6",         numbers:["2","3","4"],     selected:"2", op:"×",   result:"2×3=6" },
-    { en:"Tap  6  (the result)",         zh:"点击结果  6",                   numbers:["6","4"],         selected:"6", op:null,  result:null },
-    { en:"Tap  ×  one more time",       zh:"最后一次点击  ×",               numbers:["6","4"],         selected:"6", op:"×",   result:null },
-    { en:"Tap  4  →  6×4 = 24  🎉",     zh:"点击  4  →  6×4 = 24  🎉",   numbers:["6","4"],         selected:"6", op:"×",   result:"6×4=24 🎉" },
+    { en:"Tap  1  to select it",        zh:"点击数字  1  选中它",          fr:"Appuie sur  1  pour le selectionner",      numbers:["1","2","3","4"], selected:"1", op:null,  result:null },
+    { en:"Tap  ×  to choose multiply",  zh:"点击  ×  选择乘法",            fr:"Appuie sur  ×  pour multiplier",            numbers:["1","2","3","4"], selected:"1", op:"×",   result:null },
+    { en:"Tap  2  →  1×2 = 2",          zh:"点击  2  →  1×2 = 2",         fr:"Appuie sur  2  →  1×2 = 2",                numbers:["1","2","3","4"], selected:"1", op:"×",   result:"1×2=2" },
+    { en:"Tap  2  (the result)",         zh:"点击结果  2",                   fr:"Appuie sur le resultat  2",                 numbers:["2","3","4"],     selected:"2", op:null,  result:null },
+    { en:"Tap  ×  again",               zh:"再次点击  ×",                   fr:"Appuie encore sur  ×",                      numbers:["2","3","4"],     selected:"2", op:"×",   result:null },
+    { en:"Tap  3  →  2×3 = 6",          zh:"点击  3  →  2×3 = 6",         fr:"Appuie sur  3  →  2×3 = 6",                numbers:["2","3","4"],     selected:"2", op:"×",   result:"2×3=6" },
+    { en:"Tap  6  (the result)",         zh:"点击结果  6",                   fr:"Appuie sur le resultat  6",                 numbers:["6","4"],         selected:"6", op:null,  result:null },
+    { en:"Tap  ×  one more time",       zh:"最后一次点击  ×",               fr:"Appuie une derniere fois sur  ×",          numbers:["6","4"],         selected:"6", op:"×",   result:null },
+    { en:"Tap  4  →  6×4 = 24  🎉",     zh:"点击  4  →  6×4 = 24  🎉",   fr:"Appuie sur  4  →  6×4 = 24  🎉",          numbers:["6","4"],         selected:"6", op:"×",   result:"6×4=24 🎉" },
   ];
 
   const [demoIdx, setDemoIdx] = useState(0);
@@ -2967,7 +3035,7 @@ function HelpModal({lang, setLang, onClose, onReplayTutorial}) {
                 {lang==="zh"?`第${demoIdx+1}步 / 共9步`:`Step ${demoIdx+1} of 9`}
               </div>
               <div style={{color:"white",fontWeight:800,fontSize:15,marginTop:4}}>
-                {lang==="zh"?ds.zh:ds.en}
+                {lang==="zh"?ds.zh:lang==="fr"?ds.fr:ds.en}
               </div>
               {ds.result&&(
                 <div style={{color:"#34d399",fontWeight:900,fontSize:16,marginTop:6,
@@ -3088,6 +3156,88 @@ function pickAbilities() {
   return arr.slice(0,2);
 }
 
+function BattleHelpModal({ lang, setLang, onClose }) {
+  const lines = {
+    en: [
+      "⚔️ You vs the Robot — solve faster to win!",
+      "🎯 Use +, −, ×, ÷ (and ^, √ on harder bots) to make 24 from 4 cards.",
+      "❤️ Both start with 3 lives. First to 0 loses.",
+      "⏱️ 60 seconds per round. If nobody solves in time, both lose 1 life.",
+      "🤖 Watch the Robot's progress bar — it turns red when it's about to solve!",
+      "✨ Each round you get 2 random abilities — use them to turn the tide!",
+    ],
+    zh: [
+      "⚔️ 你对战机器人——谁先解出谁赢！",
+      "🎯 用 +、−、×、÷（高难度还有 ^、√）把4张牌凑成24。",
+      "❤️ 双方都有3条命，先归零的一方输。",
+      "⏱️ 每回合60秒。如果谁都没解出，双方各扣1条命。",
+      "🤖 留意机器人进度条——变红就代表它快解出了！",
+      "✨ 每回合随机获得2个技能，善用它们扭转战局！",
+    ],
+    fr: [
+      "⚔️ Toi contre le Robot — resous plus vite pour gagner !",
+      "🎯 Utilise +, −, ×, ÷ (et ^, √ pour les robots difficiles) pour faire 24 avec 4 cartes.",
+      "❤️ Vous avez chacun 3 vies. Le premier a 0 perd.",
+      "⏱️ 60 secondes par manche. Si personne ne resout, chacun perd 1 vie.",
+      "🤖 Surveille la barre du Robot — elle devient rouge quand il est pres de resoudre !",
+      "✨ Chaque manche, tu recois 2 capacites aleatoires — utilise-les pour renverser la situation !",
+    ],
+  };
+  const t = lines[lang] || lines.en;
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",
+      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}>
+      <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",
+        border:"1px solid rgba(239,68,68,0.25)",borderRadius:24,padding:24,
+        maxWidth:380,width:"100%",maxHeight:"88vh",overflowY:"auto"}}>
+
+        <div style={{textAlign:"center",marginBottom:14}}>
+          <div style={{marginBottom:10}}><LangSwitcher lang={lang} setLang={setLang}/></div>
+          <div style={{fontSize:36,marginBottom:4}}>⚔️</div>
+          <div style={{fontSize:18,fontWeight:900,color:"#ef4444"}}>
+            {lang==="zh"?"对战模式说明":lang==="fr"?"Comment jouer — Combat":"How Battle Mode Works"}
+          </div>
+        </div>
+
+        <div style={{marginBottom:16}}>
+          {t.map((line,i)=>(
+            <div key={i} style={{color:"#cbd5e1",fontSize:13,marginBottom:8,
+              padding:"8px 12px",background:"rgba(255,255,255,0.04)",
+              borderRadius:8,lineHeight:1.5}}>{line}</div>
+          ))}
+        </div>
+
+        <div style={{color:"#94a3b8",fontSize:11,fontWeight:700,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>
+          {lang==="zh"?"技能列表":lang==="fr"?"Capacites":"Abilities"}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:18}}>
+          {ABILITIES.map(a=>(
+            <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,
+              background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"8px 12px"}}>
+              <div style={{fontSize:20}}>{a.icon}</div>
+              <div>
+                <div style={{color:"white",fontWeight:700,fontSize:13}}>
+                  {lang==="zh"?a.zh:lang==="fr"?a.fr:a.en}
+                </div>
+                <div style={{color:"#64748b",fontSize:11}}>
+                  {lang==="zh"?a.descZh:lang==="fr"?a.descFr:a.desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onClose} style={{
+          width:"100%",padding:"12px",borderRadius:12,border:"none",
+          background:"linear-gradient(135deg,#ef4444,#f97316)",
+          color:"white",fontSize:14,fontWeight:800,cursor:"pointer",
+        }}>{lang==="zh"?"明白了！开始战斗 ⚔️":lang==="fr"?"Compris ! Au combat ⚔️":"Got it! Let's fight ⚔️"}</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Battle Mode Screen ─────────────────────────────────────────────────────
 function BattleScreen({ lang, setLang, onBack }) {
   const t = T[lang];
@@ -3105,6 +3255,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   const [roundNum, setRoundNum] = useState(1);
   const [countdown, setCountdown] = useState(3);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showBattleHelp, setShowBattleHelp] = useState(false);
 
   // Abilities
   const [abilities, setAbilities] = useState([]);
@@ -3350,10 +3501,12 @@ function BattleScreen({ lang, setLang, onBack }) {
         <div style={{fontSize:52,marginBottom:8}}>⚔️</div>
         <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 4px",background:"linear-gradient(90deg,#ef4444,#f97316,#ef4444)",backgroundSize:"200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 2s linear infinite"}}>{lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h1>
         <p style={{color:"#64748b",fontSize:13,margin:"0 0 8px",fontStyle:"italic"}}>{lang==="zh"?"「你的大脑就是你的武器」":lang==="fr"?"\"Ton cerveau est ton arme\"":"\"Your brain is your weapon\""}</p>
-        <div style={{display:"flex",justifyContent:"center"}}>
+        <div style={{display:"flex",justifyContent:"center",gap:8,alignItems:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>setShowBattleHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"4px 10px",color:"#64748b",fontSize:12,cursor:"pointer"}}>❓</button>
         </div>
       </div>
+      {showBattleHelp && <BattleHelpModal lang={lang} setLang={setLang} onClose={()=>setShowBattleHelp(false)}/>}
       <div style={{width:"100%",maxWidth:360,animation:"fadeIn 0.4s ease"}}>
         <div style={{marginBottom:16}}>
           <div style={{color:"#94a3b8",fontSize:12,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{lang==="zh"?"你的名字":lang==="fr"?"Votre nom":"Your Name"}</div>
@@ -3483,6 +3636,7 @@ function BattleScreen({ lang, setLang, onBack }) {
         <h2 style={{fontSize:17,fontWeight:900,margin:0,background:"linear-gradient(90deg,#ef4444,#f97316)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",textAlign:"center"}}>⚔️ {lang==="zh"?"对战模式":lang==="fr"?"Mode Combat":"Battle Mode"}</h2>
         <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>setShowBattleHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>❓</button>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 10px",color:"#64748b",fontSize:11,cursor:"pointer"}}>🏠</button>
         </div>
       </div>
@@ -3724,6 +3878,8 @@ function BattleScreen({ lang, setLang, onBack }) {
       {/* Reset */}
       <button onClick={doReset} style={{background:"transparent",border:"2px solid #475569",borderRadius:10,padding:"6px 18px",color:"#64748b",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:4}}>{t.reset}</button>
 
+      {showBattleHelp && <BattleHelpModal lang={lang} setLang={setLang} onClose={()=>setShowBattleHelp(false)}/>}
+
       <Analytics/>
     </div>
   );
@@ -3732,6 +3888,7 @@ function BattleScreen({ lang, setLang, onBack }) {
 
 // ── Personal Stats Screen ──────────────────────────────────────────────────
 function StatsScreen({ lang, setLang, onBack }) {
+  const [showStatsHelp, setShowStatsHelp] = useState(false);
   // Load all data from localStorage
   const lb        = (() => { try { return JSON.parse(localStorage.getItem("game24_leaderboard")||"[]"); } catch { return []; } })();
   const pb        = (() => { try { return JSON.parse(localStorage.getItem("game24_pb")||"{}"); } catch { return {}; } })();
@@ -3827,6 +3984,7 @@ function StatsScreen({ lang, setLang, onBack }) {
           animation:"shimmer 3s linear infinite"}}>{t("title")}</h1>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>setShowStatsHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>❓</button>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>🏠</button>
         </div>
       </div>
@@ -3908,6 +4066,8 @@ function StatsScreen({ lang, setLang, onBack }) {
           </Section>
         </>
       )}
+
+      {showStatsHelp && <HelpModal lang={lang} setLang={setLang} onClose={()=>setShowStatsHelp(false)} onReplayTutorial={()=>setShowStatsHelp(false)}/>}
     </div>
   );
 }
@@ -3936,6 +4096,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   const [showHintSteps, setShowHintSteps] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [showDailyHelp, setShowDailyHelp] = useState(false);
   const dailyStreak = loadDailyStreak();
   const shareCardRef = useRef(null);
 
@@ -4159,6 +4320,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         {/* Lang toggle + back */}
         <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center"}}>
           <LangSwitcher lang={lang} setLang={setLang}/>
+          <button onClick={()=>setShowDailyHelp(true)} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 12px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>❓</button>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"3px 14px",color:"#94a3b8",fontSize:12,cursor:"pointer"}}>🏠</button>
         </div>
 
@@ -4387,6 +4549,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
       <div style={{display:"flex",gap:8,marginBottom:12,justifyContent:"center"}}>
         <LangSwitcher lang={lang} setLang={setLang}/>
+        <button onClick={()=>setShowDailyHelp(true)} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>❓</button>
         <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"3px 12px",color:"#64748b",fontSize:12,cursor:"pointer"}}>🏠</button>
       </div>
 
@@ -4517,6 +4680,9 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
       <p style={{color:"#1e3a5f",fontSize:11,marginTop:8,textAlign:"center"}}>
         {lang==="zh"?"每天同一题目，全球玩家一起挑战！":lang==="fr"?"Meme puzzle pour tous aujourd'hui · Mondial":"Same puzzle for everyone today · Worldwide"}
       </p>
+
+      {showDailyHelp && <HelpModal lang={lang} setLang={setLang} onClose={()=>setShowDailyHelp(false)} onReplayTutorial={()=>setShowDailyHelp(false)}/>}
+
       <Analytics/>
     </div>
   );

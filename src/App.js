@@ -1196,11 +1196,6 @@ function IntroDemoModal({ lang, setLang, onDone }) {
         @keyframes introShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
       `}</style>
 
-      {/* Language switcher — top left, so first-time visitors can pick before/during demo */}
-      <div style={{position:"absolute", top:20, left:20, zIndex:5}}>
-        <LangSwitcher lang={lang} setLang={setLang}/>
-      </div>
-
       {/* Skip button */}
       <button onClick={skip} style={{
         position:"absolute", top:20, right:20,
@@ -1208,6 +1203,11 @@ function IntroDemoModal({ lang, setLang, onDone }) {
         borderRadius:20, padding:"8px 18px",
         color:"#94a3b8", fontSize:14, fontWeight:700, cursor:"pointer",
       }}>{lang==="zh"?"跳过":lang==="fr"?"Passer":"Skip"} ✕</button>
+
+      {/* Language switcher — inline above title, easy to notice and reach */}
+      <div style={{marginBottom:14}}>
+        <LangSwitcher lang={lang} setLang={setLang}/>
+      </div>
 
       {/* Title */}
       <div style={{textAlign:"center", marginBottom:20}}>

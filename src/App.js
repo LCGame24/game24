@@ -4164,7 +4164,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   }
 
   const displayDate = formatDate(todayKey);
-  const DAILY_OPS = ["+","−","×","÷","^","√"]; // Medium operators
+  const DAILY_OPS = ["+","−","×","÷","^","√","ʸ√","!"]; // Hard operators (cards stay 1-10, no face cards)
 
   // Stopwatch
   useEffect(() => {

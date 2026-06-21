@@ -1002,7 +1002,7 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
       boxShadow: selected?"0 8px 24px rgba(245,158,11,0.5)":"0 4px 12px rgba(0,0,0,0.2)",
       cursor:used?"default":"pointer",
       display:"flex",flexDirection:"column",justifyContent:"space-between",
-      padding:"5px 7px",
+      padding:"4px 6px",
       transform: used?"scale(0.92)": selected?"translateY(-10px) scale(1.08)":"scale(1)",
       transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
       userSelect:"none",
@@ -1011,14 +1011,14 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
       position:"relative",
     }}>
       {used&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#475569"}}>✓</div>}
-      <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif",lineHeight:1.1}}>
+      <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif",lineHeight:1.1}}>
         {CARD_FACE_LABEL[card.val]}
-        <span style={{fontSize:11}}>{card.suit}</span>
+        <span style={{fontSize:18}}>{card.suit}</span>
       </div>
       <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
-      <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif",lineHeight:1.1}}>
+      <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif",lineHeight:1.1}}>
         {CARD_FACE_LABEL[card.val]}
-        <span style={{fontSize:11}}>{card.suit}</span>
+        <span style={{fontSize:18}}>{card.suit}</span>
       </div>
     </div>
   );
@@ -2602,19 +2602,19 @@ function JuniorScreen({lang, setLang, onBack}) {
                 boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":isTutTarget?"0 0 0 3px rgba(52,211,153,0.3), 0 6px 18px rgba(52,211,153,0.25)":"0 4px 12px rgba(0,0,0,0.2)",
                 cursor:turnOver?"default":"pointer",
                 display:"flex",flexDirection:"column",justifyContent:"space-between",
-                padding:"5px 7px",
+                padding:"4px 6px",
                 transform: selectedIdx===i?"translateY(-10px) scale(1.08)":isTutTarget?"scale(1.05)":"scale(1)",
                 transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                 userSelect:"none",
                 animation:`cardDeal 0.4s ease ${i*0.1}s both`,
                 position:"relative",
               }}>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
               </div>
             );
@@ -3853,18 +3853,18 @@ function BattleScreen({ lang, setLang, onBack }) {
                 boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":"0 4px 12px rgba(0,0,0,0.2)",
                 cursor:"pointer",
                 display:"flex",flexDirection:"column",justifyContent:"space-between",
-                padding:"5px 7px",
+                padding:"4px 6px",
                 transform: selectedIdx===i?"translateY(-10px) scale(1.08)":"scale(1)",
                 transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                 userSelect:"none",
                 animation:cardFlip?`cardFlipIn 0.5s ease ${i*0.08}s both`:"popIn 0.3s ease",
               }}>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
               </div>
             );
@@ -4605,18 +4605,18 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
                 boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":"0 4px 12px rgba(0,0,0,0.2)",
                 cursor:"pointer",
                 display:"flex",flexDirection:"column",justifyContent:"space-between",
-                padding:"5px 7px",
+                padding:"4px 6px",
                 transform: selectedIdx===i?"translateY(-10px) scale(1.08)":"scale(1)",
                 transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                 userSelect:"none",
                 animation:"popIn 0.3s ease",
               }}>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
               </div>
             );
@@ -5572,18 +5572,18 @@ export default function App() {
                 boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":isTutTarget?"0 0 0 3px rgba(96,165,250,0.3), 0 6px 18px rgba(96,165,250,0.25)":"0 4px 12px rgba(0,0,0,0.2)",
                 cursor:turnOver?"default":"pointer",
                 display:"flex",flexDirection:"column",justifyContent:"space-between",
-                padding:"5px 7px",
+                padding:"4px 6px",
                 transform: selectedIdx===i?"translateY(-10px) scale(1.08)":isTutTarget?"scale(1.05)":"scale(1)",
                 transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                 userSelect:"none",
                 animation:"popIn 0.3s ease",
               }}>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
                 </div>
               </div>
             );

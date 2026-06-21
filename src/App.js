@@ -4409,23 +4409,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           </div>
         </div>
 
-        {/* Buttons */}
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:12}}>
-          <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer"}}>
-            🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}
-          </button>
-          <button onClick={handleShare} disabled={sharing} style={{
-            background:"linear-gradient(135deg,#f58529,#dd2a7b,#8134af)",
-            border:"none",borderRadius:12,padding:"12px 20px",
-            color:"white",fontSize:14,fontWeight:800,
-            cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,
-            boxShadow:"0 4px 20px rgba(221,42,123,0.35)",
-          }}>
-            {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"💾 保存图片":lang==="fr"?"💾 Enregistrer":"💾 Save Image")}
-          </button>
-        </div>
-
-        {/* Challenge a Friend — primary social hook */}
+        {/* Challenge a Friend — primary, large, bold */}
         <button onClick={()=>{
           const challengeText = lang==="zh"
             ? `⚔️ 我向你发起挑战！\n今天的24点我用了 ${fmtTime(totalTime)} 解开 🎯\n你能比我快吗？\nhttps://game24-taupe.vercel.app`
@@ -4438,27 +4422,23 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
             window.open(`https://wa.me/?text=${encodeURIComponent(challengeText)}`, "_blank");
           }
         }} style={{
-          width:"100%",maxWidth:320,margin:"0 auto 16px",display:"block",
+          width:"100%",maxWidth:340,margin:"0 auto 14px",display:"block",
           background:"linear-gradient(135deg,#f472b6,#f97316)",
-          border:"none",borderRadius:14,padding:"14px 20px",
-          color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
-          boxShadow:"0 6px 24px rgba(244,114,182,0.4)",
+          border:"none",borderRadius:16,padding:"18px 24px",
+          color:"white",fontSize:18,fontWeight:900,cursor:"pointer",
+          boxShadow:"0 8px 28px rgba(244,114,182,0.45)",
           animation:"streakPulse 2.5s ease infinite",
         }}>
           ⚔️ {lang==="zh"?"挑战好友":lang==="fr"?"Defier un ami":"Challenge a Friend"}
         </button>
 
-        {/* Want more nudge */}
+        {/* Main Menu — small, secondary */}
         <div style={{textAlign:"center",marginBottom:16}}>
-          <div style={{color:"#475569",fontSize:12,marginBottom:8}}>
-            {lang==="zh"?"还想继续玩？":lang==="fr"?"Envie de jouer encore ?":"Want more puzzles?"}
-          </div>
           <button onClick={onBack} style={{
-            background:"linear-gradient(135deg,#f6d36522,#fda08522)",
-            border:"1px solid rgba(246,211,101,0.35)",
-            borderRadius:12,padding:"10px 24px",
-            color:"#f6d365",fontSize:13,fontWeight:800,cursor:"pointer",
-          }}>⚡ {lang==="zh"?"快速游戏":lang==="fr"?"Partie Rapide":"Quick Play"}</button>
+            background:"transparent",border:"1px solid rgba(255,255,255,0.12)",
+            borderRadius:10,padding:"8px 18px",
+            color:"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",
+          }}>🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
         </div>
 
         {/* Hidden share card */}

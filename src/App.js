@@ -1024,6 +1024,34 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
   );
 }
 
+// Compact card-styled tile for gameplay tap targets (original cards only — not computed results)
+function MiniCardTile({label, suit, selected, onClick}) {
+  const red = suit==="♥"||suit==="♦";
+  return (
+    <div onClick={onClick} style={{
+      width:54,height:72,borderRadius:10,
+      background: selected?"#fff8e1":"white",
+      border: selected?"3px solid #f59e0b":"3px solid #e2e8f0",
+      boxShadow: selected?"0 6px 18px rgba(245,158,11,0.45)":"0 3px 10px rgba(0,0,0,0.2)",
+      cursor:"pointer",
+      display:"flex",flexDirection:"column",justifyContent:"space-between",
+      padding:"4px 5px",
+      transform: selected?"translateY(-6px) scale(1.1)":"scale(1)",
+      transition:"all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
+      userSelect:"none",
+      animation:"popIn 0.3s ease",
+    }}>
+      <div style={{fontSize:11,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif",lineHeight:1}}>
+        {label}<span style={{fontSize:9}}>{suit}</span>
+      </div>
+      <div style={{fontSize:15,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{suit}</div>
+      <div style={{fontSize:11,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif",lineHeight:1}}>
+        {label}<span style={{fontSize:9}}>{suit}</span>
+      </div>
+    </div>
+  );
+}
+
 function OpBtn({op,active,onClick,disabled}) {
   const isWide = op==="ʸ√"; // wider label needs adjusted font
   return (
@@ -1966,7 +1994,7 @@ function JuniorScreen({lang, setLang, onBack}) {
       if (attempts>200) break;
     } while (!solveJunior(drawn.map(c=>c.val), target, ops));
     setCards(drawn);
-    setNumbers(drawn.map(c=>({value:c.val, label:String(c.val), sourceId:c.id})));
+    setNumbers(drawn.map(c=>({value:c.val, label:String(c.val), suit:c.suit, sourceId:c.id})));
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
@@ -1986,7 +2014,7 @@ function JuniorScreen({lang, setLang, onBack}) {
     const isFirstTime = !loadJrTutorialDone(level);
     if (isFirstTime) {
       setCards(jrTutCards);
-      setNumbers(jrTutCards.map(c=>({value:c.val, label:String(c.val), sourceId:c.id})));
+      setNumbers(jrTutCards.map(c=>({value:c.val, label:String(c.val), suit:c.suit, sourceId:c.id})));
       setSelectedIdx(null);
       setOperator(null);
       setSteps([]);
@@ -2105,7 +2133,7 @@ function JuniorScreen({lang, setLang, onBack}) {
   }
 
   function handleReset() {
-    setNumbers(cards.map(c=>({value:c.val,label:String(c.val),sourceId:c.id})));
+    setNumbers(cards.map(c=>({value:c.val,label:String(c.val),suit:c.suit,sourceId:c.id})));
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
@@ -2556,63 +2584,58 @@ function JuniorScreen({lang, setLang, onBack}) {
         </div>
       </div>
 
-      {/* Cards — 3 cards in a row */}
+      {/* Cards — 3 cards in a row, now directly tappable */}
       <div style={{display:"flex",gap:12,marginBottom:16,justifyContent:"center"}}>
-        {cards.map((card,i)=>{
-          const inPool=numbers.some(n=>n.sourceId===card.id);
-          const red=card.suit==="♥"||card.suit==="♦";
+        {numbers.map((n,i)=>{
+          const isTutTarget = jrTutStep>=0
+            && jrTutStep<jrTutSteps.length
+            && jrTutSteps[jrTutStep].type==="number"
+            && n.label===jrTutSteps[jrTutStep].target;
+          const isOriginalCard = !!n.suit;
+          const red = n.suit==="♥"||n.suit==="♦";
+          if (isOriginalCard) {
+            return (
+              <div key={i} onClick={()=>!turnOver && handleNumberClick(i)} style={{
+                width:86,minWidth:86,height:118,borderRadius:10,
+                background: selectedIdx===i?"#fff8e1":isTutTarget?"#ecfdf5":"white",
+                border: selectedIdx===i?"3px solid #f59e0b":isTutTarget?"3px solid #34d399":"3px solid #e2e8f0",
+                boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":isTutTarget?"0 0 0 3px rgba(52,211,153,0.3), 0 6px 18px rgba(52,211,153,0.25)":"0 4px 12px rgba(0,0,0,0.2)",
+                cursor:turnOver?"default":"pointer",
+                display:"flex",flexDirection:"column",justifyContent:"space-between",
+                padding:"5px 7px",
+                transform: selectedIdx===i?"translateY(-10px) scale(1.08)":isTutTarget?"scale(1.05)":"scale(1)",
+                transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                userSelect:"none",
+                animation:`cardDeal 0.4s ease ${i*0.1}s both`,
+                position:"relative",
+              }}>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+                <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+              </div>
+            );
+          }
+          // Computed result — clean number chip, visually distinct from cards
           return (
-            <div key={card.id} style={{
-              width:86,minWidth:86,height:118,borderRadius:10,
-              background:inPool?"white":"#1e293b",
-              border:inPool?"3px solid #e2e8f0":"2px solid #334155",
-              boxShadow:"0 4px 12px rgba(0,0,0,0.2)",
-              display:"flex",flexDirection:"column",justifyContent:"space-between",
-              padding:"5px 7px",opacity:inPool?1:0.35,
-              transition:"all 0.2s",position:"relative",
-              animation:`cardDeal 0.4s ease ${i*0.1}s both`,
-            }}>
-              {!inPool&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#475569"}}>✓</div>}
-              <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                {card.val}<span style={{fontSize:11}}>{card.suit}</span>
-              </div>
-              <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
-              <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                {card.val}<span style={{fontSize:11}}>{card.suit}</span>
-              </div>
-            </div>
+            <div key={i} onClick={()=>!turnOver && handleNumberClick(i)} style={{
+              width:62,height:62,borderRadius:14,alignSelf:"center",
+              background:selectedIdx===i?"#fef3c7":isTutTarget?"rgba(52,211,153,0.2)":"rgba(255,255,255,0.08)",
+              border:`3px solid ${selectedIdx===i?"#f59e0b":isTutTarget?"#34d399":"rgba(255,255,255,0.2)"}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:22,fontWeight:900,
+              color:selectedIdx===i?"#92400e":isTutTarget?"#34d399":"white",
+              cursor:turnOver?"default":"pointer",
+              transform:selectedIdx===i?"scale(1.15)":isTutTarget?"scale(1.12)":"scale(1)",
+              transition:"all 0.15s",
+              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":isTutTarget?"0 0 0 3px rgba(52,211,153,0.3), 0 4px 16px rgba(52,211,153,0.2)":"none",
+              animation:"popIn 0.3s ease",
+            }}>{n.label}</div>
           );
         })}
-      </div>
-
-      {/* Number pool */}
-      <div style={{marginBottom:14,textAlign:"center"}}>
-        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>
-          {lang==="zh"?"可用数字":lang==="fr"?"Nombres disponibles":"Available Numbers"}
-        </div>
-        <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-          {numbers.map((n,i)=>{
-            const isTutTarget = jrTutStep>=0
-              && jrTutStep<jrTutSteps.length
-              && jrTutSteps[jrTutStep].type==="number"
-              && n.label===jrTutSteps[jrTutStep].target;
-            return (
-              <div key={i} onClick={()=>handleNumberClick(i)} style={{
-                width:62,height:62,borderRadius:14,
-                background:selectedIdx===i?"#fef3c7":isTutTarget?"rgba(52,211,153,0.2)":"rgba(255,255,255,0.08)",
-                border:`3px solid ${selectedIdx===i?"#f59e0b":isTutTarget?"#34d399":"rgba(255,255,255,0.2)"}`,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:22,fontWeight:900,
-                color:selectedIdx===i?"#92400e":isTutTarget?"#34d399":"white",
-                cursor:turnOver?"default":"pointer",
-                transform:selectedIdx===i?"scale(1.15)":isTutTarget?"scale(1.12)":"scale(1)",
-                transition:"all 0.15s",
-                boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":isTutTarget?"0 0 0 3px rgba(52,211,153,0.3), 0 4px 16px rgba(52,211,153,0.2)":"none",
-                animation:"popIn 0.3s ease",
-              }}>{n.label}</div>
-            );
-          })}
-        </div>
       </div>
 
       {/* Tutorial bubble */}
@@ -3353,7 +3376,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     roundEndRef.current=false; hackPenaltyRef.current=0; robotElapsedRef.current=0;
     setRobotElapsed(0); setShieldBlocked(false);
     const nc=dealCards();
-    setCards(nc); setNumbers(nc.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+    setCards(nc); setNumbers(nc.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
     setSelectedIdx(null); setOperator(null); setSteps([]); setMessage({text:"",type:""});
     setTimeLeft(60); setRobotSolved(false); setRobotSolution(null); setRoundWinner(null);
     setCancelledOp(null); setHintText(null); setHackActive(false);
@@ -3456,7 +3479,7 @@ function BattleScreen({ lang, setLang, onBack }) {
   }
 
   function doRobotSolve() {
-    const orig=cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id}));
+    const orig=cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id}));
     setRobotSolution(getHintSteps(orig)); setRobotSolved(true);
     setRobotState("solved");
     SFX.robot();
@@ -3496,7 +3519,7 @@ function BattleScreen({ lang, setLang, onBack }) {
     else{setMessage({text:`✓ ${expr}`,type:"step"});}
   }
 
-  function doReset(){setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));setSelectedIdx(null);setOperator(null);setSteps([]);setMessage({text:"",type:""});}
+  function doReset(){setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));setSelectedIdx(null);setOperator(null);setSteps([]);setMessage({text:"",type:""});}
 
   // ── SETUP ──
   if(phase==="setup") return (
@@ -3817,26 +3840,51 @@ function BattleScreen({ lang, setLang, onBack }) {
       {/* Hint */}
       {hintText&&<div style={{width:"100%",maxWidth:420,marginBottom:8,background:"rgba(167,139,250,0.12)",border:"1px solid #a78bfa",borderRadius:12,padding:"7px 14px",textAlign:"center",animation:"popIn 0.3s ease"}}><div style={{color:"#c4b5fd",fontSize:11,fontWeight:700,marginBottom:2}}>💡 {lang==="zh"?"提示 — 下一步：":lang==="fr"?"Indice — prochaine etape :":"Hint — next step:"}</div><div style={{color:"#e9d5ff",fontSize:14,fontWeight:800}}>{hintText}</div></div>}
 
-      {/* Cards with 3D flip */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12,width:"fit-content"}}>
-        {cards.map((card,i)=>{
-          const inPool=numbers.some(n=>n.sourceId===card.id);
+      {/* Cards — directly tappable, card-styled for originals, chip-styled for computed results */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12,width:"fit-content",margin:"0 auto 12px"}}>
+        {numbers.map((n,i)=>{
+          const red = n.suit==="♥"||n.suit==="♦";
+          if (n.suit) {
+            return (
+              <div key={i} onClick={()=>handleNumberClick(i)} style={{
+                width:86,minWidth:86,height:118,borderRadius:10,
+                background: selectedIdx===i?"#fff8e1":"white",
+                border: selectedIdx===i?"3px solid #f59e0b":"3px solid #e2e8f0",
+                boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":"0 4px 12px rgba(0,0,0,0.2)",
+                cursor:"pointer",
+                display:"flex",flexDirection:"column",justifyContent:"space-between",
+                padding:"5px 7px",
+                transform: selectedIdx===i?"translateY(-10px) scale(1.08)":"scale(1)",
+                transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                userSelect:"none",
+                animation:cardFlip?`cardFlipIn 0.5s ease ${i*0.08}s both`:"popIn 0.3s ease",
+              }}>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+                <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+              </div>
+            );
+          }
           return (
-            <div key={card.id} style={{animation:cardFlip?`cardFlipIn 0.5s ease ${i*0.08}s both`:"none"}}>
-              <PlayingCard card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>
-            </div>
+            <div key={i} onClick={()=>handleNumberClick(i)} style={{
+              width:62,height:62,alignSelf:"center",justifySelf:"center",borderRadius:14,
+              background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
+              border:`3px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:22,fontWeight:900,
+              color:selectedIdx===i?"#92400e":"white",
+              cursor:"pointer",
+              transform:selectedIdx===i?"scale(1.15)":"scale(1)",
+              transition:"all 0.15s",
+              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
+              animation:"popIn 0.3s ease",
+            }}>{n.label}</div>
           );
         })}
-      </div>
-
-      {/* Numbers */}
-      <div style={{marginBottom:10,textAlign:"center"}}>
-        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.availableNumbers}</div>
-        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-          {numbers.map((n,i)=>(
-            <div key={i} onClick={()=>handleNumberClick(i)} style={{width:54,height:54,borderRadius:12,background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",border:`2px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:selectedIdx===i?"#92400e":"white",cursor:"pointer",transform:selectedIdx===i?"scale(1.15)":"scale(1)",transition:"all 0.15s",animation:"popIn 0.3s ease"}}>{n.label}</div>
-          ))}
-        </div>
       </div>
 
       {/* Operators */}
@@ -4089,7 +4137,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   const [phase, setPhase] = useState(alreadyDone ? "done" : "playing"); // playing | solved | failed | done
   const dailyCards = getDailyCards();
   const [cards] = useState(dailyCards);
-  const [numbers, setNumbers] = useState(dailyCards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+  const [numbers, setNumbers] = useState(dailyCards.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [operator, setOperator] = useState(null);
   const [steps, setSteps] = useState([]);
@@ -4229,7 +4277,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   }
 
   function handleReset() {
-    setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+    setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
     setSelectedIdx(null); setOperator(null); setSteps([]); setUndoStack([]); setMessage({text:"",type:""}); setShowHintSteps(null);
   }
 
@@ -4544,25 +4592,42 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         </div>
       </div>
 
-      {/* Cards 2×2 */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,width:"fit-content"}}>
-        {cards.map((card,i)=>{
-          const inPool=numbers.some(n=>n.sourceId===card.id);
-          return <PlayingCard key={card.id} card={card} used={!inPool} selected={false} animIdx={i} onClick={()=>{}}/>;
-        })}
-      </div>
-
-      {/* Number pool */}
-      <div style={{marginBottom:14,textAlign:"center"}}>
-        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{t.availableNumbers}</div>
-        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-          {numbers.map((n,i)=>(
+      {/* Cards 2×2 — directly tappable */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,width:"fit-content",margin:"0 auto 16px"}}>
+        {numbers.map((n,i)=>{
+          const red = n.suit==="♥"||n.suit==="♦";
+          if (n.suit) {
+            return (
+              <div key={i} onClick={()=>handleNumberClick(i)} style={{
+                width:86,minWidth:86,height:118,borderRadius:10,
+                background: selectedIdx===i?"#fff8e1":"white",
+                border: selectedIdx===i?"3px solid #f59e0b":"3px solid #e2e8f0",
+                boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":"0 4px 12px rgba(0,0,0,0.2)",
+                cursor:"pointer",
+                display:"flex",flexDirection:"column",justifyContent:"space-between",
+                padding:"5px 7px",
+                transform: selectedIdx===i?"translateY(-10px) scale(1.08)":"scale(1)",
+                transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                userSelect:"none",
+                animation:"popIn 0.3s ease",
+              }}>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+                <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+              </div>
+            );
+          }
+          return (
             <div key={i} onClick={()=>handleNumberClick(i)} style={{
-              width:54,height:54,borderRadius:12,
+              width:62,height:62,alignSelf:"center",justifySelf:"center",borderRadius:14,
               background:selectedIdx===i?"#fef3c7":"rgba(255,255,255,0.08)",
-              border:`2px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,
+              border:`3px solid ${selectedIdx===i?"#f59e0b":"rgba(255,255,255,0.15)"}`,
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:18,fontWeight:900,
+              fontSize:22,fontWeight:900,
               color:selectedIdx===i?"#92400e":"white",
               cursor:"pointer",
               transform:selectedIdx===i?"scale(1.15)":"scale(1)",
@@ -4570,8 +4635,8 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
               boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":"none",
               animation:"popIn 0.3s ease",
             }}>{n.label}</div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* Operators */}
@@ -4740,7 +4805,7 @@ export default function App() {
     const isFirstTime = !loadTutorialDone();
     if (isFirstTime && cfg.numPlayers===1) {
       setCards(TUTORIAL_CARDS);
-      setNumbers(TUTORIAL_CARDS.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+      setNumbers(TUTORIAL_CARDS.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
       setSelectedIdx(null);
       setOperator(null);
       setSteps([]);
@@ -4771,7 +4836,7 @@ export default function App() {
       : !hasSolution(drawn));
     setDeck(pool.slice(4));
     setCards(drawn);
-    setNumbers(drawn.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+    setNumbers(drawn.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
@@ -5042,7 +5107,7 @@ export default function App() {
   }
 
   function handleReset() {
-    setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+    setNumbers(cards.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
     setSelectedIdx(null);
     setOperator(null);
     setSteps([]);
@@ -5329,7 +5394,7 @@ export default function App() {
           onReplayTutorial={()=>{
             setShowHelp(false);
             setCards(TUTORIAL_CARDS);
-            setNumbers(TUTORIAL_CARDS.map(c=>({value:FACE[c.val],label:LABELS[c.val],sourceId:c.id})));
+            setNumbers(TUTORIAL_CARDS.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
             setSelectedIdx(null); setOperator(null); setSteps([]);
             setMessage({text:"",type:""}); setShowHint(null);
             setTurnOver(false); setTutorialStep(0);
@@ -5490,15 +5555,53 @@ export default function App() {
         {t.yourTurn(cp.name)}
       </div>
 
-      {/* Cards — always 2×2 grid */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,width:"fit-content"}}>
-        {cards.map((card,i)=>{
-          const inPool=numbers.some(n=>n.sourceId===card.id);
+      {/* Cards — directly tappable, card-styled for originals, chip-styled for computed results */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,width:"fit-content",margin:"0 auto 16px"}}>
+        {numbers.map((n,i)=>{
+          const isTutTarget = tutorialStep>=0
+            && tutorialStep<TUTORIAL_STEPS.length
+            && TUTORIAL_STEPS[tutorialStep].type==="number"
+            && n.label===TUTORIAL_STEPS[tutorialStep].target;
+          const red = n.suit==="♥"||n.suit==="♦";
+          if (n.suit) {
+            return (
+              <div key={i} onClick={()=>!turnOver && handleNumberClick(i)} style={{
+                width:86,minWidth:86,height:118,borderRadius:10,
+                background: selectedIdx===i?"#fff8e1":isTutTarget?"#eff6ff":"white",
+                border: selectedIdx===i?"3px solid #f59e0b":isTutTarget?"3px solid #60a5fa":"3px solid #e2e8f0",
+                boxShadow: selectedIdx===i?"0 8px 24px rgba(245,158,11,0.5)":isTutTarget?"0 0 0 3px rgba(96,165,250,0.3), 0 6px 18px rgba(96,165,250,0.25)":"0 4px 12px rgba(0,0,0,0.2)",
+                cursor:turnOver?"default":"pointer",
+                display:"flex",flexDirection:"column",justifyContent:"space-between",
+                padding:"5px 7px",
+                transform: selectedIdx===i?"translateY(-10px) scale(1.08)":isTutTarget?"scale(1.05)":"scale(1)",
+                transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                userSelect:"none",
+                animation:"popIn 0.3s ease",
+              }}>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+                <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
+                <div style={{fontSize:13,fontWeight:700,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {n.label}<span style={{fontSize:11}}>{n.suit}</span>
+                </div>
+              </div>
+            );
+          }
           return (
-            <PlayingCard key={card.id} card={card} used={!inPool}
-              selected={false} animIdx={i}
-              onClick={()=>{}}
-            />
+            <div key={i} onClick={()=>!turnOver && handleNumberClick(i)} style={{
+              width:62,height:62,alignSelf:"center",justifySelf:"center",borderRadius:14,
+              background:selectedIdx===i?"#fef3c7":isTutTarget?"rgba(96,165,250,0.2)":"rgba(255,255,255,0.08)",
+              border:`3px solid ${selectedIdx===i?"#f59e0b":isTutTarget?"#60a5fa":"rgba(255,255,255,0.15)"}`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:22,fontWeight:900,
+              color:selectedIdx===i?"#92400e":isTutTarget?"#93c5fd":"white",
+              cursor:turnOver?"default":"pointer",
+              transform:selectedIdx===i?"scale(1.15)":isTutTarget?"scale(1.12)":"scale(1)",
+              transition:"all 0.15s",
+              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":isTutTarget?"0 0 0 3px rgba(96,165,250,0.4), 0 4px 16px rgba(96,165,250,0.3)":"none",
+              animation:"popIn 0.3s ease",
+            }}>{n.label}</div>
           );
         })}
       </div>
@@ -5531,34 +5634,6 @@ export default function App() {
           }}>{lang==="zh"?"跳过教程":lang==="fr"?"Passer le tutoriel":"Skip tutorial"}</button>
         </div>
       )}
-
-      {/* Working numbers pool */}
-      <div style={{marginBottom:14,textAlign:"center"}}>
-        <div style={{color:"#475569",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{t.availableNumbers}</div>
-        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-          {numbers.map((n,i)=>{
-            const isTutTarget = tutorialStep>=0
-              && tutorialStep<TUTORIAL_STEPS.length
-              && TUTORIAL_STEPS[tutorialStep].type==="number"
-              && n.label===TUTORIAL_STEPS[tutorialStep].target;
-            return (
-            <div key={i} onClick={()=>handleNumberClick(i)} style={{
-              width:54,height:54,borderRadius:12,
-              background:selectedIdx===i?"#fef3c7":isTutTarget?"rgba(96,165,250,0.2)":"rgba(255,255,255,0.08)",
-              border:`2px solid ${selectedIdx===i?"#f59e0b":isTutTarget?"#60a5fa":"rgba(255,255,255,0.15)"}`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:18,fontWeight:900,
-              color:selectedIdx===i?"#92400e":isTutTarget?"#93c5fd":"white",
-              cursor:turnOver?"default":"pointer",
-              transform:selectedIdx===i?"scale(1.15)":isTutTarget?"scale(1.12)":"scale(1)",
-              transition:"all 0.15s",
-              boxShadow:selectedIdx===i?"0 4px 16px rgba(245,158,11,0.4)":isTutTarget?"0 0 0 3px rgba(96,165,250,0.4), 0 4px 16px rgba(96,165,250,0.3)":"none",
-              animation:isTutTarget?"popIn 0.3s ease":"popIn 0.3s ease",
-            }}>{n.label}</div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Operators */}
       {!turnOver&&(

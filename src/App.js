@@ -33,7 +33,7 @@ async function fetchDailyLeaderboard(dateKey) {
       collection(db, "daily_scores"),
       where("dateKey", "==", dateKey),
       orderBy("totalTime", "asc"),
-      limit(10)
+      limit(20)
     );
     const snap = await getDocs(q);
     return snap.docs.map((d, i) => ({ rank: i + 1, id: d.id, ...d.data() }));
@@ -315,8 +315,8 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
               </button>
             )}
 
-            {/* Player's own rank if outside top 10 */}
-            {playerRank && playerRank > 10 && (
+            {/* Player's own rank if outside top 20 */}
+            {playerRank && playerRank > 20 && (
               <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,
                 background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",
                 display:"flex",alignItems:"center",gap:8}}>
@@ -1077,13 +1077,13 @@ function OpBtn({op,active,onClick,disabled}) {
   const isWide = op==="ʸ√"; // wider label needs adjusted font
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      width:isWide?52:44,height:44,borderRadius:isWide?12:"50%",
-      border:active?"2px solid #f59e0b":disabled?"2px solid #1e293b":"2px solid #334155",
+      width:isWide?62:52,height:52,borderRadius:isWide?14:"50%",
+      border:active?"2.5px solid #f59e0b":disabled?"2px solid #1e293b":"2px solid #334155",
       background:active?"#fef3c7":disabled?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.05)",
-      fontSize:isWide?14:18,fontWeight:800,cursor:disabled?"default":"pointer",
-      color:active?"#92400e":disabled?"#1e3a5f":"#94a3b8",
-      transform:active?"scale(1.18)":"scale(1)",
-      transition:"all 0.15s",boxShadow:active?"0 4px 12px rgba(245,158,11,0.4)":"none",
+      fontSize:isWide?17:22,fontWeight:800,cursor:disabled?"default":"pointer",
+      color:active?"#92400e":disabled?"#1e3a5f":"#cbd5e1",
+      transform:active?"scale(1.15)":"scale(1)",
+      transition:"all 0.15s",boxShadow:active?"0 4px 14px rgba(245,158,11,0.4)":"none",
     }}>{op}</button>
   );
 }
@@ -4512,14 +4512,16 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           ⚔️ {lang==="zh"?"分享 / 挑战":lang==="fr"?"Partager / Defier":"Share / Challenge"}
         </button>
 
-        {/* Main Menu — small, secondary */}
-        <div style={{textAlign:"center",marginBottom:16}}>
-          <button onClick={onBack} style={{
-            background:"transparent",border:"1px solid rgba(255,255,255,0.12)",
-            borderRadius:10,padding:"8px 18px",
-            color:"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",
-          }}>🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}</button>
-        </div>
+        {/* Play More — clear path to other modes, more prominent than before */}
+        <button onClick={onBack} style={{
+          width:"100%",maxWidth:340,margin:"0 auto 16px",display:"block",
+          background:"rgba(96,165,250,0.1)",
+          border:"2px solid rgba(96,165,250,0.4)",
+          borderRadius:14,padding:"14px 20px",
+          color:"#93c5fd",fontSize:15,fontWeight:800,cursor:"pointer",
+        }}>
+          🎮 {lang==="zh"?"继续玩其他模式":lang==="fr"?"Continuer a jouer":"Play More Modes"}
+        </button>
 
         {/* Hidden share card */}
         <div ref={shareCardRef} style={{position:"fixed",left:"-9999px",top:0,width:380,

@@ -77,6 +77,7 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
   const [anon, setAnon] = useState(false);
   const [submitted, setSubmitted] = useState(()=>loadLBSubmitted(dateKey));
   const [submitting, setSubmitting] = useState(false);
+  const [autoSubmitted, setAutoSubmitted] = useState(false);
   const [board, setBoard] = useState(null);
   const [playerRank, setPlayerRank] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -86,6 +87,14 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
   useEffect(() => {
     if (submitted) loadBoard();
   }, [submitted]);
+
+  // Auto-submit for returning players — zero-tap submission if name is already saved
+  useEffect(() => {
+    if (!submitted && name.trim()) {
+      handleSubmit(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadBoard() {
     setLoading(true);
@@ -105,7 +114,7 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
     }
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(isAuto=false) {
     const displayName = anon ? (lang==="zh"?"匿名玩家":lang==="fr"?"Anonyme":"Anonymous 🕵️") : (name.trim() || (lang==="zh"?"玩家":lang==="fr"?"Joueur":"Player"));
     const displayCountry = anon ? "??" : country;
     setSubmitting(true);
@@ -115,6 +124,7 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
     saveLBSubmitted(dateKey);
     setSubmitted(true);
     setSubmitting(false);
+    if (isAuto) setAutoSubmitted(true);
     if (id) loadBoard();
     else setError("offline");
   }
@@ -237,6 +247,17 @@ function GlobalLeaderboard({ dateKey, totalTime, lang }) {
                 ? (lang==="zh"?"提交中...":lang==="fr"?"Envoi...":"Submitting...")
                 : (lang==="zh"?"🚀 提交成绩":lang==="fr"?"🚀 Soumettre":"🚀 Submit Score")}
             </button>
+          </div>
+        )}
+
+        {/* Auto-submit confirmation */}
+        {autoSubmitted && (
+          <div style={{
+            textAlign:"center",marginBottom:10,
+            color:"#34d399",fontSize:12,fontWeight:700,
+            background:"rgba(52,211,153,0.08)",borderRadius:10,padding:"8px 12px",
+          }}>
+            ✅ {lang==="zh"?`已自动提交，欢迎回来 ${name}！`:lang==="fr"?`Soumis automatiquement, bon retour ${name} !`:`Submitted automatically — welcome back, ${name}!`}
           </div>
         )}
 
@@ -2716,8 +2737,8 @@ function JuniorScreen({lang, setLang, onBack}) {
         <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",
           borderRadius:12,padding:"10px 16px",marginBottom:12,width:"100%",maxWidth:320}}>
           {steps.map((s,i)=>(
-            <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
+            <div key={i} style={{color:"#cbd5e1",fontSize:16,fontWeight:600,marginBottom:5}}>
+              <span style={{color:"#64748b",marginRight:6,fontSize:13,fontWeight:400}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>
@@ -3901,7 +3922,7 @@ function BattleScreen({ lang, setLang, onBack }) {
       </div>
 
       {/* Steps */}
-      {steps.length>0&&<div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"7px 12px",marginBottom:8,width:"100%",maxWidth:360}}>{steps.map((s,i)=><div key={i} style={{color:"#94a3b8",fontSize:12,marginBottom:2}}><span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}</div>)}</div>}
+      {steps.length>0&&<div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"9px 14px",marginBottom:8,width:"100%",maxWidth:360}}>{steps.map((s,i)=><div key={i} style={{color:"#cbd5e1",fontSize:16,fontWeight:600,marginBottom:4}}><span style={{color:"#64748b",marginRight:6,fontSize:13,fontWeight:400}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}</div>)}</div>}
 
       {/* Nudges */}
       {selectedIdx===null&&<div style={{color:"#334155",fontSize:11,textAlign:"center",marginBottom:6}}>{lang==="zh"?"点击数字→运算符→数字":lang==="fr"?"Appuyez nombre → opérateur → nombre":"Tap number → operator → number"}</div>}
@@ -4155,6 +4176,19 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
 
   const timerRef = useRef(null);
 
+  // Fire confetti as a closing celebration AFTER the results screen has rendered
+  // (not immediately at solve-time) — gives the player a beat to see their
+  // time/leaderboard first, per user feedback that confetti felt premature
+  useEffect(() => {
+    if (phase === "solved") {
+      const ct = setTimeout(() => {
+        setShowConfetti(true);
+        setTimeout(()=>setShowConfetti(false), 2500);
+      }, 600);
+      return () => clearTimeout(ct);
+    }
+  }, [phase]);
+
   // Format date nicely
   function formatDate(key) {
     const y = parseInt(key.slice(0,4));
@@ -4258,8 +4292,6 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   function handleSolve() {
     clearInterval(timerRef.current);
     const totalTime = elapsed + hintPenalty;
-    setShowConfetti(true);
-    setTimeout(()=>setShowConfetti(false), 2500);
 
     // Save result
     const result = { dateKey: todayKey, solved: true, elapsed, hintsUsed, hintPenalty, totalTime };
@@ -4655,8 +4687,8 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"10px 16px",marginBottom:12,width:"100%",maxWidth:360}}>
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.steps}</div>
           {steps.map((s,i)=>(
-            <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3,animation:"fadeSlide 0.3s ease"}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
+            <div key={i} style={{color:"#cbd5e1",fontSize:16,fontWeight:600,marginBottom:5,animation:"fadeSlide 0.3s ease"}}>
+              <span style={{color:"#64748b",marginRight:6,fontSize:13,fontWeight:400}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>
@@ -5697,8 +5729,8 @@ export default function App() {
         }}>
           <div style={{color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{t.steps}</div>
           {steps.map((s,i)=>(
-            <div key={i} style={{color:"#94a3b8",fontSize:13,marginBottom:3,animation:"fadeSlide 0.3s ease"}}>
-              <span style={{color:"#475569",marginRight:6}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
+            <div key={i} style={{color:"#cbd5e1",fontSize:16,fontWeight:600,marginBottom:5,animation:"fadeSlide 0.3s ease"}}>
+              <span style={{color:"#64748b",marginRight:6,fontSize:13,fontWeight:400}}>{lang==="zh"?`第${i+1}步：`:`${lang==="fr"?"Etape":"Step"} ${i+1}:`}</span>{s.expr}
             </div>
           ))}
         </div>

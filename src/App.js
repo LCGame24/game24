@@ -4460,10 +4460,10 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         {/* Share / Challenge — primary, large, bold */}
         <button onClick={()=>{
           const challengeText = lang==="zh"
-            ? `今天的24点我用了 ${fmtTime(totalTime)} 解开 🎯\n你能比我快吗？\nhttps://game24-taupe.vercel.app`
+            ? `你能用4张牌凑出24吗？\n不能用计算器 😀\n你能超过我 ${fmtTime(totalTime)} 的用时吗？\nhttps://game24-taupe.vercel.app`
             : lang==="fr"
-            ? `J'ai resolu le Game24 du jour en ${fmtTime(totalTime)} 🎯\nPeux-tu faire mieux ?\nhttps://game24-taupe.vercel.app`
-            : `I solved today's Game24 in ${fmtTime(totalTime)} 🎯\nThink you can beat me?\nhttps://game24-taupe.vercel.app`;
+            ? `Peux-tu faire 24 avec les 4 cartes ?\nPas de calculatrice 😀\nPeux-tu battre mon temps de ${fmtTime(totalTime)} ?\nhttps://game24-taupe.vercel.app`
+            : `Can you make 24 using all 4 cards?\nNo calculators 😀\nCan you beat my time of ${fmtTime(totalTime)}?\nhttps://game24-taupe.vercel.app`;
           if (navigator.share) {
             navigator.share({text: challengeText}).catch(()=>{});
           } else {

@@ -4410,12 +4410,18 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         </div>
 
         {/* Buttons */}
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:8}}>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:12}}>
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"12px 20px",color:"#94a3b8",fontSize:14,fontWeight:800,cursor:"pointer"}}>
             🏠 {lang==="zh"?"返回主页":lang==="fr"?"Menu principal":"Main Menu"}
           </button>
-          <button onClick={handleShare} disabled={sharing} style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",border:"none",borderRadius:12,padding:"12px 20px",color:"white",fontSize:14,fontWeight:800,cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,boxShadow:"0 4px 20px rgba(59,130,246,0.35)"}}>
-            {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"📤 分享":lang==="fr"?"📤 Partager":"📤 Share")}
+          <button onClick={handleShare} disabled={sharing} style={{
+            background:"linear-gradient(135deg,#f58529,#dd2a7b,#8134af)",
+            border:"none",borderRadius:12,padding:"12px 20px",
+            color:"white",fontSize:14,fontWeight:800,
+            cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,
+            boxShadow:"0 4px 20px rgba(221,42,123,0.35)",
+          }}>
+            {sharing?(lang==="zh"?"生成中...":lang==="fr"?"Generation...":"Generating..."):(lang==="zh"?"💾 保存图片":lang==="fr"?"💾 Enregistrer":"💾 Save Image")}
           </button>
         </div>
 
@@ -4432,7 +4438,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
             window.open(`https://wa.me/?text=${encodeURIComponent(challengeText)}`, "_blank");
           }
         }} style={{
-          width:"100%",maxWidth:320,margin:"0 auto 12px",display:"block",
+          width:"100%",maxWidth:320,margin:"0 auto 16px",display:"block",
           background:"linear-gradient(135deg,#f472b6,#f97316)",
           border:"none",borderRadius:14,padding:"14px 20px",
           color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
@@ -4441,43 +4447,6 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
         }}>
           ⚔️ {lang==="zh"?"挑战好友":lang==="fr"?"Defier un ami":"Challenge a Friend"}
         </button>
-
-        {/* Social share buttons */}
-        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:12}}>
-          {/* Facebook */}
-          <button onClick={()=>window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://game24-taupe.vercel.app")}`, "_blank")} style={{
-            background:"#1877f2",border:"none",borderRadius:10,
-            padding:"8px 14px",color:"white",fontSize:12,fontWeight:700,cursor:"pointer",
-            display:"flex",alignItems:"center",gap:5,
-          }}>
-            <span style={{fontSize:14}}>📘</span> Facebook
-          </button>
-          {/* Twitter/X */}
-          <button onClick={()=>{
-            const text = lang==="zh"
-              ? `你能用4张牌凑出24吗？不能用计算器 😀 来挑战我吧！`
-              : lang==="fr"
-              ? `Peux-tu faire 24 avec 4 cartes ? Pas de calculatrice 😀`
-              : `Can you make 24 using all 4 cards? No calculators 😀 Can you beat my time?`;
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent("https://game24-taupe.vercel.app")}`, "_blank");
-          }} style={{
-            background:"#000000",border:"none",borderRadius:10,
-            padding:"8px 14px",color:"white",fontSize:12,fontWeight:700,cursor:"pointer",
-            display:"flex",alignItems:"center",gap:5,
-          }}>
-            <span style={{fontSize:14}}>🐦</span> X
-          </button>
-          {/* Save Image for Instagram/TikTok */}
-          <button onClick={handleShare} disabled={sharing} style={{
-            background:"linear-gradient(135deg,#f58529,#dd2a7b,#8134af)",
-            border:"none",borderRadius:10,
-            padding:"8px 14px",color:"white",fontSize:12,fontWeight:700,
-            cursor:sharing?"not-allowed":"pointer",opacity:sharing?0.7:1,
-            display:"flex",alignItems:"center",gap:5,
-          }}>
-            <span style={{fontSize:14}}>💾</span> {lang==="zh"?"保存图片":lang==="fr"?"Enregistrer":"Save Image"}
-          </button>
-        </div>
 
         {/* Want more nudge */}
         <div style={{textAlign:"center",marginBottom:16}}>

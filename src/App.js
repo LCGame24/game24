@@ -4409,13 +4409,13 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           </div>
         </div>
 
-        {/* Challenge a Friend — primary, large, bold */}
+        {/* Share / Challenge — primary, large, bold */}
         <button onClick={()=>{
           const challengeText = lang==="zh"
-            ? `⚔️ 我向你发起挑战！\n今天的24点我用了 ${fmtTime(totalTime)} 解开 🎯\n你能比我快吗？\nhttps://game24-taupe.vercel.app`
+            ? `今天的24点我用了 ${fmtTime(totalTime)} 解开 🎯\n你能比我快吗？\nhttps://game24-taupe.vercel.app`
             : lang==="fr"
-            ? `⚔️ Je te lance un defi !\nJ'ai resolu le Game24 du jour en ${fmtTime(totalTime)} 🎯\nPeux-tu faire mieux ?\nhttps://game24-taupe.vercel.app`
-            : `⚔️ I challenge you!\nI solved today's Game24 in ${fmtTime(totalTime)} 🎯\nThink you can beat me?\nhttps://game24-taupe.vercel.app`;
+            ? `J'ai resolu le Game24 du jour en ${fmtTime(totalTime)} 🎯\nPeux-tu faire mieux ?\nhttps://game24-taupe.vercel.app`
+            : `I solved today's Game24 in ${fmtTime(totalTime)} 🎯\nThink you can beat me?\nhttps://game24-taupe.vercel.app`;
           if (navigator.share) {
             navigator.share({text: challengeText}).catch(()=>{});
           } else {
@@ -4429,7 +4429,7 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
           boxShadow:"0 8px 28px rgba(244,114,182,0.45)",
           animation:"streakPulse 2.5s ease infinite",
         }}>
-          ⚔️ {lang==="zh"?"挑战好友":lang==="fr"?"Defier un ami":"Challenge a Friend"}
+          ⚔️ {lang==="zh"?"分享 / 挑战":lang==="fr"?"Partager / Defier":"Share / Challenge"}
         </button>
 
         {/* Main Menu — small, secondary */}

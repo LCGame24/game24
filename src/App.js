@@ -1011,14 +1011,14 @@ function PlayingCard({card,selected,used,onClick,animIdx}) {
       position:"relative",
     }}>
       {used&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#475569"}}>✓</div>}
-      <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif",lineHeight:1.1}}>
+      <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif",lineHeight:1.1}}>
         {CARD_FACE_LABEL[card.val]}
-        <span style={{fontSize:18}}>{card.suit}</span>
+        <span style={{fontSize:16}}>{card.suit}</span>
       </div>
       <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{card.suit}</div>
-      <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif",lineHeight:1.1}}>
+      <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif",lineHeight:1.1}}>
         {CARD_FACE_LABEL[card.val]}
-        <span style={{fontSize:18}}>{card.suit}</span>
+        <span style={{fontSize:16}}>{card.suit}</span>
       </div>
     </div>
   );
@@ -2609,12 +2609,12 @@ function JuniorScreen({lang, setLang, onBack}) {
                 animation:`cardDeal 0.4s ease ${i*0.1}s both`,
                 position:"relative",
               }}>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
               </div>
             );
@@ -3859,12 +3859,12 @@ function BattleScreen({ lang, setLang, onBack }) {
                 userSelect:"none",
                 animation:cardFlip?`cardFlipIn 0.5s ease ${i*0.08}s both`:"popIn 0.3s ease",
               }}>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
               </div>
             );
@@ -4611,12 +4611,12 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
                 userSelect:"none",
                 animation:"popIn 0.3s ease",
               }}>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
               </div>
             );
@@ -5578,12 +5578,12 @@ export default function App() {
                 userSelect:"none",
                 animation:"popIn 0.3s ease",
               }}>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
                 <div style={{fontSize:20,textAlign:"center",color:red?"#e53e3e":"#1a202c"}}>{n.suit}</div>
-                <div style={{fontSize:24,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
-                  {n.label}<span style={{fontSize:18}}>{n.suit}</span>
+                <div style={{fontSize:20,fontWeight:800,color:red?"#e53e3e":"#1a202c",textAlign:"right",transform:"rotate(180deg)",fontFamily:"Georgia,serif"}}>
+                  {CARD_FACE_LABEL[n.value]||n.label}<span style={{fontSize:16}}>{n.suit}</span>
                 </div>
               </div>
             );

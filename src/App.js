@@ -523,6 +523,15 @@ function loadDailyResult() {
 function saveDailyResult(data) {
   try { localStorage.setItem("game24_daily",JSON.stringify(data)); } catch {}
 }
+function loadDailyProgress() {
+  try { return JSON.parse(localStorage.getItem("game24_daily_progress")||"null"); } catch { return null; }
+}
+function saveDailyProgress(data) {
+  try { localStorage.setItem("game24_daily_progress",JSON.stringify(data)); } catch {}
+}
+function clearDailyProgress() {
+  try { localStorage.removeItem("game24_daily_progress"); } catch {}
+}
 function loadDailyStreak() {
   try { return JSON.parse(localStorage.getItem("game24_daily_streak")||'{"count":0,"lastKey":""}'); } catch { return {count:0,lastKey:""}; }
 }
@@ -4154,8 +4163,13 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   const existingResult = loadDailyResult();
   const alreadyDone = existingResult && existingResult.dateKey === todayKey;
 
+  // Restore any in-progress hint/time state from a previous session today
+  // Closes the loophole: view hints → exit → re-enter with clean slate
+  const savedProgress = loadDailyProgress();
+  const progressForToday = savedProgress && savedProgress.dateKey === todayKey ? savedProgress : null;
+
   // Game state
-  const [phase, setPhase] = useState(alreadyDone ? "done" : "playing"); // playing | solved | failed | done
+  const [phase, setPhase] = useState(alreadyDone ? "done" : "playing");
   const dailyCards = getDailyCards();
   const [cards] = useState(dailyCards);
   const [numbers, setNumbers] = useState(dailyCards.map(c=>({value:FACE[c.val],label:LABELS[c.val],suit:c.suit,sourceId:c.id})));
@@ -4164,9 +4178,9 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   const [steps, setSteps] = useState([]);
   const [undoStack, setUndoStack] = useState([]);
   const [message, setMessage] = useState({text:"",type:""});
-  const [elapsed, setElapsed] = useState(0); // stopwatch
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [hintPenalty, setHintPenalty] = useState(0); // total added seconds
+  const [elapsed, setElapsed] = useState(progressForToday ? progressForToday.elapsed : 0);
+  const [hintsUsed, setHintsUsed] = useState(progressForToday ? progressForToday.hintsUsed : 0);
+  const [hintPenalty, setHintPenalty] = useState(progressForToday ? progressForToday.hintPenalty : 0);
   const [showHintSteps, setShowHintSteps] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -4203,7 +4217,16 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
   // Stopwatch
   useEffect(() => {
     if (phase !== "playing") return;
-    timerRef.current = setInterval(() => setElapsed(e => e+1), 1000);
+    timerRef.current = setInterval(() => {
+      setElapsed(e => {
+        const next = e + 1;
+        // Save elapsed time every 5 seconds so re-entering can't reset the clock
+        if (next % 5 === 0) {
+          saveDailyProgress({ dateKey: todayKey, hintsUsed, hintPenalty, elapsed: next });
+        }
+        return next;
+      });
+    }, 1000);
     return () => clearInterval(timerRef.current);
   }, [phase]);
 
@@ -4293,9 +4316,10 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     clearInterval(timerRef.current);
     const totalTime = elapsed + hintPenalty;
 
-    // Save result
+    // Save result and clear in-progress state (no longer needed)
     const result = { dateKey: todayKey, solved: true, elapsed, hintsUsed, hintPenalty, totalTime };
     saveDailyResult(result);
+    clearDailyProgress();
 
     // Update streak
     const streak = loadDailyStreak();
@@ -4329,9 +4353,14 @@ function DailyChallengeScreen({ lang, setLang, onBack }) {
     } else if (showHintSteps.revealed < showHintSteps.steps.length) {
       setShowHintSteps(h=>({...h, revealed: h.revealed+1}));
     }
-    setHintsUsed(h=>h+1);
-    setHintPenalty(p=>p+30);
-    setElapsed(e=>e+30); // add 30s to stopwatch visually
+    const newHints = hintsUsed + 1;
+    const newPenalty = hintPenalty + 30;
+    const newElapsed = elapsed + 30;
+    setHintsUsed(newHints);
+    setHintPenalty(newPenalty);
+    setElapsed(newElapsed);
+    // Persist hint state so re-entering doesn't reset it (closes the loophole)
+    saveDailyProgress({ dateKey: todayKey, hintsUsed: newHints, hintPenalty: newPenalty, elapsed: newElapsed });
     setMessage({text: lang==="zh"?"⏱ +30秒 (使用提示)":"⏱ +30s time penalty for hint", type:"bad"});
     setTimeout(()=>setMessage({text:"",type:""}), 2000);
   }

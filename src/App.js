@@ -874,7 +874,7 @@ const T = {
 // Language switcher component
 const LANGS = [
   { code:"en", flag:"EN", label:"English" },
-  { code:"zh", flag:"CN", label:"Chinese" },
+  { code:"zh", flag:"CN", label:"中文" },
   { code:"fr", flag:"FR", label:"Francais" },
 ];
 
